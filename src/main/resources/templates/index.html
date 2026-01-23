@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Transaction Dashboard - ByPass International Transfer</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%);
+            padding: 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background elements */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-animation span {
+            position: absolute;
+            display: block;
+            width: 20px;
+            height: 20px;
+            background: rgba(59, 130, 246, 0.1);
+            animation: float 25s linear infinite;
+            bottom: -150px;
+            border-radius: 50%;
+        }
+
+        .bg-animation span:nth-child(1) { left: 10%; width: 80px; height: 80px; animation-delay: 0s; }
+        .bg-animation span:nth-child(2) { left: 20%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .bg-animation span:nth-child(3) { left: 35%; width: 60px; height: 60px; animation-delay: 4s; }
+        .bg-animation span:nth-child(4) { left: 50%; width: 40px; height: 40px; animation-delay: 0s; animation-duration: 18s; }
+        .bg-animation span:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .bg-animation span:nth-child(6) { left: 75%; width: 90px; height: 90px; animation-delay: 3s; }
+        .bg-animation span:nth-child(7) { left: 85%; width: 50px; height: 50px; animation-delay: 7s; }
+        .bg-animation span:nth-child(8) { left: 25%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+        .bg-animation span:nth-child(9) { left: 55%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .bg-animation span:nth-child(10) { left: 90%; width: 70px; height: 70px; animation-delay: 0s; animation-duration: 11s; }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-1500px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: #60a5fa;
+        }
+
+        .tagline {
+            font-size: 12px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(100, 116, 139, 0.5);
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            padding: 28px;
+            margin-bottom: 24px;
+            animation: slideUp 0.6s ease-out backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title svg {
+            width: 24px;
+            height: 24px;
+            fill: #3b82f6;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .balance-table td:last-child {
+            font-weight: 700;
+            color: #10b981;
+            font-size: 16px;
+        }
+
+        /* Grid Layout */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .form-control:focus {
+            border-color: #3b82f6;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        /* Action Cards */
+        .action-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .action-card:hover {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .action-card h4 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-card h4 .icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-card h4 .icon svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .icon-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .icon-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+
+        /* Alerts */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #bae6fd;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0369a1;
+        }
+
+        /* Reconciliation Form */
+        .recon-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .recon-form .form-group {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 12px;
+        }
+
+        /* Section Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+            margin: 32px 0;
+        }
+
+        /* Transaction Type Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-receive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-send {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-transfer {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .recon-form {
+                flex-direction: column;
+            }
+
+            .recon-form .form-group {
+                width: 100%;
+            }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            fill: #cbd5e1;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="logo-text">By<span>Pass</span></div>
+                    <div class="tagline">International Transfer</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/users" class="btn btn-outline">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                    </svg>
+                    Manage Users
+                </a>
+                <form action="/logout" method="post" style="margin: 0;">
+                    <button type="submit" class="btn btn-outline">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Account Balances Card -->
+        <div class="card">
+            <h3 class="card-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                </svg>
+                Account Balances
+            </h3>
+            <div class="table-container">
+                <table class="balance-table">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="acc : ${accounts}">
+                            <td th:text="${acc.name}"></td>
+                            <td th:text="${acc.balance}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h3 class="card-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 14V6c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zm-9-1c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-6v11c0 1.1-.9 2-2 2H4v-2h17V7h2z"/>
+                </svg>
+                Quick Actions
+            </h3>
+            <div class="grid-3">
+                <!-- Add Incoming -->
+                <div class="action-card">
+                    <h4>
+                        <span class="icon icon-green">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/>
+                            </svg>
+                        </span>
+                        Add Incoming
+                    </h4>
+                    <form action="/receive" method="post">
+                        <div class="form-group">
+                            <label class="form-label">Account</label>
+                            <select name="account" class="form-control" required>
+                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <button type="submit" class="btn btn-success" style="width: 100%;">Receive Money</button>
+                    </form>
+                </div>
+
+                <!-- Send / Pay Out -->
+                <div class="action-card">
+                    <h4>
+                        <span class="icon icon-red">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
+                            </svg>
+                        </span>
+                        Send / Pay Out
+                    </h4>
+                    <form action="/send" method="post">
+                        <div class="form-group">
+                            <label class="form-label">Account</label>
+                            <select name="account" class="form-control" required>
+                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <button type="submit" class="btn btn-danger" style="width: 100%;">Send Money</button>
+                    </form>
+                </div>
+
+                <!-- Transfer Between Accounts -->
+                <div class="action-card">
+                    <h4>
+                        <span class="icon icon-blue">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+                            </svg>
+                        </span>
+                        Transfer
+                    </h4>
+                    <form action="/transfer" method="post">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select name="from" class="form-control" required>
+                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select name="to" class="form-control" required>
+                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Transfer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reconciliation Card -->
+        <div class="card">
+            <h3 class="card-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
+                Daily Reconciliation
+            </h3>
+
+            <!-- Flash messages -->
+            <div th:if="${success}" class="alert alert-success">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span th:text="${success}"></span>
+            </div>
+            <div th:if="${error}" class="alert alert-danger">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <span th:text="${error}"></span>
+            </div>
+
+            <!-- AJAX success banner -->
+            <div id="recon-success" class="alert alert-success" style="display:none;"></div>
+
+            <form id="recon-form" action="/reconcile" method="post" class="recon-form">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input id="recon-date" type="date" name="date" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Actual Balance</label>
+                    <input id="recon-actual" type="number" step="0.01" name="actualBalance" class="form-control" placeholder="0.00" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <button id="recon-btn" type="submit" class="btn btn-secondary" style="width: 100%;">Run Reconciliation</button>
+                </div>
+            </form>
+            <p class="help-text">Enter the physical/actual cash balance and click Run to save a reconciliation record.</p>
+
+            <div class="divider"></div>
+
+            <h4 style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 16px;">Reconciliation Records</h4>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>System Balance</th>
+                            <th>Actual Balance</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recon-tbody">
+                        <tr th:each="rec : ${reconciliations}">
+                            <td th:text="${rec.date}"></td>
+                            <td th:text="${rec.systemBalance}"></td>
+                            <td th:text="${rec.actualBalance}"></td>
+                            <td th:text="${rec.difference}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(reconciliations)}">
+                            <td colspan="4" class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                </svg>
+                                <p>No reconciliations yet.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transactions Card -->
+        <div class="card">
+            <h3 class="card-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                Transactions
+            </h3>
+
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-label">Total Fees Collected:</span>
+                    <span class="stat-value" th:text="${totalFees}">0</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Amount</th>
+                            <th>Fee</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${transactions}">
+                            <td th:text="${t.date}"></td>
+                            <td th:text="${t.type}"></td>
+                            <td th:text="${t.fromAccount}"></td>
+                            <td th:text="${t.toAccount}"></td>
+                            <td th:text="${t.amount}"></td>
+                            <td th:text="${t.fee}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('recon-form');
+        const successDiv = document.getElementById('recon-success');
+        const tbody = document.getElementById('recon-tbody');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const date = document.getElementById('recon-date').value;
+            const actual = document.getElementById('recon-actual').value;
+
+            const payload = {
+                date: date || null,
+                actualBalance: parseFloat(actual)
+            };
+
+            fetch('/api/reconciliation/daily', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(resp => {
+                if (!resp.ok) throw new Error('Network response was not ok');
+                return resp.json();
+            })
+            .then(data => {
+                successDiv.style.display = 'flex';
+                successDiv.innerHTML = '<svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>Reconciliation saved: ' + (data.date || '') + ' — actual=' + data.actualBalance + ' system=' + data.systemBalance + ' diff=' + data.difference + '</span>';
+
+                const row = document.createElement('tr');
+                row.innerHTML = '<td>' + (data.date || '') + '</td>' +
+                                '<td>' + (data.systemBalance || '') + '</td>' +
+                                '<td>' + (data.actualBalance || '') + '</td>' +
+                                '<td>' + (data.difference || '') + '</td>';
+                
+                const emptyRow = tbody.querySelector('tr td[colspan="4"]');
+                if (emptyRow) emptyRow.parentElement.remove();
+                tbody.insertBefore(row, tbody.firstChild);
+
+                document.getElementById('recon-actual').value = '';
+                document.getElementById('recon-date').value = '';
+
+                setTimeout(() => { successDiv.style.display = 'none'; }, 6000);
+            })
+            .catch(err => {
+                successDiv.style.display = 'flex';
+                successDiv.classList.remove('alert-success');
+                successDiv.classList.add('alert-danger');
+                successDiv.innerHTML = '<svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg><span>Reconciliation failed: ' + err.message + '</span>';
+                setTimeout(() => { 
+                    successDiv.style.display = 'none'; 
+                    successDiv.classList.remove('alert-danger'); 
+                    successDiv.classList.add('alert-success'); 
+                }, 6000);
+            });
+
+            return false;
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>transaction</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+
+        <select name="type">
+            <option value="INCOMING">Incoming</option>
+            <option value="OUTGOING">Outgoing</option>
+            <option value="TRANSFER">Transfer</option>
+        </select>
+
+
+        <input type="number" name="amount" step="0.01" required />
+        <input type="text" name="referenceCode" />
+        <input type="file" name="proof" />
+
+
+        <button type="submit">Submit (Pending)</button>
+
+    </body>
+</html>
