@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+
 @SpringBootApplication
 public class BypasstransersApplication {
 
@@ -70,9 +72,24 @@ public class BypasstransersApplication {
                     log.info("Seeded default users: superadmin/admin/staff");
                 }
 
+                // Migrate any existing plain-text passwords to BCrypt
+                List<User> all = userRepo.findAll();
+                int migrated = 0;
+                for (User u : all) {
+                    String pw = u.getPassword();
+                    if (pw != null && !pw.startsWith("$2")) {
+                        // treat existing value as raw password and encode it
+                        u.setPassword(passwordEncoder.encode(pw));
+                        userRepo.save(u);
+                        migrated++;
+                    }
+                }
+                if (migrated > 0) log.info("Migrated {} plain-text passwords to BCrypt", migrated);
+
             } catch (Exception ex) {
                 log.warn("Initialization skipped: {}", ex.getMessage());
             }
         };
     }
+
 }

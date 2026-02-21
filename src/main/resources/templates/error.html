@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-
-<html>
-    <head>
-        <title>error</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <div>there was as issue with the Login system </div>
-    </body>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Error - ByPass</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2em; background: #f4f4f9; }
+        .error-box { background: white; padding: 2em; border-radius: 8px; max-width: 500px; margin: 2em auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .error-title { color: #b00020; font-weight: bold; margin-bottom: 0.5em; }
+        a { color: #4a90e2; }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <div class="error-title">Error <span th:text="${status}">--</span></div>
+        <p th:if="${status == 404}">The page you requested was not found.</p>
+        <p th:if="${status == 403}">You don't have permission to access this resource.</p>
+        <p th:if="${status == 401}">Please log in to continue.</p>
+        <p th:if="${status == 500}">An internal server error occurred. Please try again later.</p>
+        <p th:if="${status != null and status != 404 and status != 403 and status != 401 and status != 500}">
+            <span th:text="${message} ?: 'Something went wrong.'">Something went wrong.</span>
+        </p>
+        <p><a th:href="@{/}">Return to dashboard</a> · <a th:href="@{/login}">Log in</a></p>
+    </div>
+</body>
 </html>

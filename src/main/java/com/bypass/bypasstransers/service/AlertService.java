@@ -3,18 +3,27 @@ package com.bypass.bypasstransers.service;
 import com.bypass.bypasstransers.model.Account;
 import com.bypass.bypasstransers.repository.AccountRepository;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- *
- * @author Vickeller.01
+ * Handles low balance alerts and sends SMS notifications to account owners.
  */
 @Service
 public class AlertService {
 
+    private static final Logger log = LoggerFactory.getLogger(AlertService.class);
+
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private AuditService auditService;
+
+    @Autowired
+    private SmsService smsService;
 
     public List<Account> lowBalance(double threshold) {
         try {
@@ -23,38 +32,51 @@ public class AlertService {
                     .filter(a -> a.getBalance() < threshold)
                     .toList();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to fetch low balance accounts", e);
             return List.of();
         }
     }
 
-    @Autowired
-    private AuditService auditService;
+    /** Returns accounts whose balance is below their own lowBalanceThreshold. */
+    public List<Account> lowBalanceAccounts() {
+        try {
+            return accountRepository.findAll()
+                    .stream()
+                    .filter(a -> a.getBalance() < a.getLowBalanceThreshold())
+                    .toList();
+        } catch (Exception e) {
+            log.error("Failed to fetch low balance accounts", e);
+            return List.of();
+        }
+    }
 
     public void notifyLowBalance(Account account) {
+        String message = "⚠ LOW BALANCE ALERT: " + account.getName()
+                + " - Balance: " + account.getBalance()
+                + " (threshold: " + account.getLowBalanceThreshold() + ")";
 
-        // For now: LOG + CONSOLE (SMS/Email later)
-        System.out.println(
-                "⚠ LOW BALANCE ALERT: " + account.getName()
-                + " Balance = " + account.getBalance()
-        );
+        log.warn(message);
 
-        String username = "unknown";
         if (account.getOwner() != null) {
-            username = account.getOwner().getUsername();
+            try {
+                smsService.sendAlert(account.getOwner(), message);
+            } catch (Exception e) {
+                log.warn("Failed to send low balance SMS to {}: {}", account.getOwner().getUsername(), e.getMessage());
+            }
         }
 
-        auditService.log(
-                username,
-                "Low balance alert sent for " + account.getName()
-        );
+        String username = account.getOwner() != null ? account.getOwner().getUsername() : "unknown";
+        try {
+            auditService.log(username, "Low balance alert sent for " + account.getName());
+        } catch (Exception e) {
+            log.warn("Failed to audit low balance alert: {}", e.getMessage());
+        }
 
         account.setLowBalanceAlertSent(true);
         try {
             accountRepository.save(account);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to persist low balance alert flag", e);
         }
     }
-
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Reset Password</title>
+    </head>
+    <body>
+        <h1>Reset Password</h1>
+        
+        
+        <form action="/reset" method="post">
+            <input type="hidden" name="token" value="b02506bb-095a-4734-ae6c-60df7b4a36fb" />
+            <div>
+                <label>New password</label>
+                <input type="password" name="password" required />
+            </div>
+            <div>
+                <button type="submit">Reset Password</button>
+            </div>
+        </form>
+        <p><a href="/login">Back to login</a></p>
+    </body>
+</html>

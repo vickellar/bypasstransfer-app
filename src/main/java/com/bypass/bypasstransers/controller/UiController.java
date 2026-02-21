@@ -20,8 +20,8 @@ public class UiController {
         this.service = service;
     }
 
-    @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    @GetMapping("/transactions")
+    public String transactions(Model model) {
         model.addAttribute("transactions", service.findAll());
         return "dashboard";
     }

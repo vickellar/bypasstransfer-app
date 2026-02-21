@@ -29,14 +29,23 @@ public class PasswordResetService {
     @Autowired
     private AuditService auditService;
 
-    public PasswordResetToken createTokenForUser(User user) {
+    /** Convenience overload for callers that don't need the reset link. */
+    public String createTokenForUser(User user) {
+        return createTokenForUser(user, null);
+    }
+
+    /**
+     * Creates a password reset token. If user has no email, returns the reset link
+     * so the controller can display it on the page; otherwise returns null.
+     */
+    public String createTokenForUser(User user, Object ignored) {
         if (user == null) return null;
         try { tokenRepository.deleteByUser(user); } catch (Exception e) { }
 
         String token = UUID.randomUUID().toString();
         LocalDateTime expiry = LocalDateTime.now().plusHours(6);
         PasswordResetToken prt = new PasswordResetToken(token, user, expiry);
-        PasswordResetToken saved = tokenRepository.save(prt);
+        tokenRepository.save(prt);
 
         String resetLink = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/reset")
@@ -49,13 +58,10 @@ public class PasswordResetService {
 
         if (user.getEmail() != null && !user.getEmail().isBlank()) {
             emailService.sendSimpleEmail(user.getEmail(), "Password reset", body);
-        } else {
-            System.out.println("Password reset link for user=" + user.getUsername() + " -> " + resetLink);
         }
-
         try { auditService.logEntity(user.getUsername(), "users", user.getId(), "REQUEST_PASSWORD_RESET", null, null); } catch (Exception e) { }
-
-        return saved;
+        // Return link when user has no email so it can be displayed on the page
+        return (user.getEmail() == null || user.getEmail().isBlank()) ? resetLink : null;
     }
 
     public User validateTokenAndFetchUser(String token) {
@@ -68,6 +74,7 @@ public class PasswordResetService {
 
     public boolean resetPassword(String token, String rawPassword) {
         if (token == null || rawPassword == null || rawPassword.isBlank()) return false;
+        if (rawPassword.length() < 6) return false;
         PasswordResetToken prt = tokenRepository.findByToken(token);
         if (prt == null) return false;
         if (prt.getExpiry() == null || prt.getExpiry().isBefore(LocalDateTime.now())) return false;

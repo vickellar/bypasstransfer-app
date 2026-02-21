@@ -2,17 +2,18 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.SmsProvider;
 import com.bypass.bypasstransers.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SmsService {
 
-    @Autowired
-    private SmsProvider provider;
+    private final SmsProvider provider;
+    private final AuditService auditService;
 
-    @Autowired
-    private AuditService auditService;
+    public SmsService(SmsProvider provider, AuditService auditService) {
+        this.provider = provider;
+        this.auditService = auditService;
+    }
 
     public void send(String phoneNumber, String message) {
         // Delegate to provider (placeholder implementations may just print)
@@ -34,6 +35,7 @@ public class SmsService {
                 "SMS sent: " + message
             );
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

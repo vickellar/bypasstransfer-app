@@ -11,16 +11,17 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- *
- * @author Vickeller.01
+ * Excel export for transactions. Requires authentication.
  */
 @RestController
 @RequestMapping("/api/export")
+@PreAuthorize("isAuthenticated()")
 public class ExportController {
 
     @Autowired

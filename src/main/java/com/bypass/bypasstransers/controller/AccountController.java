@@ -3,6 +3,7 @@ package com.bypass.bypasstransers.controller;
 import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.DailyReconciliationRepository;
+import com.bypass.bypasstransers.service.AlertService;
 import com.bypass.bypasstransers.service.TransactionService;
 import com.bypass.bypasstransers.service.ReconsiliationService;
 import java.time.LocalDate;
@@ -35,37 +36,58 @@ public class AccountController {
     @Autowired
     private DailyReconciliationRepository dailyRepo;
 
+    @Autowired
+    private AlertService alertService;
+
     @GetMapping("/")
     public String dashboard(Model model) {
         model.addAttribute("accounts", accountRepo.findAll());
         model.addAttribute("transactions", txRepo.findAll());
         model.addAttribute("totalFees", service.totalFees());
+        model.addAttribute("lowBalanceAccounts", alertService.lowBalanceAccounts());
         model.addAttribute("reconciliations", dailyRepo.findAll());
         return "index";
     }
 
+    // Explicit dashboard mapping used as post-login landing to avoid redirect loops
+    @GetMapping("/dashboard")
+    public String dashboardAlias(Model model) {
+        return dashboard(model);
+    }
+
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/receive")
-    public String receive(@RequestParam String account,
-                          @RequestParam double amount) {
-        service.receive(account, amount);
+    public String receive(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
+        try {
+            service.receive(account, amount);
+            ra.addFlashAttribute("success", "Received " + amount + " into " + account);
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/";
     }
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/send")
-    public String send(@RequestParam String account,
-                       @RequestParam double amount) {
-        service.send(account, amount);
+    public String send(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
+        try {
+            service.send(account, amount);
+            ra.addFlashAttribute("success", "Sent " + amount + " from " + account);
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/";
     }
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/transfer")
-    public String transfer(@RequestParam String from,
-                           @RequestParam String to,
-                           @RequestParam double amount) {
-        service.transfer(from, to, amount);
+    public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam double amount, RedirectAttributes ra) {
+        try {
+            service.transfer(from, to, amount);
+            ra.addFlashAttribute("success", "Transferred " + amount + " from " + from + " to " + to);
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/";
     }
 

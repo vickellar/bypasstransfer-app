@@ -4,6 +4,8 @@ import com.bypass.bypasstransers.model.Account;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
+import com.bypass.bypasstransers.enums.Role;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -13,10 +15,12 @@ public class DataLoader implements CommandLineRunner {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataLoader(AccountRepository accountRepository, UserRepository userRepository) {
+    public DataLoader(AccountRepository accountRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -29,7 +33,10 @@ public class DataLoader implements CommandLineRunner {
         } else {
             user = new User();
             user.setUsername("vickellar");
-            user.setPassword("NjisweVic~2030");
+            // store a BCrypt-hashed password so authentication works
+            user.setPassword(passwordEncoder.encode("NjisweVic~2030"));
+            // set a default role to allow role-based access checks (use STAFF by default)
+            user.setRole(Role.STAFF);
             user.setPhoneNumber("+263778411140");
             userRepository.save(user);
         }
