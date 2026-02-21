@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -30,6 +31,14 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // new: whether the user's email is verified
+    @Column(name = "email_verified")
+    private Boolean emailVerified = false;
+
+    // new: record creation time
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     public String getPhoneNumber() {
         return phoneNumber;
@@ -77,5 +86,21 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified != null && emailVerified;
+    }
+
+    public void setEmailVerified(Boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -1,27 +1,718 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Error - ByPass</title>
+    <title>Error - ByPass International</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 2em; background: #f4f4f9; }
-        .error-box { background: white; padding: 2em; border-radius: 8px; max-width: 500px; margin: 2em auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .error-title { color: #b00020; font-weight: bold; margin-bottom: 0.5em; }
-        a { color: #4a90e2; }
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0B0F1A;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2234;
+            --accent: #0EA5E9;
+            --accent-glow: rgba(14, 165, 233, 0.15);
+            --accent-soft: rgba(14, 165, 233, 0.08);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border: rgba(148, 163, 184, 0.1);
+            --error-red: #EF4444;
+            --error-glow: rgba(239, 68, 68, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-grid::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridShift 20s linear infinite;
+        }
+
+        @keyframes gridShift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.18), transparent 70%);
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.1), transparent 70%);
+            bottom: -50px;
+            left: -80px;
+            animation-delay: -4s;
+        }
+
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.1), transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -8s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -20px) scale(1.05); }
+            50% { transform: translate(-15px, 25px) scale(0.95); }
+            75% { transform: translate(20px, 15px) scale(1.02); }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+            background: rgba(11, 15, 26, 0.7);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            position: relative;
+        }
+
+        .logo-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.25s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            border-radius: 1px;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .error-container {
+            width: 100%;
+            max-width: 560px;
+            animation: fadeUp 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Error code display */
+        .error-code-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--error-red), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.15); }
+        }
+
+        .error-code::after {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(ellipse, var(--error-glow), transparent 70%);
+            z-index: -1;
+            border-radius: 50%;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Card */
+        .error-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .error-card:hover {
+            border-color: rgba(14, 165, 233, 0.2);
+            box-shadow: 0 0 40px var(--accent-soft);
+        }
+
+        .error-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--error-red), var(--accent), var(--error-red));
+            background-size: 200% 100%;
+            animation: shimmerBar 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmerBar {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 100px;
+            background: var(--error-glow);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--error-red);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1.25rem;
+            animation: fadeIn 0.6s ease-out 0.5s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--error-red);
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .error-card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+            animation: fadeIn 0.6s ease-out 0.6s both;
+        }
+
+        .error-card .message {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.6s ease-out 0.7s both;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin-bottom: 1.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            animation: dividerSweep 4s ease-in-out infinite;
+        }
+
+        @keyframes dividerSweep {
+            0% { left: -60%; }
+            100% { left: 100%; }
+        }
+
+        /* Action buttons */
+        .actions {
+            display: flex;
+            gap: 0.875rem;
+            animation: fadeIn 0.6s ease-out 0.8s both;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: #38bdf8;
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: rgba(148, 163, 184, 0.25);
+            background: rgba(148, 163, 184, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ===== GLOBE ANIMATION ===== */
+        .globe-wrapper {
+            position: fixed;
+            bottom: -120px;
+            right: -120px;
+            width: 400px;
+            height: 400px;
+            z-index: 0;
+            opacity: 0.07;
+            animation: spinGlobe 60s linear infinite;
+        }
+
+        @keyframes spinGlobe {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .globe-wrapper svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 1.25rem 2rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            backdrop-filter: blur(16px);
+            background: rgba(11, 15, 26, 0.7);
+            animation: slideUp 0.6s ease-out 0.4s both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.25s ease;
+        }
+
+        .footer a:hover {
+            color: var(--accent);
+        }
+
+        .footer-dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        /* ===== PARTICLES ===== */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleRise 8s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 7s; }
+        .particle:nth-child(2) { left: 25%; animation-delay: 1.5s; animation-duration: 9s; }
+        .particle:nth-child(3) { left: 40%; animation-delay: 3s; animation-duration: 6s; }
+        .particle:nth-child(4) { left: 55%; animation-delay: 0.5s; animation-duration: 10s; }
+        .particle:nth-child(5) { left: 70%; animation-delay: 2s; animation-duration: 8s; }
+        .particle:nth-child(6) { left: 85%; animation-delay: 4s; animation-duration: 7.5s; }
+        .particle:nth-child(7) { left: 15%; animation-delay: 2.5s; animation-duration: 9.5s; }
+        .particle:nth-child(8) { left: 60%; animation-delay: 1s; animation-duration: 6.5s; }
+
+        @keyframes particleRise {
+            0% { bottom: -5%; opacity: 0; transform: translateX(0); }
+            15% { opacity: 0.6; }
+            85% { opacity: 0.6; }
+            100% { bottom: 105%; opacity: 0; transform: translateX(30px); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 1rem 1.25rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .main {
+                padding: 1.5rem 1rem;
+            }
+
+            .error-code {
+                font-size: 5rem;
+            }
+
+            .error-card {
+                padding: 1.75rem;
+            }
+
+            .error-card h2 {
+                font-size: 1.25rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+
+            .globe-wrapper {
+                width: 250px;
+                height: 250px;
+                bottom: -80px;
+                right: -80px;
+            }
+
+            .footer {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="error-box">
-        <div class="error-title">Error <span th:text="${status}">--</span></div>
-        <p th:if="${status == 404}">The page you requested was not found.</p>
-        <p th:if="${status == 403}">You don't have permission to access this resource.</p>
-        <p th:if="${status == 401}">Please log in to continue.</p>
-        <p th:if="${status == 500}">An internal server error occurred. Please try again later.</p>
-        <p th:if="${status != null and status != 404 and status != 403 and status != 401 and status != 500}">
-            <span th:text="${message} ?: 'Something went wrong.'">Something went wrong.</span>
-        </p>
-        <p><a th:href="@{/}">Return to dashboard</a> · <a th:href="@{/login}">Log in</a></p>
+
+    <!-- Animated Background -->
+    <div class="bg-grid">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
     </div>
+
+    <!-- Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Globe watermark -->
+    <div class="globe-wrapper">
+        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="95" stroke="currentColor" stroke-width="1"/>
+            <ellipse cx="100" cy="100" rx="60" ry="95" stroke="currentColor" stroke-width="1"/>
+            <ellipse cx="100" cy="100" rx="30" ry="95" stroke="currentColor" stroke-width="1"/>
+            <line x1="5" y1="100" x2="195" y2="100" stroke="currentColor" stroke-width="1"/>
+            <ellipse cx="100" cy="100" rx="95" ry="30" stroke="currentColor" stroke-width="0.75"/>
+            <ellipse cx="100" cy="60" rx="85" ry="20" stroke="currentColor" stroke-width="0.5"/>
+            <ellipse cx="100" cy="140" rx="85" ry="20" stroke="currentColor" stroke-width="0.5"/>
+        </svg>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a th:href="@{/}" class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="36" height="36" rx="8" fill="#0EA5E9" fill-opacity="0.12"/>
+                    <path d="M10 18L15 13L20 18L25 13" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 23L15 18L20 23L25 18" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+                </svg>
+            </div>
+            <div class="logo-text">By<span>Pass</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a th:href="@{/}">Dashboard</a></li>
+            <li><a th:href="@{/transfers}">Transfers</a></li>
+            <li><a th:href="@{/support}">Support</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="error-container">
+
+            <!-- Large Error Code -->
+            <div class="error-code-wrapper">
+                <div class="error-code" th:text="${status}">404</div>
+            </div>
+
+            <!-- Error Card -->
+            <div class="error-card">
+
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    Error <span th:text="${status}">--</span>
+                </div>
+
+                <!-- 404 -->
+                <div th:if="${status == 404}">
+                    <h2>Page Not Found</h2>
+                    <p class="message">The page you requested could not be located. It may have been moved or no longer exists. Please check the URL or navigate back to the dashboard.</p>
+                </div>
+
+                <!-- 403 -->
+                <div th:if="${status == 403}">
+                    <h2>Access Denied</h2>
+                    <p class="message">You don't have the required permissions to access this resource. If you believe this is a mistake, please contact your account administrator.</p>
+                </div>
+
+                <!-- 401 -->
+                <div th:if="${status == 401}">
+                    <h2>Authentication Required</h2>
+                    <p class="message">Your session may have expired or you need to sign in to access this page. Please log in to continue using ByPass services.</p>
+                </div>
+
+                <!-- 500 -->
+                <div th:if="${status == 500}">
+                    <h2>Server Error</h2>
+                    <p class="message">An unexpected error occurred on our servers. Our team has been notified and is working on it. Please try again in a few moments.</p>
+                </div>
+
+                <!-- Generic fallback -->
+                <div th:if="${status != null and status != 404 and status != 403 and status != 401 and status != 500}">
+                    <h2>Something Went Wrong</h2>
+                    <p class="message" th:text="${message} ?: 'An unexpected error occurred. Please try again or contact support if the problem persists.'">
+                        An unexpected error occurred. Please try again or contact support if the problem persists.
+                    </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Actions -->
+                <div class="actions">
+                    <a th:href="@{/}" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                        Go to Dashboard
+                    </a>
+                    <a th:href="@{/login}" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>&copy; 2026 ByPass International</span>
+        <div class="footer-dot"></div>
+        <a th:href="@{/support}">Support</a>
+        <div class="footer-dot"></div>
+        <a th:href="@{/privacy}">Privacy</a>
+        <div class="footer-dot"></div>
+        <a th:href="@{/terms}">Terms</a>
+    </footer>
+
 </body>
 </html>

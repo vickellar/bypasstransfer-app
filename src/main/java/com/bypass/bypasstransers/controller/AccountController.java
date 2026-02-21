@@ -39,7 +39,8 @@ public class AccountController {
     @Autowired
     private AlertService alertService;
 
-    @GetMapping("/")
+    //@GetMapping("/")
+    @GetMapping("/app")
     public String dashboard(Model model) {
         model.addAttribute("accounts", accountRepo.findAll());
         model.addAttribute("transactions", txRepo.findAll());
@@ -64,7 +65,7 @@ public class AccountController {
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/";
+        return "redirect:/app";
     }
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
@@ -76,7 +77,7 @@ public class AccountController {
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/";
+        return "redirect:/app";
     }
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
@@ -88,7 +89,7 @@ public class AccountController {
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/";
+        return "redirect:/app";
     }
 
     // Handle reconciliation form POST from the dashboard
@@ -105,6 +106,6 @@ public class AccountController {
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("error", "Reconciliation failed: " + ex.getMessage());
         }
-        return "redirect:/";
+        return "redirect:/app";
     }
 }

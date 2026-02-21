@@ -37,13 +37,15 @@ public class SecurityConfig {
             .userDetailsService(userDetailsService)
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize -> authorize
-                // Only permit the login page, password reset pages and static resources publicly.
-                .requestMatchers("/login", "/forgot-password", "/reset", "/css/**", "/js/**", "/images/**", "/error", "/debug/**").permitAll()
+                // Only permit the login page, password reset pages, static resources and public pages.
+                .requestMatchers("/", "/about", "/register", "/contact", "/login", "/forgot-password", "/reset", "/css/**", "/js/**", "/images/**", "/error", "/debug/**").permitAll()
                 // Role-based endpoints examples
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // allow ADMIN, SUPER_ADMIN and SUPERVISOR to access /admin/** so senior staff can manage users
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
-                .requestMatchers("/manage/**").hasAnyRole("ADMIN", "SUPERVISOR")
-                // All other requests (including "/") require authentication
+                // management endpoints accessible to ADMIN, SUPER_ADMIN and SUPERVISOR
+                .requestMatchers("/manage/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
+                // All other requests require authentication
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

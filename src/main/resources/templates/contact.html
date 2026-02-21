@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Contact - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    <main class="container">
+        <h1>Contact Us</h1>
+
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <form th:action="@{/contact}" method="post" class="form">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" required class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea name="message" rows="6" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Send</button>
+                <a th:href="@{/app}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </main>
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

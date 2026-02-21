@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Contact Messages - Admin</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+</head>
+<body>
+<div th:insert="fragments/header :: header"></div>
+<main class="container">
+    <h1>Contact Messages</h1>
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <table class="table" border="1" style="width:100%; border-collapse:collapse;">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Message</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${messages}">
+            <td th:text="${m.id}"></td>
+            <td th:text="${m.name}"></td>
+            <td th:text="${m.email}"></td>
+            <td th:text="${m.message}"></td>
+            <td th:text="${m.createdAt}"></td>
+            <td>
+                <form th:action="@{/admin/contact-messages/delete}" method="post" style="display:inline">
+                    <input type="hidden" name="id" th:value="${m.id}" />
+                    <button type="submit" onclick="return confirm('Delete message?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p><a th:href="@{/admin}">Back to Admin</a></p>
+</main>
+<div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

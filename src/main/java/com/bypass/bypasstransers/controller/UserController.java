@@ -42,8 +42,12 @@ public class UserController {
     }
 
     @GetMapping("/users/new")
-    public String newUserForm(Model model) {
-        model.addAttribute("user", new User());
+    public String newUserForm(Model model, @RequestParam(value = "role", required = false) Role preRole) {
+        User u = new User();
+        if (preRole != null) {
+            u.setRole(preRole);
+        }
+        model.addAttribute("user", u);
         model.addAttribute("roles", Role.values());
         return "user-form";
     }
@@ -99,6 +103,28 @@ public class UserController {
     @PostMapping("/users/delete")
     public String deleteUser(@RequestParam Long id, RedirectAttributes ra) {
         try {
+            Optional<User> opt = userRepository.findById(id);
+            if (opt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
+            }
+            User u = opt.get();
+
+            // Prevent deleting the last admin-capable account
+            long adminCount = userRepository.countByRole(Role.ADMIN);
+            long superCount = userRepository.countByRole(Role.SUPER_ADMIN);
+            if (u.getRole() == Role.SUPER_ADMIN) {
+                if (superCount <= 1 && adminCount == 0) {
+                    ra.addFlashAttribute("error", "Cannot delete the last administrative user. Add another admin first.");
+                    return "redirect:/users";
+                }
+            } else if (u.getRole() == Role.ADMIN) {
+                if (adminCount <= 1 && superCount == 0) {
+                    ra.addFlashAttribute("error", "Cannot delete the last administrative user. Add another admin first.");
+                    return "redirect:/users";
+                }
+            }
+
             userRepository.deleteById(id);
             auditService.logEntity("admin", "users", id, "DELETE_USER", null, null);
             ra.addFlashAttribute("success", "User deleted");

@@ -5,6 +5,8 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,9 +58,21 @@ public class PasswordResetService {
                 "Use the following link to reset your password (expires in 6 hours):\n" +
                 resetLink + "\n\nIf you didn't request this, please ignore.\n";
 
-        if (user.getEmail() != null && !user.getEmail().isBlank()) {
-            emailService.sendSimpleEmail(user.getEmail(), "Password reset", body);
+        try {
+            if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                Map<String, Object> model = new HashMap<>();
+                model.put("username", user.getUsername());
+                model.put("link", resetLink);
+                emailService.sendTemplateEmail(user.getEmail(), "Password reset", "password-reset.html", model);
+            } else {
+                // fallback to console if no email
+                emailService.sendSimpleEmail("no-reply@localhost", "Password reset (no email)", body);
+            }
+        } catch (Exception ex) {
+            // fallback to simple email
+            try { emailService.sendSimpleEmail(user.getEmail() == null ? "no-reply@localhost" : user.getEmail(), "Password reset", body); } catch (Exception e) { }
         }
+
         try { auditService.logEntity(user.getUsername(), "users", user.getId(), "REQUEST_PASSWORD_RESET", null, null); } catch (Exception e) { }
         // Return link when user has no email so it can be displayed on the page
         return (user.getEmail() == null || user.getEmail().isBlank()) ? resetLink : null;

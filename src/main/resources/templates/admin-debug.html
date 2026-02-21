@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Debug</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+</head>
+<body>
+<div th:insert="fragments/header :: header"></div>
+<main class="container">
+    <h1>Debug Console</h1>
+    <h2>Password Reset Tokens</h2>
+    <table border="1">
+        <thead><tr><th>ID</th><th>Token</th><th>User</th><th>Expiry</th></tr></thead>
+        <tbody>
+        <tr th:each="t : ${passwordTokens}">
+            <td th:text="${t.id}"></td>
+            <td th:text="${t.token}"></td>
+            <td th:text="${t.user.username}"></td>
+            <td th:text="${t.expiry}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Email Verification Tokens</h2>
+    <table border="1">
+        <thead><tr><th>ID</th><th>Token</th><th>User</th><th>Expiry</th></tr></thead>
+        <tbody>
+        <tr th:each="t : ${verifyTokens}">
+            <td th:text="${t.id}"></td>
+            <td th:text="${t.token}"></td>
+            <td th:text="${t.user.username}"></td>
+            <td th:text="${t.expiry}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Contact Messages</h2>
+    <table border="1">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Message</th><th>Created</th></tr></thead>
+        <tbody>
+        <tr th:each="c : ${contacts}">
+            <td th:text="${c.id}"></td>
+            <td th:text="${c.name}"></td>
+            <td th:text="${c.email}"></td>
+            <td th:text="${c.message}"></td>
+            <td th:text="${c.createdAt}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p><a th:href="@{/admin}">Back to Admin</a></p>
+</main>
+<div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

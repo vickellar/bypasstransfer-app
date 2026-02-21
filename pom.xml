@@ -49,6 +49,18 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Mail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- Flyway for DB migrations -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- UI -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -148,6 +160,13 @@
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
             <type>jar</type>
+        </dependency>
+
+        <!-- In-memory DB for tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

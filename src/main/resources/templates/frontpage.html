@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ByPass Transfers - Home</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+</head>
+<body>
+    <!-- include header fragment -->
+    <div th:insert="fragments/header :: header"></div>
+
+    <main class="container">
+        <h1>Welcome to ByPass Transfers</h1>
+        <p>Your secure platform for managing transfers.</p>
+        <div class="cta-section" style="margin-top: 24px;">
+            <a th:href="@{/register}" class="btn btn-primary" style="margin-right: 12px;">Get Started - Register</a>
+            <a th:href="@{/login}" class="btn btn-secondary">Already have an account? Login</a>
+        </div>
+    </main>
+
+    <!-- include footer fragment -->
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

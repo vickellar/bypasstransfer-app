@@ -1,6 +1,7 @@
 package com.bypass.bypasstransers.repository;
 
 import com.bypass.bypasstransers.model.User;
+import com.bypass.bypasstransers.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -15,4 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Case-insensitive email lookup
     User findByEmailIgnoreCase(String email);
+
+    // Count users by role (used to prevent deleting last admin)
+    long countByRole(Role role);
 }

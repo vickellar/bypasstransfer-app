@@ -1,0 +1,31 @@
+/* Basic site styling used by templates */
+:root{
+  --brand:#0f172a;
+  --muted:#64748b;
+  --accent:#3b82f6;
+  --bg:#f8fafc;
+}
+body{
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+  color:var(--brand);
+  background:var(--bg);
+  margin:0;
+}
+.container{max-width:1100px;margin:28px auto;padding:0 16px}
+.site-header a{color:var(--brand);text-decoration:none}
+.main-nav a{color:var(--muted);text-decoration:none;padding:6px 8px;border-radius:6px}
+.main-nav a:hover{background:#eef2ff;color:var(--accent)}
+.form{background:white;padding:18px;border-radius:8px;border:1px solid #e6edf3}
+.form-group{margin-bottom:12px}
+.form-control{width:100%;padding:8px 10px;border:1px solid #d1dbe3;border-radius:6px}
+.btn{display:inline-block;padding:8px 12px;border-radius:6px;text-decoration:none;border:1px solid transparent;cursor:pointer}
+.btn-primary{background:var(--accent);color:white}
+.btn-secondary{background:#eef2f8;color:var(--brand)}
+.alert{padding:10px;border-radius:6px;margin-bottom:12px}
+.alert-success{background:#ecfdf5;color:#065f46}
+.alert-danger{background:#fff1f2;color:#7f1d1d}
+footer{font-size:13px;color:var(--muted)}
+/* simple responsive tweaks */
+@media (max-width:640px){
+  .main-nav{display:flex;flex-wrap:wrap;gap:8px}
+}

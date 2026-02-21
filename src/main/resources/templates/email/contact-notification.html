@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>New Contact Message</title>
+</head>
+<body>
+  <p>Hi <span th:text="${adminName}">Admin</span>,</p>
+  <p>You have a new contact message from <strong th:text="${name}">Name</strong> (<span th:text="${email}">email</span>):</p>
+  <blockquote th:text="${message}">Message text</blockquote>
+  <p>Visit the admin console to manage messages.</p>
+</body>
+</html>

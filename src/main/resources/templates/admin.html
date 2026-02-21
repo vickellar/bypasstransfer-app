@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Console</title>
+</head>
+<body>
+<h1>Admin Console</h1>
+<p>Total users: <span th:text="${userCount}">0</span></p>
+<ul>
+    <li><a th:href="@{/users}">Manage Users</a></li>
+    <li><a th:href="@{/users/new?role=STAFF}">Create Staff</a></li>
+    <li><a th:href="@{/admin/contact-messages}">Contact Messages</a></li>
+    <li><a th:href="@{/}">Dashboard</a></li>
+</ul>
+</body>
+</html>
