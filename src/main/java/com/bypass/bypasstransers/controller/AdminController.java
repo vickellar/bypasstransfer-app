@@ -7,8 +7,11 @@ import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import com.bypass.bypasstransers.service.BackupService;
 import com.bypass.bypasstransers.service.SecurityService;
 import com.bypass.bypasstransers.service.UserProvisioningService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,15 +34,21 @@ public class AdminController {
     private final TransactionRepository transactionRepository;
     private final SecurityService securityService;
     private final UserProvisioningService userProvisioningService;
+    private final PasswordEncoder passwordEncoder;
+    private final BackupService backupService;
 
     public AdminController(UserRepository userRepository, WalletRepository walletRepository, 
                           TransactionRepository transactionRepository, SecurityService securityService,
-                          UserProvisioningService userProvisioningService) {
+                          UserProvisioningService userProvisioningService,
+                          PasswordEncoder passwordEncoder,
+                          BackupService backupService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
         this.securityService = securityService;
         this.userProvisioningService = userProvisioningService;
+        this.passwordEncoder = passwordEncoder;
+        this.backupService = backupService;
     }
 
     @GetMapping({"/", ""})
@@ -140,5 +149,131 @@ public class AdminController {
         }
         
         return "redirect:/users";
+    }
+    
+    @GetMapping("/change-password")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String changePasswordForm(Model model) {
+        model.addAttribute("user", securityService.getCurrentUser());
+        return "admin-change-password";
+    }
+    
+    @PostMapping("/change-password")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String changePassword(@RequestParam String currentPassword,
+                               @RequestParam String newPassword,
+                               @RequestParam String confirmPassword,
+                               RedirectAttributes ra) {
+        try {
+            User currentUser = securityService.getCurrentUser();
+            Optional<User> userOpt = userRepository.findById(currentUser.getId());
+            
+            if (userOpt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/admin/change-password";
+            }
+            
+            User user = userOpt.get();
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                ra.addFlashAttribute("error", "Current password is incorrect");
+                return "redirect:/admin/change-password";
+            }
+            
+            // Check if new passwords match
+            if (!newPassword.equals(confirmPassword)) {
+                ra.addFlashAttribute("error", "New passwords do not match");
+                return "redirect:/admin/change-password";
+            }
+            
+            // Check password strength
+            if (newPassword.length() < 8) {
+                ra.addFlashAttribute("error", "Password must be at least 8 characters long");
+                return "redirect:/admin/change-password";
+            }
+            
+            // Update password
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            
+            ra.addFlashAttribute("success", "Password changed successfully");
+            return "redirect:/admin";
+            
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Failed to change password: " + e.getMessage());
+            return "redirect:/admin/change-password";
+        }
+    }
+    
+    @GetMapping("/backup")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String backupPage(Model model) {
+        return "admin-backup";
+    }
+    
+    @GetMapping("/backup/download")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public void downloadBackup(HttpServletResponse response) throws Exception {
+        byte[] backupData = backupService.createBackup();
+        
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=backup_" + 
+                          java.time.LocalDateTime.now().toString().replace(":", "-") + ".zip");
+        response.setContentLength(backupData.length);
+        
+        response.getOutputStream().write(backupData);
+        response.getOutputStream().flush();
+    }
+    
+    @PostMapping("/backup/restore")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String restoreBackup(@RequestParam("backupFile") org.springframework.web.multipart.MultipartFile file,
+                               RedirectAttributes ra) {
+        try {
+            if (file.isEmpty()) {
+                ra.addFlashAttribute("error", "Please select a backup file to restore");
+                return "redirect:/admin/backup";
+            }
+            
+            byte[] backupData = file.getBytes();
+            
+            // Get backup info for confirmation
+            java.util.Map<String, Object> backupInfo = backupService.getBackupInfo(backupData);
+            
+            // Store backup data in session for confirmation
+            // In a real application, you'd want to handle this more securely
+            ra.addFlashAttribute("backupInfo", backupInfo);
+            ra.addFlashAttribute("backupData", backupData);
+            
+            return "redirect:/admin/backup/confirm";
+            
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Failed to process backup file: " + e.getMessage());
+            return "redirect:/admin/backup";
+        }
+    }
+    
+    @GetMapping("/backup/confirm")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String confirmRestorePage(Model model) {
+        // This would typically get backup info from session
+        // For simplicity, we'll just show a generic confirmation
+        return "admin-backup-confirm";
+    }
+    
+    @PostMapping("/backup/restore/confirm")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String confirmRestore(RedirectAttributes ra) {
+        try {
+            // In a real implementation, you'd get the backup data from session
+            // For now, we'll show a message that this requires manual confirmation
+            ra.addFlashAttribute("info", "Restore functionality requires manual database restoration for safety");
+            return "redirect:/admin/backup";
+            
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Restore failed: " + e.getMessage());
+            return "redirect:/admin/backup";
+        }
     }
 }

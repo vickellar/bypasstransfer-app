@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Details - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .page-header p { color: #64748b; }
+        
+        .user-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h3 i { color: #3b82f6; }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #64748b; font-size: 14px; }
+        .info-value { font-weight: 500; color: #1e293b; }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-card h4 { font-size: 14px; opacity: 0.9; margin-bottom: 8px; }
+        .stat-card .number { font-size: 32px; font-weight: 700; }
+        
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; }
+        td { font-size: 14px; }
+        tr:hover { background: #f8fafc; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-success:hover { background: #16a34a; }
+        
+        .actions { display: flex; gap: 12px; margin-top: 24px; }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-super { background: #fef3c7; color: #92400e; }
+        .badge-admin { background: #dbeafe; color: #1e40af; }
+        .badge-staff { background: #f3e8ff; color: #6b21a8; }
+        
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .container { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    
+    <div class="container">
+        <div class="page-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h1><i class="fas fa-user-circle"></i> User Details</h1>
+                    <p>View complete account information and financial records</p>
+                </div>
+                <div>
+                    <span th:if="${user.active}" class="user-status status-active">
+                        <i class="fas fa-check-circle"></i> Active
+                    </span>
+                    <span th:unless="${user.active}" class="user-status status-inactive">
+                        <i class="fas fa-times-circle"></i> Inactive
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Info & Stats -->
+        <div class="grid-2">
+            <div class="card">
+                <h3><i class="fas fa-info-circle"></i> Personal Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Username</span>
+                    <span class="info-value" th:text="${user.username}">username</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value" th:text="${user.email} ?: 'Not set'">email</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone</span>
+                    <span class="info-value" th:text="${user.phoneNumber} ?: 'Not set'">phone</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Role</span>
+                    <span class="info-value">
+                        <span th:class="'badge badge-' + ${#strings.toLowerCase(user.role)}" th:text="${user.role}">ROLE</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Created</span>
+                    <span class="info-value" th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy HH:mm')}">date</span>
+                </div>
+                <div class="info-row" th:if="${user.deletedAt != null}">
+                    <span class="info-label">Deactivated</span>
+                    <span class="info-value" th:text="${#temporals.format(user.deletedAt, 'dd MMM yyyy HH:mm')}" style="color: #dc2626;">date</span>
+                </div>
+            </div>
+            
+            <div class="grid-3">
+                <div class="stat-card">
+                    <h4>Accounts</h4>
+                    <div class="number" th:text="${#lists.size(accounts)}">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                    <h4>Transactions</h4>
+                    <div class="number" th:text="${#lists.size(transactions)}">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <h4>Expenditures</h4>
+                    <div class="number" th:text="${#lists.size(expenditures)}">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Accounts/Wallets -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3><i class="fas fa-wallet"></i> Accounts / Wallets</h3>
+            <div class="table-container">
+                <table class="data-table table-mobile">
+                    <thead>
+                        <tr>
+                            <th>Account Name</th>
+                            <th>Type</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="account : ${accounts}">
+                            <td data-label="Account Name" th:text="${account.name}">Account Name</td>
+                            <td data-label="Type" th:text="${account.accountType}">Type</td>
+                            <td data-label="Balance" th:text="${#numbers.formatDecimal(account.balance, 1, 2)}">0.00</td>
+                            <td data-label="Status">
+                                <span th:if="${account.locked}" class="badge" style="background: #fee2e2; color: #991b1b;">Locked</span>
+                                <span th:unless="${account.locked}" class="badge" style="background: #dcfce7; color: #166534;">Active</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(accounts)}">
+                            <td colspan="4" style="text-align: center; color: #64748b; padding: 32px;">
+                                <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                                No accounts found
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Transactions -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3><i class="fas fa-exchange-alt"></i> Transaction History</h3>
+            <div class="table-container">
+                <table class="data-table table-mobile">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Amount</th>
+                            <th>Fee</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="tx : ${transactions}">
+                            <td data-label="Date" th:text="${#temporals.format(tx.date, 'dd MMM yyyy HH:mm')}">Date</td>
+                            <td data-label="Type" th:text="${tx.type}">Type</td>
+                            <td data-label="From" th:text="${tx.fromAccount} ?: 'N/A'">From</td>
+                            <td data-label="To" th:text="${tx.toAccount} ?: 'N/A'">To</td>
+                            <td data-label="Amount" th:text="${#numbers.formatDecimal(tx.amount, 1, 2)}">0.00</td>
+                            <td data-label="Fee" th:text="${#numbers.formatDecimal(tx.fee, 1, 2)}">0.00</td>
+                            <td data-label="Status">
+                                <span th:if="${tx.syncStatus == 'SYNCED'}" class="badge" style="background: #dcfce7; color: #166534;">
+                                    <i class="fas fa-check"></i> Synced
+                                </span>
+                                <span th:unless="${tx.syncStatus == 'SYNCED'}" class="badge" style="background: #fef3c7; color: #92400e;">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(transactions)}">
+                            <td colspan="7" style="text-align: center; color: #64748b; padding: 32px;">
+                                <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                                No transactions found
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Expenditures -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3><i class="fas fa-receipt"></i> Expenditures</h3>
+            <div class="table-container">
+                <table class="data-table table-mobile">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="exp : ${expenditures}">
+                            <td data-label="Date" th:text="${exp.date}">Date</td>
+                            <td data-label="Category" th:text="${exp.category}">Category</td>
+                            <td data-label="Description" th:text="${exp.description}">Description</td>
+                            <td data-label="Amount" th:text="${#numbers.formatDecimal(exp.amount, 1, 2)}">0.00</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(expenditures)}">
+                            <td colspan="4" style="text-align: center; color: #64748b; padding: 32px;">
+                                <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                                No expenditures found
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="actions">
+            <a th:href="@{/users}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+            <div style="display: flex; gap: 12px;">
+                <a th:href="@{|/users/${user.id}/export/excel|}" class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </a>
+                <a th:href="@{|/users/${user.id}/export/pdf|}" class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </a>
+            </div>
+            <form th:if="${!user.active}" th:action="@{/users/restore}" method="post" style="display: inline;">
+                <input type="hidden" name="id" th:value="${user.id}">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Restore this user account?')">
+                    <i class="fas fa-undo"></i> Restore User
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

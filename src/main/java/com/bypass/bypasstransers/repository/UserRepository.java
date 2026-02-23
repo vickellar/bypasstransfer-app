@@ -23,4 +23,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Find users by role
     List<User> findByRole(Role role);
+
+    // Soft delete queries - only return active users
+    List<User> findByIsActiveTrue();
+
+    List<User> findByRoleAndIsActiveTrue(Role role);
+
+    long countByRoleAndIsActiveTrue(Role role);
+
+    // Find all users including inactive (for admin audit)
+    List<User> findAllByOrderByIsActiveDescCreatedAtDesc();
+
+    // Find specific user regardless of active status (for audit)
+    User findByIdAndIsActive(Long id, Boolean isActive);
 }

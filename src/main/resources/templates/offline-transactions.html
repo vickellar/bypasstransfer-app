@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Transactions - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .page-header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #1e293b; 
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header p { color: #64748b; font-size: 15px; margin-top: 4px; }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .stat-card h3 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .stat-card.pending h3 { color: #f59e0b; }
+        .stat-card.synced h3 { color: #22c55e; }
+        .stat-card.failed h3 { color: #ef4444; }
+        .stat-card p { font-size: 14px; color: #64748b; margin: 0; }
+        
+        .actions {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-synced { background: #dcfce7; color: #166534; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+        
+        .table-container { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { 
+            background: #f8fafc; 
+            padding: 16px; 
+            text-align: left; 
+            font-weight: 600; 
+            color: #64748b; 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .data-table td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background: #f8fafc; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; color: #cbd5e1; }
+        .empty-state h3 { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+        
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+            .stats-row { grid-template-columns: 1fr; }
+            .actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>
+                    <i class="fas fa-wifi"></i>
+                    Offline Transactions
+                </h1>
+                <p>Record and manage transactions when offline</p>
+            </div>
+            <div th:if="${user != null}">
+                <p>Welcome, <strong th:text="${user.username}">User</strong></p>
+            </div>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+        
+        <div th:if="${warning}" class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span th:text="${warning}"></span>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+        
+        <!-- Sync Statistics -->
+        <div class="stats-row">
+            <div class="stat-card pending">
+                <h3 th:text="${syncStats.pending}">0</h3>
+                <p>Pending Sync</p>
+            </div>
+            <div class="stat-card synced">
+                <h3 th:text="${syncStats.synced}">0</h3>
+                <p>Synced</p>
+            </div>
+            <div class="stat-card failed">
+                <h3 th:text="${syncStats.failed}">0</h3>
+                <p>Failed</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${syncStats.total}">0</h3>
+                <p>Total</p>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="actions">
+            <a th:href="@{/offline/transactions/new}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Record Offline Transaction
+            </a>
+            <form th:if="${syncStats.pending > 0}" th:action="@{/offline/sync}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-success" 
+                        onclick="return confirm('Sync all pending transactions to main system?')">
+                    <i class="fas fa-sync"></i> Sync All Transactions
+                </button>
+            </form>
+            <form th:if="${syncStats.failed > 0}" th:action="@{/offline/sync/retry}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-redo"></i> Retry Failed
+                </button>
+            </form>
+            <a th:href="@{/app}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        
+        <!-- Transactions Table -->
+        <div class="table-container">
+            <table class="data-table table-mobile">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Account</th>
+                        <th>Recorded</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${transactions}">
+                        <td data-label="Reference" th:text="${tx.transactionRef}">REF-001</td>
+                        <td data-label="Type" th:text="${tx.type}">SEND</td>
+                        <td data-label="Amount" th:text="'$' + ${#numbers.formatDecimal(tx.amount, 0, 2)}">$0.00</td>
+                        <td data-label="Account" th:text="${tx.fromAccount} ?: 'N/A'">Account</td>
+                        <td data-label="Recorded" th:text="${#temporals.format(tx.offlineRecordedAt, 'dd MMM yyyy HH:mm')}">Date</td>
+                        <td data-label="Status">
+                            <span th:if="${tx.syncStatus == 'PENDING'}" class="status-badge status-pending">
+                                <i class="fas fa-clock"></i> Pending
+                            </span>
+                            <span th:if="${tx.syncStatus == 'SYNCED'}" class="status-badge status-synced">
+                                <i class="fas fa-check"></i> Synced
+                            </span>
+                            <span th:if="${tx.syncStatus == 'FAILED'}" class="status-badge status-failed">
+                                <i class="fas fa-times"></i> Failed
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transactions)}">
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>No Offline Transactions</h3>
+                            <p>Record your first offline transaction when you're not connected to the internet</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

@@ -97,4 +97,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "GROUP BY function('date', t.date) " +
            "ORDER BY function('date', t.date) DESC")
     List<Object[]> getDailyVolumeAllUsers();
+    
+    /**
+     * Find transactions by creator username (for admin audit)
+     */
+    List<Transaction> findByCreatedBy(String createdBy);
 }

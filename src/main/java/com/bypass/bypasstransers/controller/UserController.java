@@ -2,15 +2,32 @@ package com.bypass.bypasstransers.controller;
 
 import com.bypass.bypasstransers.enums.Role;
 import com.bypass.bypasstransers.model.User;
-import com.bypass.bypasstransers.repository.AccountRepository;
+import com.bypass.bypasstransers.model.Wallet;
+import com.bypass.bypasstransers.model.Transaction;
+import com.bypass.bypasstransers.model.Expenditure;
+import com.bypass.bypasstransers.repository.WalletRepository;
+import com.bypass.bypasstransers.repository.EmailVerificationTokenRepository;
+import com.bypass.bypasstransers.repository.ExpenditureRepository;
 import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
+import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.service.AuditService;
 import com.bypass.bypasstransers.service.PasswordResetService;
 import com.bypass.bypasstransers.service.UserProvisioningService;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.properties.TextAlignment;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -33,26 +50,59 @@ public class UserController {
     private final PasswordResetService passwordResetService;
     private final UserProvisioningService userProvisioningService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final AccountRepository accountRepository;
+    private final WalletRepository walletRepository;
+    private final ExpenditureRepository expenditureRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final TransactionRepository transactionRepository;
 
     public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, 
                          AuditService auditService, PasswordResetService passwordResetService,
                          UserProvisioningService userProvisioningService,
                          PasswordResetTokenRepository passwordResetTokenRepository,
-                         AccountRepository accountRepository) {
+                         WalletRepository walletRepository,
+                         ExpenditureRepository expenditureRepository,
+                         EmailVerificationTokenRepository emailVerificationTokenRepository,
+                         TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
         this.passwordResetService = passwordResetService;
         this.userProvisioningService = userProvisioningService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.accountRepository = accountRepository;
+        this.walletRepository = walletRepository;
+        this.expenditureRepository = expenditureRepository;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @GetMapping("/users")
     public String listUsers(Model model) {
-        model.addAttribute("users", userRepository.findAll());
+        // Show all users with inactive ones marked
+        model.addAttribute("users", userRepository.findAllByOrderByIsActiveDescCreatedAtDesc());
         return "users";
+    }
+    
+    @GetMapping("/users/{id}/details")
+    public String viewUserDetails(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "User not found");
+            return "redirect:/users";
+        }
+        
+        User user = userOpt.get();
+        model.addAttribute("user", user);
+        
+        // Get user's accounts/wallets
+        model.addAttribute("accounts", walletRepository.findByOwnerId(id));
+        
+        // Get user's transactions
+        model.addAttribute("transactions", transactionRepository.findByCreatedBy(user.getUsername()));
+        
+        // Get user's expenditures
+        model.addAttribute("expenditures", expenditureRepository.findByRecordedBy(user));
+        
+        return "user-details";
     }
 
     @GetMapping("/users/new")
@@ -156,8 +206,8 @@ public class UserController {
             User u = opt.get();
 
             // Prevent deleting the last admin-capable account
-            long adminCount = userRepository.countByRole(Role.ADMIN);
-            long superCount = userRepository.countByRole(Role.SUPER_ADMIN);
+            long adminCount = userRepository.countByRoleAndIsActiveTrue(Role.ADMIN);
+            long superCount = userRepository.countByRoleAndIsActiveTrue(Role.SUPER_ADMIN);
             if (u.getRole() == Role.SUPER_ADMIN) {
                 if (superCount <= 1 && adminCount == 0) {
                     ra.addFlashAttribute("error", "Cannot delete the last administrative user. Add another admin first.");
@@ -170,24 +220,16 @@ public class UserController {
                 }
             }
 
-            // Step 1: Delete all accounts/wallets belonging to this user first
-            // This avoids foreign key constraint violation
-            System.out.println("[DELETE USER] Deleting accounts for user ID: " + id);
-            accountRepository.deleteByOwnerId(id);
-            System.out.println("[DELETE USER] Accounts deleted successfully");
+            // SOFT DELETE: Mark user as inactive instead of deleting
+            // This preserves all financial records for audit purposes
+            System.out.println("[DELETE USER] Soft deleting user ID: " + id);
+            u.setIsActive(false);
+            u.setDeletedAt(LocalDateTime.now());
+            userRepository.save(u);
+            System.out.println("[DELETE USER] User soft deleted successfully - all records preserved");
             
-            // Step 2: Delete password reset tokens
-            System.out.println("[DELETE USER] Deleting password reset tokens for user ID: " + id);
-            passwordResetTokenRepository.deleteByUser(u);
-            System.out.println("[DELETE USER] Password reset tokens deleted successfully");
-            
-            // Step 3: Finally delete the user
-            System.out.println("[DELETE USER] Deleting user ID: " + id);
-            userRepository.deleteById(id);
-            System.out.println("[DELETE USER] User deleted successfully");
-            
-            auditService.logEntity("admin", "users", id, "DELETE_USER", null, null);
-            ra.addFlashAttribute("success", "User and all associated accounts deleted");
+            auditService.logEntity("admin", "users", id, "SOFT_DELETE_USER", u.getUsername(), "User deactivated - records preserved");
+            ra.addFlashAttribute("success", "User deactivated successfully. All financial records have been preserved for audit purposes.");
         } catch (Exception ex) {
             System.err.println("[DELETE USER] Error deleting user ID " + id + ": " + ex.getMessage());
             ex.printStackTrace();
@@ -195,9 +237,239 @@ public class UserController {
         }
         return "redirect:/users";
     }
+    
+    @PostMapping("/users/restore")
+    @Transactional
+    public String restoreUser(@RequestParam Long id, RedirectAttributes ra) {
+        try {
+            Optional<User> opt = userRepository.findById(id);
+            if (opt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
+            }
+            User u = opt.get();
+            
+            if (u.isActive()) {
+                ra.addFlashAttribute("info", "User is already active");
+                return "redirect:/users";
+            }
+            
+            // Restore user
+            u.setIsActive(true);
+            u.setDeletedAt(null);
+            userRepository.save(u);
+            
+            auditService.logEntity("admin", "users", id, "RESTORE_USER", u.getUsername(), "User account restored");
+            ra.addFlashAttribute("success", "User " + u.getUsername() + " has been restored successfully");
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Failed to restore user: " + ex.getMessage());
+        }
+        return "redirect:/users";
+    }
 
     @ModelAttribute("availableRoles")
     public List<Role> availableRoles() {
         return Arrays.asList(Role.values());
+    }
+    
+    @GetMapping("/users/{id}/export/excel")
+    public void exportUserExcel(@PathVariable Long id, HttpServletResponse response) throws Exception {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        User user = userOpt.get();
+        
+        // Get user data
+        List<Wallet> accounts = walletRepository.findByOwnerId(id);
+        List<Transaction> transactions = transactionRepository.findByCreatedBy(user.getUsername());
+        List<Expenditure> expenditures = expenditureRepository.findByRecordedBy(user);
+        
+        // Create Excel workbook
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("User Data - " + user.getUsername());
+        
+        // Create styles
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        
+        // Create header row for accounts
+        Row headerRow = sheet.createRow(0);
+        String[] accountHeaders = {"ID", "Name", "Type", "Balance", "Status", "Created"};
+        for (int i = 0; i < accountHeaders.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(accountHeaders[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add accounts data
+        int rowNum = 1;
+        for (Wallet account : accounts) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(account.getId());
+            row.createCell(1).setCellValue(account.getAccountType());
+            row.createCell(2).setCellValue(account.getAccountType());
+            row.createCell(3).setCellValue(account.getBalance());
+            row.createCell(4).setCellValue(account.isLocked() ? "Locked" : "Active");
+            row.createCell(5).setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
+        }
+        
+        // Add blank row before transactions
+        rowNum++;
+        Row transHeaderRow = sheet.createRow(rowNum++);
+        String[] transHeaders = {"Transactions for " + user.getUsername()};
+        transHeaderRow.createCell(0).setCellValue(transHeaders[0]);
+        transHeaderRow.getCell(0).setCellStyle(headerStyle);
+        
+        // Add transaction headers
+        Row transHeader = sheet.createRow(rowNum++);
+        String[] transactionHeaders = {"ID", "Date", "Type", "From", "To", "Amount", "Fee", "Status"};
+        for (int i = 0; i < transactionHeaders.length; i++) {
+            Cell cell = transHeader.createCell(i);
+            cell.setCellValue(transactionHeaders[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add transaction data
+        for (Transaction transaction : transactions) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(transaction.getId());
+            row.createCell(1).setCellValue(transaction.getDate() != null ? transaction.getDate().toString() : "");
+            row.createCell(2).setCellValue(transaction.getType() != null ? transaction.getType().toString() : "");
+            row.createCell(3).setCellValue(transaction.getFromAccount() != null ? transaction.getFromAccount() : "");
+            row.createCell(4).setCellValue(transaction.getToAccount() != null ? transaction.getToAccount() : "");
+            row.createCell(5).setCellValue(transaction.getAmount());
+            row.createCell(6).setCellValue(transaction.getFee());
+            row.createCell(7).setCellValue(transaction.getSyncStatus());
+        }
+        
+        // Add blank row before expenditures
+        rowNum++;
+        Row expHeaderRow = sheet.createRow(rowNum++);
+        String[] expHeaders = {"Expenditures for " + user.getUsername()};
+        expHeaderRow.createCell(0).setCellValue(expHeaders[0]);
+        expHeaderRow.getCell(0).setCellStyle(headerStyle);
+        
+        // Add expenditure headers
+        Row expHeader = sheet.createRow(rowNum++);
+        String[] expenditureHeaders = {"ID", "Date", "Category", "Description", "Amount"};
+        for (int i = 0; i < expenditureHeaders.length; i++) {
+            Cell cell = expHeader.createCell(i);
+            cell.setCellValue(expenditureHeaders[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add expenditure data
+        for (Expenditure expenditure : expenditures) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(expenditure.getId());
+            row.createCell(1).setCellValue(expenditure.getDate() != null ? expenditure.getDate().toString() : "");
+            row.createCell(2).setCellValue(expenditure.getCategory());
+            row.createCell(3).setCellValue(expenditure.getDescription());
+            row.createCell(4).setCellValue(expenditure.getAmount());
+        }
+        
+        // Auto-size columns
+        for (int i = 0; i < 8; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        
+        // Set response headers
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + "_data.xlsx");
+        
+        // Write to response
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+    
+    @GetMapping("/users/{id}/export/pdf")
+    public void exportUserPdf(@PathVariable Long id, HttpServletResponse response) throws Exception {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        User user = userOpt.get();
+        
+        // Get user data
+        List<Wallet> accounts = walletRepository.findByOwnerId(id);
+        List<Transaction> transactions = transactionRepository.findByCreatedBy(user.getUsername());
+        List<Expenditure> expenditures = expenditureRepository.findByRecordedBy(user);
+        
+        // Set response headers
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + "_data.pdf");
+        
+        // Create PDF
+        com.itextpdf.kernel.pdf.PdfDocument pdfDoc = new com.itextpdf.kernel.pdf.PdfDocument(new com.itextpdf.kernel.pdf.PdfWriter(response.getOutputStream()));
+        com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc);
+        
+        // Add title
+        document.add(new com.itextpdf.layout.element.Paragraph("User Data Export - " + user.getUsername())
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
+                .setFontSize(20).setMarginBottom(20));
+        
+        // Add user info
+        document.add(new com.itextpdf.layout.element.Paragraph("User Information:")
+                .setFontSize(16).setBold().setMarginTop(10));
+        document.add(new com.itextpdf.layout.element.Paragraph("Username: " + user.getUsername()));
+        document.add(new com.itextpdf.layout.element.Paragraph("Email: " + (user.getEmail() != null ? user.getEmail() : "Not set")));
+        document.add(new com.itextpdf.layout.element.Paragraph("Phone: " + (user.getPhoneNumber() != null ? user.getPhoneNumber() : "Not set")));
+        document.add(new com.itextpdf.layout.element.Paragraph("Role: " + user.getRole()));
+        document.add(new com.itextpdf.layout.element.Paragraph("Created: " + (user.getCreatedAt() != null ? user.getCreatedAt().toString() : "Unknown")));
+        document.add(new com.itextpdf.layout.element.Paragraph("Status: " + (user.isActive() ? "Active" : "Inactive")));
+        
+        // Add accounts section
+        document.add(new com.itextpdf.layout.element.Paragraph("\nAccounts/Wallets:")
+                .setFontSize(16).setBold().setMarginTop(20));
+        
+        if (!accounts.isEmpty()) {
+            for (Wallet account : accounts) {
+                document.add(new com.itextpdf.layout.element.Paragraph(
+                    "• " + account.getAccountType() + " (" + account.getAccountType() + ") - Balance: " + 
+                    String.format("%.2f", account.getBalance()) + " - " + (account.isLocked() ? "Locked" : "Active")));
+            }
+        } else {
+            document.add(new com.itextpdf.layout.element.Paragraph("No accounts found"));
+        }
+        
+        // Add transactions section
+        document.add(new com.itextpdf.layout.element.Paragraph("\nTransactions:")
+                .setFontSize(16).setBold().setMarginTop(20));
+        
+        if (!transactions.isEmpty()) {
+            for (Transaction transaction : transactions) {
+                document.add(new com.itextpdf.layout.element.Paragraph(
+                    "• " + transaction.getType() + " - Amount: " + 
+                    String.format("%.2f", transaction.getAmount()) + 
+                    " - Fee: " + String.format("%.2f", transaction.getFee()) + 
+                    " - Date: " + (transaction.getDate() != null ? transaction.getDate().toString() : "Unknown")));
+            }
+        } else {
+            document.add(new com.itextpdf.layout.element.Paragraph("No transactions found"));
+        }
+        
+        // Add expenditures section
+        document.add(new com.itextpdf.layout.element.Paragraph("\nExpenditures:")
+                .setFontSize(16).setBold().setMarginTop(20));
+        
+        if (!expenditures.isEmpty()) {
+            for (Expenditure expenditure : expenditures) {
+                document.add(new com.itextpdf.layout.element.Paragraph(
+                    "• " + expenditure.getCategory() + " - " + expenditure.getDescription() + 
+                    " - Amount: " + String.format("%.2f", expenditure.getAmount()) + 
+                    " - Date: " + (expenditure.getDate() != null ? expenditure.getDate().toString() : "Unknown")));
+            }
+        } else {
+            document.add(new com.itextpdf.layout.element.Paragraph("No expenditures found"));
+        }
+        
+        document.close();
     }
 }

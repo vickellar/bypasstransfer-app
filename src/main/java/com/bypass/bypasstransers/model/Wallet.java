@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "account")
@@ -31,6 +32,9 @@ public class Wallet {
 
     @Column(name = "locked", nullable = false, columnDefinition = "boolean default false")
     private boolean locked = false;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -97,5 +101,11 @@ public class Wallet {
         this.balance += amount;
     }
     
-    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

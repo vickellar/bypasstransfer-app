@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <!-- templates/fragments/footer.html -->
 <div th:fragment="footer">
-    <footer style="padding:16px 24px; background:#f1f5f9; border-top:1px solid #e2e8f0; margin-top:32px;">
-        <div style="max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+    <footer style="padding:24px; background:#f1f5f9; border-top:1px solid #e2e8f0; margin-top:32px;">
+        <div style="max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>&copy; <span th:text="${T(java.time.Year).now().value}">2026</span> ByPass Transfers</div>
-            <div>
-                <a th:href="@{/about}" style="margin-right:12px;">About</a>
-                <a th:href="@{/contact}">Contact</a>
+            <div style="display:flex; gap:16px; align-items:center;">
+                <a th:href="@{/about}" style="color:#64748b; text-decoration:none; padding:8px 12px; border-radius:6px; transition:color 0.2s;">About</a>
+                <a th:href="@{/contact}" style="color:#64748b; text-decoration:none; padding:8px 12px; border-radius:6px; transition:color 0.2s;">Contact</a>
             </div>
         </div>
     </footer>
+    <style>
+        @media (max-width: 768px) {
+            footer {
+                padding: 20px 16px;
+            }
+            footer div {
+                flex-direction: column;
+                text-align: center;
+            }
+            footer div:last-child {
+                margin-top: 12px;
+            }
+        }
+    </style>
 </div>

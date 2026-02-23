@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Offline Transaction - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; text-align: center; }
+        .page-header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #1e293b; 
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .page-header p { color: #64748b; font-size: 15px; }
+        
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #334155;
+            font-size: 14px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 251, 0.1);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 10px 20px;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .info-box h4 {
+            color: #0369a1;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-box p {
+            color: #0369a1;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .form-card { padding: 24px; }
+            .page-header h1 { font-size: 24px; }
+            .actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-wifi"></i>
+                Record Offline Transaction
+            </h1>
+            <p>Record transactions when you're not connected to the internet</p>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+        
+        <div class="info-box">
+            <h4><i class="fas fa-info-circle"></i> Offline Mode Information</h4>
+            <p>This transaction will be stored locally and synchronized with the main system when you're back online. The transaction will appear in your offline transaction list with a "Pending" status until synchronization occurs.</p>
+        </div>
+        
+        <div class="form-card">
+            <form th:action="@{/offline/transactions/save}" th:object="${transaction}" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="type">
+                        <i class="fas fa-exchange-alt"></i> Transaction Type *
+                    </label>
+                    <select id="type" th:field="*{type}" class="form-control" required>
+                        <option value="">Select Transaction Type</option>
+                        <option th:each="type : ${transactionTypes}" th:value="${type}" th:text="${type}">
+                            SEND
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="fromAccount">
+                        <i class="fas fa-wallet"></i> From Account
+                    </label>
+                    <select id="fromAccount" th:field="*{fromAccount}" class="form-control">
+                        <option value="">Select Account (Optional)</option>
+                        <option th:each="account : ${accounts}" th:value="${account.name}" th:text="${account.name}">
+                            Account Name
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="toAccount">
+                        <i class="fas fa-wallet"></i> To Account
+                    </label>
+                    <input type="text" id="toAccount" th:field="*{toAccount}" class="form-control" 
+                           placeholder="Enter destination account">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="amount">
+                        <i class="fas fa-dollar-sign"></i> Amount *
+                    </label>
+                    <input type="number" id="amount" th:field="*{amount}" class="form-control" 
+                           placeholder="0.00" step="0.01" min="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="fee">
+                        <i class="fas fa-percentage"></i> Fee (Optional)
+                    </label>
+                    <input type="number" id="fee" th:field="*{fee}" class="form-control" 
+                           placeholder="0.00" step="0.01" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="location">
+                        <i class="fas fa-map-marker-alt"></i> Location
+                    </label>
+                    <input type="text" id="location" th:field="*{location}" class="form-control" 
+                           placeholder="Enter location where transaction was recorded">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="deviceId">
+                        <i class="fas fa-mobile-alt"></i> Device ID
+                    </label>
+                    <input type="text" id="deviceId" th:field="*{deviceId}" class="form-control" 
+                           placeholder="Enter device identifier (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </label>
+                    <textarea id="notes" th:field="*{notes}" class="form-control" rows="3" 
+                              placeholder="Additional notes about this transaction"></textarea>
+                </div>
+                
+                <div class="actions">
+                    <a th:href="@{/offline/transactions}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Record Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div th:insert="fragments/footer :: footer"></div>
+    
+    <script>
+        // Auto-calculate net amount
+        document.getElementById('amount').addEventListener('input', calculateNetAmount);
+        document.getElementById('fee').addEventListener('input', calculateNetAmount);
+        
+        function calculateNetAmount() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const fee = parseFloat(document.getElementById('fee').value) || 0;
+            const netAmount = amount - fee;
+            
+            // You could display this somewhere if needed
+            console.log('Net Amount: $' + netAmount.toFixed(2));
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,6 @@ package com.bypass.bypasstransers.controller;
 import com.bypass.bypasstransers.dto.StaffPerformanceDTO;
 import com.bypass.bypasstransers.dto.AccountPerformanceDTO;
 import com.bypass.bypasstransers.dto.ExpenditureDTO;
-import com.bypass.bypasstransers.model.Expenditure;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.service.AnalyticsService;
 import com.bypass.bypasstransers.service.SecurityService;

@@ -1,6 +1,7 @@
 package com.bypass.bypasstransers.repository;
 
 import com.bypass.bypasstransers.model.Expenditure;
+import com.bypass.bypasstransers.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +22,8 @@ public interface ExpenditureRepository extends JpaRepository<Expenditure, Long> 
     
     @Query("SELECT e.category, SUM(e.amount) FROM Expenditure e WHERE e.date BETWEEN :startDate AND :endDate GROUP BY e.category")
     List<Object[]> getExpenditureByCategoryForPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    List<Expenditure> findByRecordedBy(User user);
+    
+    void deleteByRecordedBy(com.bypass.bypasstransers.model.User user);
 }

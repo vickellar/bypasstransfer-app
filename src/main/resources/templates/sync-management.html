@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync Management - ByPass Transfers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/site.css}" rel="stylesheet">
+    <style>
+        .sync-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        .sync-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .sync-status-pending { border-left-color: #ffc107; }
+        .sync-status-synced { border-left-color: #28a745; }
+        .sync-status-failed { border-left-color: #dc3545; }
+        .progress-bar-custom { height: 10px; }
+        .offline-badge {
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <nav th:replace="~{fragments/header :: header}"></nav>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-sync-alt me-2"></i>Sync Management</h2>
+                    <div sec:authorize="hasAnyRole('ADMIN','SUPER_ADMIN')">
+                        <button class="btn btn-primary" onclick="triggerSync()">
+                            <i class="fas fa-sync me-1"></i>Sync All Now
+                        </button>
+                        <button class="btn btn-warning" onclick="retryFailed()">
+                            <i class="fas fa-redo me-1"></i>Retry Failed
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sync Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center sync-card sync-status-pending">
+                    <div class="card-body">
+                        <h3 th:text="${syncStats.pending}" class="text-warning">0</h3>
+                        <p class="card-text">Pending Sync</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center sync-card sync-status-synced">
+                    <div class="card-body">
+                        <h3 th:text="${syncStats.synced}" class="text-success">0</h3>
+                        <p class="card-text">Successfully Synced</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center sync-card sync-status-failed">
+                    <div class="card-body">
+                        <h3 th:text="${syncStats.failed}" class="text-danger">0</h3>
+                        <p class="card-text">Failed Sync</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center sync-card">
+                    <div class="card-body">
+                        <h3 th:text="${syncStats.total}" class="text-primary">0</h3>
+                        <p class="card-text">Total Records</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sync Progress -->
+        <div class="row mb-4" id="syncProgressSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-spinner fa-spin me-2"></i>Sync in Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-3">
+                            <div id="syncProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="syncStatus" class="text-center">Starting sync...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Sync Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Sync Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(transactions)}" class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No sync activity found</p>
+                        </div>
+                        
+                        <div th:if="${not #lists.isEmpty(transactions)}">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Transaction Ref</th>
+                                            <th>User</th>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Recorded</th>
+                                            <th>Synced</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="tx : ${transactions}" 
+                                            th:classappend="${tx.syncStatus == 'PENDING' ? 'table-warning' : 
+                                                          tx.syncStatus == 'SYNCED' ? 'table-success' : 'table-danger'}">
+                                            <td>
+                                                <span th:text="${tx.transactionRef}" class="fw-bold"></span>
+                                                <span class="offline-badge ms-2">Offline</span>
+                                            </td>
+                                            <td th:text="${tx.username}"></td>
+                                            <td>
+                                                <span th:class="'badge bg-' + ${tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).DEPOSIT ? 'success' : 
+                                                              tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).WITHDRAWAL ? 'danger' : 
+                                                              tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).TRANSFER ? 'primary' : 'secondary'}"
+                                                      th:text="${tx.type}"></span>
+                                            </td>
+                                            <td class="fw-bold" th:text="${'$' + #numbers.formatDecimal(tx.amount, 1, 2)}"></td>
+                                            <td>
+                                                <span th:if="${tx.syncStatus == 'PENDING'}" class="badge bg-warning">Pending</span>
+                                                <span th:if="${tx.syncStatus == 'SYNCED'}" class="badge bg-success">Synced</span>
+                                                <span th:if="${tx.syncStatus == 'FAILED'}" class="badge bg-danger">Failed</span>
+                                            </td>
+                                            <td th:text="${#temporals.format(tx.offlineRecordedAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                            <td>
+                                                <span th:if="${tx.syncedAt}" th:text="${#temporals.format(tx.syncedAt, 'yyyy-MM-dd HH:mm')}"></span>
+                                                <span th:unless="${tx.syncedAt}" class="text-muted">Not synced</span>
+                                            </td>
+                                            <td>
+                                                <div sec:authorize="hasAnyRole('ADMIN','SUPER_ADMIN')">
+                                                    <button th:if="${tx.syncStatus == 'FAILED'}" 
+                                                            class="btn btn-sm btn-warning" 
+                                                            th:onclick="'retryTransaction(' + ${tx.id} + ')'">
+                                                        <i class="fas fa-redo"></i>
+                                                    </button>
+                                                    <button th:if="${tx.syncStatus == 'PENDING'}" 
+                                                            class="btn btn-sm btn-primary" 
+                                                            th:onclick="'syncTransaction(' + ${tx.id} + ')'">
+                                                        <i class="fas fa-sync"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sync Instructions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>How Sync Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>For Offline Users:</h6>
+                                <ul>
+                                    <li>Record transactions using the "Offline Transactions" section</li>
+                                    <li>Transactions are stored locally until internet connection is available</li>
+                                    <li>System automatically attempts to sync when online</li>
+                                    <li>All data is preserved even if device goes offline</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>For Admin Users:</h6>
+                                <ul>
+                                    <li>Monitor sync status through this dashboard</li>
+                                    <li>Manually trigger sync for all pending transactions</li>
+                                    <li>Retry failed sync operations</li>
+                                    <li>View detailed sync history and statistics</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Tip:</strong> Sync operations are automatic but can be triggered manually for immediate processing.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function triggerSync() {
+            if (confirm('Are you sure you want to sync all pending transactions?')) {
+                showSyncProgress();
+                
+                fetch('/offline/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideSyncProgress();
+                    if (data.success) {
+                        alert('Sync completed successfully!\n' + data.message);
+                        location.reload();
+                    } else {
+                        alert('Sync failed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    hideSyncProgress();
+                    alert('Sync error: ' + error.message);
+                });
+            }
+        }
+        
+        function retryFailed() {
+            if (confirm('Retry all failed transactions?')) {
+                fetch('/offline/sync/retry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Retry initiated successfully!\n' + data.message);
+                        location.reload();
+                    } else {
+                        alert('Retry failed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Retry error: ' + error.message);
+                });
+            }
+        }
+        
+        function retryTransaction(id) {
+            if (confirm('Retry this failed transaction?')) {
+                // Implementation for retrying single transaction
+                alert('Retry functionality for individual transactions will be implemented');
+            }
+        }
+        
+        function syncTransaction(id) {
+            if (confirm('Sync this transaction now?')) {
+                // Implementation for syncing single transaction
+                alert('Manual sync for individual transactions will be implemented');
+            }
+        }
+        
+        function showSyncProgress() {
+            document.getElementById('syncProgressSection').style.display = 'block';
+            document.getElementById('syncStatus').textContent = 'Processing transactions...';
+            document.getElementById('syncProgress').style.width = '50%';
+        }
+        
+        function hideSyncProgress() {
+            document.getElementById('syncProgressSection').style.display = 'none';
+            document.getElementById('syncProgress').style.width = '0%';
+        }
+        
+        // Auto-refresh sync stats every 30 seconds
+        setInterval(function() {
+            fetch('/api/sync/stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update stats display
+                    document.querySelectorAll('.sync-card h3')[0].textContent = data.pending;
+                    document.querySelectorAll('.sync-card h3')[1].textContent = data.synced;
+                    document.querySelectorAll('.sync-card h3')[2].textContent = data.failed;
+                    document.querySelectorAll('.sync-card h3')[3].textContent = data.total;
+                })
+                .catch(error => console.log('Auto-refresh failed:', error));
+        }, 30000);
+    </script>
+</body>
+</html>

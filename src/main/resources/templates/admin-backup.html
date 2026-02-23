@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Backup - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #1e293b; 
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header p { color: #64748b; font-size: 15px; }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+        .card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h3 i { color: #3b82f6; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .warning-box {
+            background: #fffbeb;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .warning-box h4 {
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .warning-box p {
+            color: #92400e;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .warning-box ul {
+            margin: 12px 0 0 20px;
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .info-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .info-item h4 {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .info-item p {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 24px 0;
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        .upload-area i {
+            font-size: 48px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        .upload-area h4 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .upload-area p {
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .card { padding: 24px; }
+            .actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-database"></i>
+                System Backup & Restore
+            </h1>
+            <p>Manage your system data backups and restoration</p>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+        
+        <div th:if="${info}" class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <span th:text="${info}"></span>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+        
+        <div class="warning-box">
+            <h4><i class="fas fa-exclamation-triangle"></i> Important Warning</h4>
+            <p>System backup and restore operations are critical. Please read the following carefully:</p>
+            <ul>
+                <li>Backup files contain all sensitive data including passwords and financial records</li>
+                <li>Store backup files in a secure location with encryption</li>
+                <li>Restoring a backup will completely replace all current data</li>
+                <li>Always test backup files before relying on them</li>
+                <li>Only SUPER_ADMIN users can perform backup/restore operations</li>
+            </ul>
+        </div>
+        
+        <!-- Backup Section -->
+        <div class="card">
+            <h3><i class="fas fa-download"></i> Create Backup</h3>
+            <p>Create a complete backup of your system including all users, accounts, transactions, and settings.</p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Users</h4>
+                    <p th:text="${@userRepository.count()}">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>Accounts</h4>
+                    <p th:text="${@accountRepository.count()}">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>Transactions</h4>
+                    <p th:text="${@transactionRepository.count()}">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>Expenditures</h4>
+                    <p th:text="${@expenditureRepository.count()}">0</p>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a th:href="@{/admin/backup/download}" class="btn btn-primary" 
+                   onclick="return confirm('Create a full system backup? This may take a few minutes.')">
+                    <i class="fas fa-file-export"></i> Download Backup
+                </a>
+                <a th:href="@{/admin}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Admin
+                </a>
+            </div>
+        </div>
+        
+        <!-- Restore Section -->
+        <div class="card">
+            <h3><i class="fas fa-upload"></i> Restore Backup</h3>
+            <p>Restore your system from a previously created backup file. This will replace all current data.</p>
+            
+            <form th:action="@{/admin/backup/restore}" method="post" enctype="multipart/form-data">
+                <div class="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h4>Upload Backup File</h4>
+                    <p>Select a .zip backup file to restore your system</p>
+                    <input type="file" name="backupFile" accept=".zip" required
+                           style="margin-top: 16px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                </div>
+                
+                <div class="actions">
+                    <button type="submit" class="btn btn-danger" 
+                            onclick="return confirm('WARNING: This will completely replace all current data. Are you absolutely sure?')">
+                        <i class="fas fa-file-import"></i> Restore Backup
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Security Recommendations -->
+        <div class="card">
+            <h3><i class="fas fa-shield-alt"></i> Security Recommendations</h3>
+            <ul style="margin: 16px 0; padding-left: 20px; color: #64748b;">
+                <li>Store backup files in encrypted storage</li>
+                <li>Test backup files regularly to ensure they work</li>
+                <li>Keep multiple backup copies in different locations</li>
+                <li>Use strong passwords for backup file access</li>
+                <li>Document backup procedures and recovery steps</li>
+                <li>Train authorized personnel on backup/restore procedures</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

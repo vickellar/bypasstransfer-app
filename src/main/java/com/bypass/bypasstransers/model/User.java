@@ -44,6 +44,14 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // Soft delete flag - preserves all data when user is "deleted"
+    @Column(name = "is_active", nullable = true)
+    private Boolean isActive = true;
+
+    // Deletion timestamp for audit
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public String getPhoneNumber() {
         return phoneNumber;
     }
@@ -106,5 +114,25 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public boolean isActive() {
+        return isActive != null && isActive;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

@@ -98,6 +98,20 @@
         </div>
 
         <div class="actions-grid">
+            <a th:href="@{/admin/change-password}" class="action-card">
+                <div class="action-icon users"><i class="fas fa-key"></i></div>
+                <div class="action-content">
+                    <h3>Change Password</h3>
+                    <p>Update your administrator account password</p>
+                </div>
+            </a>
+            <a th:href="@{/admin/backup}" class="action-card" th:if="${isSuperAdmin}">
+                <div class="action-icon migrate"><i class="fas fa-database"></i></div>
+                <div class="action-content">
+                    <h3>System Backup</h3>
+                    <p>Backup and restore your entire system data</p>
+                </div>
+            </a>
             <a th:href="@{/users}" class="action-card">
                 <div class="action-icon users"><i class="fas fa-users-cog"></i></div>
                 <div class="action-content">
