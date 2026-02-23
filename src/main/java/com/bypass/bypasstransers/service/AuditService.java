@@ -5,6 +5,7 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.AuditLogRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,8 +24,8 @@ public class AuditService {
     private Long resolveFallbackPerformerId() {
         // Prefer superadmin, otherwise first user in DB
         try {
-            User superAdmin = userRepository.findByUsername("superadmin");
-            if (superAdmin != null) return superAdmin.getId();
+            List<User> superAdmins = userRepository.findByUsername("superadmin");
+            if (!superAdmins.isEmpty()) return superAdmins.get(0).getId();
             return userRepository.findAll().stream().findFirst().map(User::getId).orElse(null);
         } catch (Exception e) {
             return null;
@@ -63,8 +64,8 @@ public class AuditService {
         Long performerId = null;
         try {
             if (resolvedUsername != null) {
-                User u = userRepository.findByUsername(resolvedUsername);
-                if (u != null) performerId = u.getId();
+                List<User> users = userRepository.findByUsername(resolvedUsername);
+                if (!users.isEmpty()) performerId = users.get(0).getId();
             }
         } catch (Exception e) {
             // ignore
@@ -101,8 +102,8 @@ public class AuditService {
         Long performerId = null;
         try {
             if (resolvedUsername != null) {
-                User u = userRepository.findByUsername(resolvedUsername);
-                if (u != null) performerId = u.getId();
+                List<User> users = userRepository.findByUsername(resolvedUsername);
+                if (!users.isEmpty()) performerId = users.get(0).getId();
             }
         } catch (Exception e) {
             // ignore

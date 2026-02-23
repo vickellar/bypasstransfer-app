@@ -42,6 +42,7 @@ public class SecurityConfig {
                 // Role-based endpoints examples
                 // allow ADMIN, SUPER_ADMIN and SUPERVISOR to access /admin/** so senior staff can manage users
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
+                .requestMatchers("/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")
                 // management endpoints accessible to ADMIN, SUPER_ADMIN and SUPERVISOR
                 .requestMatchers("/manage/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
@@ -50,7 +51,7 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/", true) // After login redirect to application root
+                .defaultSuccessUrl("/app", true) // After login redirect to dashboard
                 .permitAll()
             )
             .logout(logout -> logout

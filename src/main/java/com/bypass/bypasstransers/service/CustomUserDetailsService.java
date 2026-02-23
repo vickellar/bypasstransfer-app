@@ -26,9 +26,11 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("Username cannot be empty");
         }
         // Try username first (case-insensitive), then email (allows login with either)
-        User user = userRepository.findByUsernameIgnoreCase(username);
+        List<User> users = userRepository.findByUsernameIgnoreCase(username);
+        User user = users.isEmpty() ? null : users.get(0);
         if (user == null) {
-            user = userRepository.findByEmailIgnoreCase(username);
+            List<User> emailUsers = userRepository.findByEmailIgnoreCase(username);
+            user = emailUsers.isEmpty() ? null : emailUsers.get(0);
         }
         if (user == null) {
             throw new UsernameNotFoundException("User not found: " + username);

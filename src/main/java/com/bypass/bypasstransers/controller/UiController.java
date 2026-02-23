@@ -23,7 +23,7 @@ public class UiController {
     @GetMapping("/transactions")
     public String transactions(Model model) {
         model.addAttribute("transactions", service.findAll());
-        return "dashboard";
+        return "redirect:/app";
     }
     
    

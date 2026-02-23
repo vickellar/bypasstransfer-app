@@ -1,16 +1,48 @@
 <!DOCTYPE html>
-<!-- templates/fragments/header.html -->
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="header">
-    <header style="padding:12px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-        <div style="max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
-            <div class="brand"><a th:href="@{/app}" style="font-weight:700; color:#0f172a; text-decoration:none;">ByPass Transfers</a></div>
-            <nav class="main-nav" style="display:flex; gap:12px; align-items:center;">
-                <a th:href="@{/app}">Home</a>
-                <a th:href="@{/about}">About</a>
-                <a th:href="@{/register}">Register</a>
-                <a th:href="@{/login}">Login</a>
-                <a th:href="@{/admin}">Admin</a>
+    <header style="padding:16px 32px; background:white; border-bottom:1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div style="max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+            <div class="brand">
+                <a th:href="@{/}" style="font-weight:800; color:#1e293b; text-decoration:none; font-size:22px; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-exchange-alt" style="color:#3b82f6;"></i>
+                    ByPass Transfers
+                </a>
+            </div>
+            <nav class="main-nav" style="display:flex; gap:24px; align-items:center;">
+                <!-- Public navigation (not logged in) -->
+                <th:block sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">Home</a>
+                    <a th:href="@{/about}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">About</a>
+                    <a th:href="@{/contact}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">Contact</a>
+                    <a th:href="@{/login}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">Login</a>
+                    <a th:href="@{/register}" style="background:#3b82f6; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:500; font-size:15px;">Register</a>
+                </th:block>
+                
+                <!-- Authenticated navigation -->
+                <th:block sec:authorize="isAuthenticated()">
+                    <a th:href="@{/app}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">Dashboard</a>
+                    <a th:href="@{/about}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">About</a>
+                    <a th:href="@{/contact}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px;">Contact</a>
+                    <!-- Admin link for ADMIN and SUPER_ADMIN roles -->
+                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}" style="background:#f59e0b; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                    <!-- Analytics link for SUPERVISOR, ADMIN and SUPER_ADMIN roles -->
+                    <a sec:authorize="hasAnyRole('SUPERVISOR', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/admin/analytics}" style="background:#22c55e; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
+                    <span sec:authentication="name" style="color:#64748b; font-weight:500; font-size:15px; padding:0 12px; border-left:1px solid #e2e8f0; margin-left:8px;">User</span>
+                    <a th:href="@{/change-password}" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-key"></i> Password
+                    </a>
+                    <a th:href="@{/logout}" style="color:#dc2626; text-decoration:none; font-weight:500; font-size:15px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </th:block>
             </nav>
         </div>
     </header>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </div>
+</html>

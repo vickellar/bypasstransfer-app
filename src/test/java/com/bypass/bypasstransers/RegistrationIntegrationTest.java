@@ -35,9 +35,9 @@ public class RegistrationIntegrationTest {
         String email = "testuser1@example.com";
 
         // Ensure user doesn't exist
-        User existingByName = userRepository.findByUsernameIgnoreCase(username);
+        User existingByName = userRepository.findByUsernameIgnoreCase(username).stream().findFirst().orElse(null);
         if (existingByName != null) userRepository.delete(existingByName);
-        User existingByEmail = userRepository.findByEmailIgnoreCase(email);
+        User existingByEmail = userRepository.findByEmailIgnoreCase(email).stream().findFirst().orElse(null);
         if (existingByEmail != null) userRepository.delete(existingByEmail);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/register")
@@ -47,7 +47,7 @@ public class RegistrationIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
                 .andExpect(MockMvcResultMatchers.redirectedUrl("/login"));
 
-        User u = userRepository.findByUsernameIgnoreCase(username);
+        User u = userRepository.findByUsernameIgnoreCase(username).get(0);
         Assertions.assertNotNull(u, "User should be created");
         Assertions.assertEquals(email, u.getEmail());
     }

@@ -1,12 +1,20 @@
 package com.bypass.bypasstransers.controller;
 
+import com.bypass.bypasstransers.dto.TransactionSummary;
+import com.bypass.bypasstransers.dto.UserTransactionSummary;
+import com.bypass.bypasstransers.model.User;
+import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.AccountRepository;
-import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.DailyReconciliationRepository;
+import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.service.AlertService;
-import com.bypass.bypasstransers.service.TransactionService;
 import com.bypass.bypasstransers.service.ReconsiliationService;
+import com.bypass.bypasstransers.service.SecurityService;
+import com.bypass.bypasstransers.service.TransactionService;
+import com.bypass.bypasstransers.service.WalletService;
+import com.bypass.bypasstransers.service.WalletTransactionService;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -39,15 +47,86 @@ public class AccountController {
     @Autowired
     private AlertService alertService;
 
-    //@GetMapping("/")
+    @Autowired
+    private SecurityService securityService;
+
+    @Autowired
+    private WalletService walletService;
+
+    @Autowired
+    private WalletTransactionService walletTransactionService;
+
+    /**
+     * Main dashboard - routes to appropriate view based on user role
+     */
     @GetMapping("/app")
     public String dashboard(Model model) {
-        model.addAttribute("accounts", accountRepo.findAll());
-        model.addAttribute("transactions", txRepo.findAll());
-        model.addAttribute("totalFees", service.totalFees());
-        model.addAttribute("lowBalanceAccounts", alertService.lowBalanceAccounts());
-        model.addAttribute("reconciliations", dailyRepo.findAll());
-        return "index";
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        // Route to appropriate dashboard based on role
+        if (securityService.isSupervisorOrAbove()) {
+            return supervisorDashboard(model);
+        } else {
+            return staffDashboard(model);
+        }
+    }
+
+    /**
+     * Staff dashboard - shows only their own data
+     */
+    @GetMapping("/app/staff")
+    public String staffDashboard(Model model) {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        // Get staff-specific data
+        List<Wallet> wallets = walletService.getCurrentUserWallets();
+        Double totalBalance = walletService.getCurrentUserTotalBalance();
+        long walletCount = walletService.countCurrentUserWallets();
+        TransactionSummary txSummary = service.getCurrentUserSummary();
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("wallets", wallets);
+        model.addAttribute("totalBalance", totalBalance);
+        model.addAttribute("walletCount", walletCount);
+        model.addAttribute("txSummary", txSummary);
+
+        return "staff-dashboard";
+    }
+
+    /**
+     * Supervisor/Admin dashboard - shows company overview
+     */
+    @GetMapping("/app/supervisor")
+    public String supervisorDashboard(Model model) {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        // Ensure only supervisors and above
+        if (!securityService.isSupervisorOrAbove()) {
+            return "redirect:/app";
+        }
+
+        // Get company-wide data
+        List<Wallet> allWallets = walletService.getAllWallets();
+        Double companyBalance = walletService.getCompanyTotalBalance();
+        List<UserTransactionSummary> userSummaries = service.getCompanyTransactionSummary();
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("allWallets", allWallets);
+        model.addAttribute("companyBalance", companyBalance);
+        model.addAttribute("userSummaries", userSummaries);
+        model.addAttribute("isSupervisor", securityService.isSupervisorOrAbove());
+        model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
+
+        return "supervisor-dashboard";
     }
 
     // Explicit dashboard mapping used as post-login landing to avoid redirect loops
@@ -60,10 +139,10 @@ public class AccountController {
     @PostMapping("/receive")
     public String receive(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
         try {
-            service.receive(account, amount);
-            ra.addFlashAttribute("success", "Received " + amount + " into " + account);
+            walletTransactionService.receive(account, amount);
+            ra.addFlashAttribute("success", "Received $" + amount + " into " + account);
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", ex.getMessage());
+            ra.addFlashAttribute("error", "Failed to receive: " + ex.getMessage());
         }
         return "redirect:/app";
     }
@@ -72,10 +151,10 @@ public class AccountController {
     @PostMapping("/send")
     public String send(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
         try {
-            service.send(account, amount);
-            ra.addFlashAttribute("success", "Sent " + amount + " from " + account);
+            walletTransactionService.send(account, amount);
+            ra.addFlashAttribute("success", "Sent $" + amount + " from " + account);
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", ex.getMessage());
+            ra.addFlashAttribute("error", "Failed to send: " + ex.getMessage());
         }
         return "redirect:/app";
     }
@@ -84,10 +163,10 @@ public class AccountController {
     @PostMapping("/transfer")
     public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam double amount, RedirectAttributes ra) {
         try {
-            service.transfer(from, to, amount);
-            ra.addFlashAttribute("success", "Transferred " + amount + " from " + from + " to " + to);
+            walletTransactionService.transfer(from, to, amount);
+            ra.addFlashAttribute("success", "Transferred $" + amount + " from " + from + " to " + to);
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", ex.getMessage());
+            ra.addFlashAttribute("error", "Failed to transfer: " + ex.getMessage());
         }
         return "redirect:/app";
     }

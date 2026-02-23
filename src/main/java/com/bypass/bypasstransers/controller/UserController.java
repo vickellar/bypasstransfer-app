@@ -2,15 +2,19 @@ package com.bypass.bypasstransers.controller;
 
 import com.bypass.bypasstransers.enums.Role;
 import com.bypass.bypasstransers.model.User;
+import com.bypass.bypasstransers.repository.AccountRepository;
+import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.service.AuditService;
 import com.bypass.bypasstransers.service.PasswordResetService;
+import com.bypass.bypasstransers.service.UserProvisioningService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,12 +31,22 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
     private final PasswordResetService passwordResetService;
+    private final UserProvisioningService userProvisioningService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final AccountRepository accountRepository;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuditService auditService, PasswordResetService passwordResetService) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, 
+                         AuditService auditService, PasswordResetService passwordResetService,
+                         UserProvisioningService userProvisioningService,
+                         PasswordResetTokenRepository passwordResetTokenRepository,
+                         AccountRepository accountRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
         this.passwordResetService = passwordResetService;
+        this.userProvisioningService = userProvisioningService;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.accountRepository = accountRepository;
     }
 
     @GetMapping("/users")
@@ -68,6 +82,24 @@ public class UserController {
     public String saveUser(@ModelAttribute User user, @RequestParam(required = false) String rawPassword, RedirectAttributes ra) {
         boolean isNew = (user.getId() == null);
         try {
+            // Check for duplicate username
+            if (isNew) {
+                List<User> existingUsers = userRepository.findByUsername(user.getUsername());
+                if (!existingUsers.isEmpty()) {
+                    ra.addFlashAttribute("error", "Username '" + user.getUsername() + "' is already taken. Please choose a different username.");
+                    return "redirect:/users/new";
+                }
+            } else {
+                // When editing, check if another user has the same username
+                List<User> existingUsers = userRepository.findByUsername(user.getUsername());
+                for (User existing : existingUsers) {
+                    if (!existing.getId().equals(user.getId())) {
+                        ra.addFlashAttribute("error", "Username '" + user.getUsername() + "' is already taken by another user.");
+                        return "redirect:/users/edit/" + user.getId();
+                    }
+                }
+            }
+            
             if (rawPassword != null && !rawPassword.isBlank()) {
                 user.setPassword(passwordEncoder.encode(rawPassword));
             } else {
@@ -77,23 +109,35 @@ public class UserController {
                     if (existing != null) {
                         user.setPassword(existing.getPassword());
                     }
+                } else {
+                    // Set a default password for new users if none provided
+                    user.setPassword(passwordEncoder.encode("changeme123"));
                 }
             }
-            userRepository.save(user);
+            
+            // Save the user first to get an ID
+            User savedUser = userRepository.save(user);
 
-            // If newly created and no password provided, send password reset link if email exists
-            if (isNew && (rawPassword == null || rawPassword.isBlank()) && user.getEmail() != null && !user.getEmail().isBlank()) {
-                try {
-                    passwordResetService.createTokenForUser(user);
-                } catch (Exception ex) {
-                    // ignore send failures but log audit
+            // If newly created, create default wallets (Mukuru, Econet, Innbucks)
+            if (isNew) {
+                userProvisioningService.createDefaultWalletsForUser(savedUser);
+                
+                // Send password reset link if email exists
+                if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                    try {
+                        passwordResetService.createTokenForUser(savedUser);
+                    } catch (Exception ex) {
+                        // ignore send failures but log audit
+                    }
                 }
             }
 
             // audit log
-            auditService.logEntity("admin", "users", user.getId(), isNew ? "CREATE_USER" : "UPDATE_USER", null, user.getUsername());
+            auditService.logEntity("admin", "users", savedUser.getId(), isNew ? "CREATE_USER" : "UPDATE_USER", null, savedUser.getUsername());
 
-            ra.addFlashAttribute("success", "User saved");
+            ra.addFlashAttribute("success", isNew ? 
+                "User created successfully with default wallets (Mukuru, Econet, Innbucks)" : 
+                "User updated successfully");
         } catch (Exception ex) {
             ra.addFlashAttribute("error", "Failed to save user: " + ex.getMessage());
         }
@@ -101,6 +145,7 @@ public class UserController {
     }
 
     @PostMapping("/users/delete")
+    @Transactional
     public String deleteUser(@RequestParam Long id, RedirectAttributes ra) {
         try {
             Optional<User> opt = userRepository.findById(id);
@@ -125,10 +170,27 @@ public class UserController {
                 }
             }
 
+            // Step 1: Delete all accounts/wallets belonging to this user first
+            // This avoids foreign key constraint violation
+            System.out.println("[DELETE USER] Deleting accounts for user ID: " + id);
+            accountRepository.deleteByOwnerId(id);
+            System.out.println("[DELETE USER] Accounts deleted successfully");
+            
+            // Step 2: Delete password reset tokens
+            System.out.println("[DELETE USER] Deleting password reset tokens for user ID: " + id);
+            passwordResetTokenRepository.deleteByUser(u);
+            System.out.println("[DELETE USER] Password reset tokens deleted successfully");
+            
+            // Step 3: Finally delete the user
+            System.out.println("[DELETE USER] Deleting user ID: " + id);
             userRepository.deleteById(id);
+            System.out.println("[DELETE USER] User deleted successfully");
+            
             auditService.logEntity("admin", "users", id, "DELETE_USER", null, null);
-            ra.addFlashAttribute("success", "User deleted");
+            ra.addFlashAttribute("success", "User and all associated accounts deleted");
         } catch (Exception ex) {
+            System.err.println("[DELETE USER] Error deleting user ID " + id + ": " + ex.getMessage());
+            ex.printStackTrace();
             ra.addFlashAttribute("error", "Failed to delete user: " + ex.getMessage());
         }
         return "redirect:/users";

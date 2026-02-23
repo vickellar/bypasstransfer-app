@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Expenditure - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        
+        .card {
+            background: white; border-radius: 12px; padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-weight: 500; color: #374151; margin-bottom: 8px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 15px; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        
+        .btn {
+            padding: 12px 24px; border-radius: 8px; font-weight: 500;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s; border: none; cursor: pointer;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        
+        .actions { display: flex; gap: 12px; margin-top: 24px; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-plus-circle" style="margin-right: 12px; color: #3b82f6;"></i>Record Expenditure</h1>
+            <p style="color: #64748b;">Add a new business expense</p>
+        </div>
+
+        <div class="card">
+            <form th:action="@{/admin/analytics/expenditures/save}" th:object="${expenditure}" method="post">
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" th:field="*{description}" required 
+                           placeholder="e.g., Office Rent, Internet Bill">
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" th:field="*{category}" required>
+                        <option value="">Select Category</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Salaries">Salaries</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount ($)</label>
+                    <input type="number" id="amount" th:field="*{amount}" step="0.01" min="0" required 
+                           placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" th:field="*{date}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea id="notes" th:field="*{notes}" 
+                              placeholder="Additional details about this expenditure"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Expenditure
+                    </button>
+                    <a th:href="@{/admin/analytics/expenditures}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

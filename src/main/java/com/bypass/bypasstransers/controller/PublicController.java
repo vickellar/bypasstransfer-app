@@ -51,7 +51,17 @@ public class PublicController {
 
     @GetMapping("/")
     public String home(Model model) {
-        // simple links will be rendered by the Thymeleaf template
+        // Check if user is authenticated using SecurityContextHolder
+        org.springframework.security.core.context.SecurityContext context = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext();
+        org.springframework.security.core.Authentication authentication = context.getAuthentication();
+        
+        // If user is logged in (not anonymous), redirect to their dashboard
+        if (authentication != null && authentication.isAuthenticated() && 
+            authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+            return "redirect:/app";
+        }
+        // Otherwise show the landing page
         return "frontpage";
     }
 
@@ -77,11 +87,11 @@ public class PublicController {
             return "redirect:/register";
         }
 
-        if (userRepository.findByUsernameIgnoreCase(username) != null) {
+        if (!userRepository.findByUsernameIgnoreCase(username).isEmpty()) {
             ra.addFlashAttribute("error", "Username already exists");
             return "redirect:/register";
         }
-        if (userRepository.findByEmailIgnoreCase(email) != null) {
+        if (!userRepository.findByEmailIgnoreCase(email).isEmpty()) {
             ra.addFlashAttribute("error", "An account with that email already exists");
             return "redirect:/register";
         }
@@ -132,13 +142,15 @@ public class PublicController {
     }
 
     @GetMapping("/contact")
-    public String contact() {
+    public String contact(Model model) {
+        model.addAttribute("contactMessage", new ContactMessage());
         return "contact";
     }
 
     @PostMapping("/contact")
     public String contactPost(@RequestParam String name,
                               @RequestParam String email,
+                              @RequestParam(required = false) String subject,
                               @RequestParam String message,
                               RedirectAttributes ra) {
         // For now, persist the message and acknowledge.
@@ -148,6 +160,9 @@ public class PublicController {
         }
 
         ContactMessage cm = new ContactMessage(name, email, message);
+        if (subject != null && !subject.isBlank()) {
+            cm.setSubject(subject);
+        }
         try {
             contactMessageRepository.save(cm);
 
@@ -160,6 +175,7 @@ public class PublicController {
                         Map<String, Object> model = new HashMap<>();
                         model.put("name", name);
                         model.put("email", email);
+                        model.put("subject", subject != null ? subject : "General Inquiry");
                         model.put("message", message);
                         model.put("adminName", u.getUsername());
                         emailService.sendTemplateEmail(u.getEmail(), "New contact message", "contact-notification.html", model);

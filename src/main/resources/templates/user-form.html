@@ -2,38 +2,110 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${user.id} != null ? 'Edit User' : 'Create User'">User Form</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .form-container { max-width: 600px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .page-header p { color: #64748b; font-size: 15px; }
+        
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 32px; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-weight: 500; color: #374151; margin-bottom: 8px; font-size: 14px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 15px; transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+        .info-box h4 { font-size: 14px; font-weight: 600; color: #1e40af; margin-bottom: 8px; }
+        .info-box p { font-size: 13px; color: #3b82f6; margin: 0; }
+        .info-box ul { margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #3b82f6; }
+        .info-box li { margin-bottom: 4px; }
+        
+        .form-actions { display: flex; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; font-size: 15px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+    </style>
 </head>
-<body>
-<h1 th:text="${user.id} != null ? 'Edit User' : 'Create User'"></h1>
-<form th:action="@{/users/save}" method="post">
-    <input type="hidden" th:if="${user.id}" name="id" th:value="${user.id}" />
-    <div>
-        <label>Username</label>
-        <input type="text" name="username" th:value="${user.username}" required />
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="form-container">
+        <div class="page-header">
+            <h1><i class="fas fa-user" style="margin-right: 12px; color: #3b82f6;"></i>
+                <span th:text="${user.id} != null ? 'Edit User' : 'Create New User'">Create User</span>
+            </h1>
+            <p th:text="${user.id} != null ? 'Update user information' : 'Add a new user to the system'">Add a new user</p>
+        </div>
+
+        <div class="card">
+            <div th:if="${user.id} == null" class="info-box">
+                <h4><i class="fas fa-info-circle" style="margin-right: 8px;"></i>Auto-Provisioning</h4>
+                <p>When you create a new user, they will automatically receive three default accounts:</p>
+                <ul>
+                    <li><strong>Mukuru</strong> - For international transfers</li>
+                    <li><strong>Econet</strong> - For mobile money transactions</li>
+                    <li><strong>Innbucks</strong> - For Innbucks transfers</li>
+                </ul>
+            </div>
+
+            <form th:action="@{/users/save}" method="post">
+                <input type="hidden" th:if="${user.id}" name="id" th:value="${user.id}" />
+                
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user" style="margin-right: 6px; color: #64748b;"></i>Username *</label>
+                    <input type="text" id="username" name="username" th:value="${user.username}" required placeholder="Enter username" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber"><i class="fas fa-phone" style="margin-right: 6px; color: #64748b;"></i>Phone Number</label>
+                    <input type="text" id="phoneNumber" name="phoneNumber" th:value="${user.phoneNumber}" placeholder="e.g. +263712345678" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope" style="margin-right: 6px; color: #64748b;"></i>Email Address</label>
+                    <input type="email" id="email" name="email" th:value="${user.email}" placeholder="user@example.com" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="role"><i class="fas fa-shield-alt" style="margin-right: 6px; color: #64748b;"></i>Role *</label>
+                    <select id="role" name="role" required>
+                        <option value="">Select a role...</option>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}" th:selected="${r} == ${user.role}"></option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rawPassword"><i class="fas fa-lock" style="margin-right: 6px; color: #64748b;"></i>Password 
+                        <span th:if="${user.id} != null" style="font-weight: 400; color: #6b7280;">(leave blank to keep existing)</span>
+                        <span th:if="${user.id} == null" style="font-weight: 400; color: #6b7280;">(optional - defaults to "changeme123")</span>
+                    </label>
+                    <input type="password" id="rawPassword" name="rawPassword" placeholder="Enter password" />
+                </div>
+                
+                <div class="form-actions">
+                    <a th:href="@{/users}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 
+                        <span th:text="${user.id} != null ? 'Update User' : 'Create User'">Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div>
-        <label>Phone Number</label>
-        <input type="text" name="phoneNumber" th:value="${user.phoneNumber}" />
-    </div>
-    <div>
-        <label>Email</label>
-        <input type="email" name="email" th:value="${user.email}" />
-    </div>
-    <div>
-        <label>Role</label>
-        <select name="role">
-            <option th:each="r : ${roles}" th:value="${r}" th:text="${r}" th:selected="${r} == ${user.role}"></option>
-        </select>
-    </div>
-    <div>
-        <label>Password (leave blank to keep existing)</label>
-        <input type="password" name="rawPassword" />
-    </div>
-    <div>
-        <button type="submit">Save</button>
-        <a th:href="@{/users}">Cancel</a>
-    </div>
-</form>
+
+    <div th:insert="fragments/footer :: footer"></div>
 </body>
 </html>

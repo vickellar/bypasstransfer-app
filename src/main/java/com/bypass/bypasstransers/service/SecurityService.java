@@ -2,11 +2,15 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.enums.Role;
 import com.bypass.bypasstransers.model.User;
+import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
+import com.bypass.bypasstransers.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class SecurityService {
@@ -29,7 +33,8 @@ public class SecurityService {
             return null;
         }
         String username = authentication.getName();
-        return userRepository.findByUsernameIgnoreCase(username);
+        List<User> users = userRepository.findByUsernameIgnoreCase(username);
+        return users.isEmpty() ? null : users.get(0);
     }
 
     /**

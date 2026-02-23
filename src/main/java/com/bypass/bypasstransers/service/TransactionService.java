@@ -1,5 +1,7 @@
 package com.bypass.bypasstransers.service;
 
+import com.bypass.bypasstransers.dto.TransactionSummary;
+import com.bypass.bypasstransers.dto.UserTransactionSummary;
 import com.bypass.bypasstransers.enums.TransactionType;
 import com.bypass.bypasstransers.exception.AccountNotFoundException;
 import com.bypass.bypasstransers.exception.InsufficientBalanceException;
@@ -10,11 +12,14 @@ import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TransactionService {
@@ -27,6 +32,9 @@ public class TransactionService {
 
     @Autowired
     private AlertService alertService;
+
+    @Autowired
+    private SecurityService securityService;
 
     @Autowired
     private AuditService auditService;
@@ -106,8 +114,114 @@ public class TransactionService {
         checkLowBalance(acc);
     }
 
-    public List<Transaction> findAll() {
+    /**
+     * Get transactions for current user with role-based filtering
+     * - Staff: only their own transactions
+     * - Supervisor/Admin: all transactions
+     */
+    public List<Transaction> findAllForCurrentUser() {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+
+        // Staff can only see their own transactions
+        if (securityService.isStaffOnly()) {
+            return txRepo.findByWalletOwnerId(currentUser.getId());
+        }
+
+        // Supervisors and above can see all transactions
         return txRepo.findAll();
+    }
+
+    /**
+     * Get all transactions - only for supervisors and above
+     */
+    public List<Transaction> findAll() {
+        if (!securityService.isSupervisorOrAbove()) {
+            throw new AccessDeniedException("Insufficient privileges to view all transactions");
+        }
+        return txRepo.findAll();
+    }
+
+    /**
+     * Get transaction by ID - enforces user isolation
+     */
+    public Optional<Transaction> findById(Long id) {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+
+        // Staff can only access their own transactions
+        if (securityService.isStaffOnly()) {
+            return txRepo.findByIdAndWalletOwnerId(id, currentUser.getId());
+        }
+
+        // Supervisors and above can access any transaction
+        return txRepo.findById(id);
+    }
+
+    /**
+     * Get transactions for a specific wallet - enforces user isolation
+     */
+    public List<Transaction> findByWalletId(Long walletId) {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+
+        // Staff can only access their own wallet transactions
+        if (securityService.isStaffOnly()) {
+            return txRepo.findByWalletIdAndWalletOwnerId(walletId, currentUser.getId());
+        }
+
+        // Supervisors and above can access any wallet transactions
+        return txRepo.findByWalletId(walletId);
+    }
+
+    /**
+     * Get transaction summary for current user
+     */
+    public TransactionSummary getCurrentUserSummary() {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+
+        Long userId = currentUser.getId();
+        long count = txRepo.countByWalletOwnerId(userId);
+        Double totalAmount = txRepo.getTotalAmountByWalletOwnerId(userId);
+        Double totalFees = txRepo.getTotalFeesByWalletOwnerId(userId);
+
+        TransactionSummary summary = new TransactionSummary();
+        summary.setTransactionCount(count);
+        summary.setTotalAmount(totalAmount != null ? totalAmount : 0.0);
+        summary.setTotalFees(totalFees != null ? totalFees : 0.0);
+        return summary;
+    }
+
+    /**
+     * Get company-wide transaction summary - only for supervisors
+     */
+    public List<UserTransactionSummary> getCompanyTransactionSummary() {
+        if (!securityService.isSupervisorOrAbove()) {
+            throw new AccessDeniedException("Insufficient privileges");
+        }
+
+        List<Object[]> results = txRepo.getTransactionSummaryByUser();
+        List<UserTransactionSummary> summaries = new ArrayList<>();
+
+        for (Object[] row : results) {
+            UserTransactionSummary summary = new UserTransactionSummary();
+            summary.setUsername((String) row[0]);
+            summary.setTransactionCount((Long) row[1]);
+            summary.setTotalAmount((Double) row[2]);
+            summary.setTotalFees((Double) row[3]);
+            summaries.add(summary);
+        }
+
+        return summaries;
     }
 
     @Transactional(rollbackFor = Exception.class)

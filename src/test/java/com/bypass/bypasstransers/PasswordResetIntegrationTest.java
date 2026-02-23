@@ -80,7 +80,7 @@ public class PasswordResetIntegrationTest {
                 .andExpect(MockMvcResultMatchers.redirectedUrlPattern("/login**"));
 
         // verify password updated
-        User updated = userRepository.findByUsernameIgnoreCase(username);
+        User updated = userRepository.findByUsernameIgnoreCase(username).get(0);
         Assertions.assertTrue(passwordEncoder.matches(newPass, updated.getPassword()), "Password should be updated to the new value");
     }
 }

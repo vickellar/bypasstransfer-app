@@ -2,23 +2,645 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
-    <title>ByPass Transfers - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByPass Transfers - Global Financial Solutions</title>
     <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Live Ticker */
+        .ticker-wrap {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 12px 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .ticker {
+            display: inline-block;
+            animation: ticker 30s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker-item {
+            display: inline-block;
+            padding: 0 40px;
+            font-size: 14px;
+        }
+        .ticker-item i { margin-right: 8px; }
+        .ticker-up { color: #22c55e; }
+        .ticker-down { color: #ef4444; }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
+            color: white;
+            padding: 80px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/></svg>');
+            background-size: 100px 100px;
+            animation: float 20s linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
+        }
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        .hero-text h1 {
+            font-size: 52px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-text p {
+            font-size: 18px;
+            color: #94a3b8;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        .stat-item h3 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        .stat-item p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0;
+        }
+        
+        /* Exchange Rate Card */
+        .exchange-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 32px;
+        }
+        .exchange-card h3 {
+            font-size: 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rate-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .rate-row:last-child { border-bottom: none; }
+        .rate-country {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rate-flag {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .rate-info h4 { font-size: 16px; font-weight: 600; }
+        .rate-info p { font-size: 12px; color: #94a3b8; margin: 0; }
+        .rate-value {
+            text-align: right;
+        }
+        .rate-value h4 { font-size: 20px; font-weight: 700; }
+        .rate-change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .rate-change.up { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .rate-change.down { background: rgba(239,68,68,0.2); color: #ef4444; }
+        
+        /* Calculator Section */
+        .calculator-section {
+            background: #f8fafc;
+            padding: 80px 32px;
+        }
+        .calculator-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+        .section-header p {
+            color: #64748b;
+            font-size: 18px;
+        }
+        .calculator-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .calc-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: end;
+            margin-bottom: 24px;
+        }
+        .calc-field label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .calc-field input, .calc-field select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: border-color 0.3s;
+        }
+        .calc-field input:focus, .calc-field select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .calc-swap {
+            width: 50px; height: 50px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+        .calc-swap:hover { transform: rotate(180deg); }
+        .calc-result {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-top: 24px;
+        }
+        .calc-result h4 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .calc-result .amount {
+            font-size: 42px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .calc-result .fee {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+        
+        /* Features Grid */
+        .features-section {
+            padding: 80px 32px;
+            background: white;
+        }
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+        .feature-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+            box-shadow: 0 20px 40px rgba(59,130,246,0.15);
+        }
+        .feature-icon {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+        
+        /* Trust Badges */
+        .trust-section {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 60px 32px;
+            text-align: center;
+        }
+        .trust-section h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+        .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .trust-item i {
+            font-size: 32px;
+            color: #3b82f6;
+        }
+        .trust-item span {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 32px;
+            text-align: center;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        .cta-section h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .cta-section p {
+            font-size: 20px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        .btn-white {
+            background: white;
+            color: #3b82f6;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        .btn-white:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .hero-content { grid-template-columns: 1fr; }
+            .hero-text h1 { font-size: 36px; }
+            .calc-row { grid-template-columns: 1fr; }
+            .hero-stats { flex-direction: column; gap: 20px; }
+        }
+    </style>
 </head>
 <body>
-    <!-- include header fragment -->
+    <!-- Live Market Ticker -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 6,500.00 (+2.3%)</span></span>
+            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0845 (-0.5%)</span></span>
+            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2678 (+0.8%)</span></span>
+            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+1.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,420 (+5.6%)</span></span>
+            <span class="ticker-item"><i class="fas fa-coins"></i> ETH/USD <span class="ticker-down">▼ $3,420 (-1.2%)</span></span>
+            <!-- Duplicate for seamless loop -->
+            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 6,500.00 (+2.3%)</span></span>
+            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0845 (-0.5%)</span></span>
+            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2678 (+0.8%)</span></span>
+            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+1.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,420 (+5.6%)</span></span>
+            <span class="ticker-item"><i class="fas fa-coins"></i> ETH/USD <span class="ticker-down">▼ $3,420 (-1.2%)</span></span>
+        </div>
+    </div>
+
     <div th:insert="fragments/header :: header"></div>
 
-    <main class="container">
-        <h1>Welcome to ByPass Transfers</h1>
-        <p>Your secure platform for managing transfers.</p>
-        <div class="cta-section" style="margin-top: 24px;">
-            <a th:href="@{/register}" class="btn btn-primary" style="margin-right: 12px;">Get Started - Register</a>
-            <a th:href="@{/login}" class="btn btn-secondary">Already have an account? Login</a>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Global Money Transfers Made Simple</h1>
+                <p>Send and receive money across borders with real-time exchange rates. Trusted by thousands of businesses in Zimbabwe and beyond.</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <h3>$2.5B+</h3>
+                        <p>Transactions Processed</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>50K+</h3>
+                        <p>Active Users</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>99.9%</h3>
+                        <p>Uptime Guaranteed</p>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    <a th:href="@{/register}" class="btn btn-primary"><i class="fas fa-rocket"></i> Start Free Trial</a>
+                    <a th:href="@{/login}" class="btn btn-secondary"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                </div>
+            </div>
+            
+            <!-- Live Exchange Rates Card -->
+            <div class="exchange-card">
+                <h3><i class="fas fa-chart-line"></i> Live Exchange Rates</h3>
+                <div class="rate-row">
+                    <div class="rate-country">
+                        <div class="rate-flag" style="background: linear-gradient(135deg, #ef4444, #dc2626);">🇿🇼</div>
+                        <div class="rate-info">
+                            <h4>Zimbabwe Dollar</h4>
+                            <p>ZWL</p>
+                        </div>
+                    </div>
+                    <div class="rate-value">
+                        <h4>6,500.00</h4>
+                        <span class="rate-change up">▲ +2.3%</span>
+                    </div>
+                </div>
+                <div class="rate-row">
+                    <div class="rate-country">
+                        <div class="rate-flag" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">🇺🇸</div>
+                        <div class="rate-info">
+                            <h4>US Dollar</h4>
+                            <p>USD</p>
+                        </div>
+                    </div>
+                    <div class="rate-value">
+                        <h4>1.0000</h4>
+                        <span class="rate-change">Base</span>
+                    </div>
+                </div>
+                <div class="rate-row">
+                    <div class="rate-country">
+                        <div class="rate-flag" style="background: linear-gradient(135deg, #22c55e, #16a34a);">🇿🇦</div>
+                        <div class="rate-info">
+                            <h4>South African Rand</h4>
+                            <p>ZAR</p>
+                        </div>
+                    </div>
+                    <div class="rate-value">
+                        <h4>18.4520</h4>
+                        <span class="rate-change up">▲ +0.8%</span>
+                    </div>
+                </div>
+                <div class="rate-row">
+                    <div class="rate-country">
+                        <div class="rate-flag" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🇬🇧</div>
+                        <div class="rate-info">
+                            <h4>British Pound</h4>
+                            <p>GBP</p>
+                        </div>
+                    </div>
+                    <div class="rate-value">
+                        <h4>0.7890</h4>
+                        <span class="rate-change down">▼ -0.3%</span>
+                    </div>
+                </div>
+                <div class="rate-row">
+                    <div class="rate-country">
+                        <div class="rate-flag" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">🇪🇺</div>
+                        <div class="rate-info">
+                            <h4>Euro</h4>
+                            <p>EUR</p>
+                        </div>
+                    </div>
+                    <div class="rate-value">
+                        <h4>0.9220</h4>
+                        <span class="rate-change down">▼ -0.5%</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </main>
+    </section>
 
-    <!-- include footer fragment -->
+    <!-- Calculator Section -->
+    <section class="calculator-section">
+        <div class="calculator-container">
+            <div class="section-header">
+                <h2>Transfer Calculator</h2>
+                <p>Calculate fees and exchange rates before you send</p>
+            </div>
+            <div class="calculator-card">
+                <div class="calc-row">
+                    <div class="calc-field">
+                        <label>You Send</label>
+                        <input type="number" id="sendAmount" value="1000" min="1" oninput="calculateTransfer()">
+                    </div>
+                    <div class="calc-field">
+                        <label>From</label>
+                        <select id="fromCurrency" onchange="calculateTransfer()">
+                            <option value="USD">🇺🇸 USD</option>
+                            <option value="ZWL">🇿🇼 ZWL</option>
+                            <option value="ZAR">🇿🇦 ZAR</option>
+                            <option value="GBP">🇬🇧 GBP</option>
+                            <option value="EUR">🇪🇺 EUR</option>
+                        </select>
+                    </div>
+                    <button class="calc-swap" onclick="swapCurrencies()">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    <div class="calc-field">
+                        <label>To</label>
+                        <select id="toCurrency" onchange="calculateTransfer()">
+                            <option value="ZWL">🇿🇼 ZWL</option>
+                            <option value="USD">🇺🇸 USD</option>
+                            <option value="ZAR">🇿🇦 ZAR</option>
+                            <option value="GBP">🇬🇧 GBP</option>
+                            <option value="EUR">🇪🇺 EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="calc-result">
+                    <h4>Recipient Gets</h4>
+                    <div class="amount" id="receiveAmount">ZWL 6,435,000.00</div>
+                    <div class="fee">
+                        <i class="fas fa-info-circle"></i> 
+                        Fee: <span id="feeAmount">$15.00</span> | 
+                        Exchange Rate: <span id="exchangeRate">1 USD = 6,500 ZWL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="section-header">
+            <h2>Why Choose ByPass Transfers?</h2>
+            <p>Everything you need for seamless international transfers</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Instant Transfers</h3>
+                <p>Send money in seconds, not days. Our network ensures your funds reach their destination instantly.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>Bank-Grade Security</h3>
+                <p>256-bit encryption and multi-factor authentication keep your money and data safe.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Best Exchange Rates</h3>
+                <p>Get real-time market rates with minimal markup. Save up to 5% compared to banks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h3>Mobile First</h3>
+                <p>Manage transfers on the go. Our platform works perfectly on any device.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                <h3>24/7 Support</h3>
+                <p>Our dedicated support team is always ready to help you with any questions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-wallet"></i></div>
+                <h3>Multi-Currency</h3>
+                <p>Hold and manage multiple currencies. Switch between USD, ZWL, ZAR, and more.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="trust-section">
+        <h2>Trusted by Leading Companies</h2>
+        <div class="trust-badges">
+            <div class="trust-item">
+                <i class="fas fa-certificate"></i>
+                <span>Licensed & Regulated</span>
+            </div>
+            <div class="trust-item">
+                <i class="fas fa-lock"></i>
+                <span>SOC 2 Certified</span>
+            </div>
+            <div class="trust-item">
+                <i class="fas fa-check-circle"></i>
+                <span>PCI DSS Compliant</span>
+            </div>
+            <div class="trust-item">
+                <i class="fas fa-users"></i>
+                <span>50,000+ Happy Customers</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Ready to Get Started?</h2>
+        <p>Join thousands of businesses already using ByPass Transfers</p>
+        <a th:href="@{/register}" class="btn-white">
+            <i class="fas fa-rocket"></i> Create Free Account
+        </a>
+    </section>
+
     <div th:insert="fragments/footer :: footer"></div>
+
+    <script>
+        // Exchange rates (simulated)
+        const rates = {
+            'USD': { 'ZWL': 6500, 'ZAR': 18.45, 'GBP': 0.789, 'EUR': 0.922, 'USD': 1 },
+            'ZWL': { 'USD': 0.000154, 'ZAR': 0.00284, 'GBP': 0.000121, 'EUR': 0.000142, 'ZWL': 1 },
+            'ZAR': { 'USD': 0.0542, 'ZWL': 352, 'GBP': 0.0428, 'EUR': 0.0500, 'ZAR': 1 },
+            'GBP': { 'USD': 1.267, 'ZWL': 8235, 'ZAR': 23.38, 'EUR': 1.168, 'GBP': 1 },
+            'EUR': { 'USD': 1.085, 'ZWL': 7042, 'ZAR': 20.01, 'GBP': 0.856, 'EUR': 1 }
+        };
+
+        function calculateTransfer() {
+            const amount = parseFloat(document.getElementById('sendAmount').value) || 0;
+            const from = document.getElementById('fromCurrency').value;
+            const to = document.getElementById('toCurrency').value;
+            
+            const rate = rates[from][to];
+            const fee = amount * 0.015; // 1.5% fee
+            const netAmount = amount - fee;
+            const received = netAmount * rate;
+            
+            // Format based on currency
+            const formatCurrency = (val, curr) => {
+                if (curr === 'ZWL') return 'ZWL ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                return curr + ' ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            };
+            
+            document.getElementById('receiveAmount').textContent = formatCurrency(received, to);
+            document.getElementById('feeAmount').textContent = from + ' ' + fee.toFixed(2);
+            document.getElementById('exchangeRate').textContent = '1 ' + from + ' = ' + rate.toLocaleString() + ' ' + to;
+        }
+
+        function swapCurrencies() {
+            const from = document.getElementById('fromCurrency');
+            const to = document.getElementById('toCurrency');
+            const temp = from.value;
+            from.value = to.value;
+            to.value = temp;
+            calculateTransfer();
+        }
+
+        // Initial calculation
+        calculateTransfer();
+    </script>
 </body>
 </html>

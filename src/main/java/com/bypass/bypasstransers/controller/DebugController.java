@@ -34,10 +34,11 @@ public class DebugController {
 
     @GetMapping("/debug/check-password")
     public String checkPassword(@RequestParam String username, @RequestParam String raw) {
-        User u = userRepository.findByUsername(username);
-        if (u == null) {
+        List<User> users = userRepository.findByUsername(username);
+        if (users.isEmpty()) {
             return "user-not-found";
         }
+        User u = users.get(0);
         String stored = u.getPassword();
         boolean matches = passwordEncoder.matches(raw, stored);
         return "stored=" + stored + "\nmatches=" + matches;
@@ -110,8 +111,9 @@ public class DebugController {
 
     @GetMapping("/debug/reset-password")
     public String resetPassword(@RequestParam String username, @RequestParam String newPassword) {
-        User u = userRepository.findByUsername(username);
-        if (u == null) return "user-not-found";
+        List<User> users = userRepository.findByUsername(username);
+        if (users.isEmpty()) return "user-not-found";
+        User u = users.get(0);
         u.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(u);
         return "reset-ok";
@@ -137,8 +139,9 @@ public class DebugController {
 
     @GetMapping("/debug/create-token")
     public String createTokenForUser(@RequestParam String username) {
-        User u = userRepository.findByUsername(username);
-        if (u == null) return "user-not-found";
+        List<User> users = userRepository.findByUsername(username);
+        if (users.isEmpty()) return "user-not-found";
+        User u = users.get(0);
         String link = passwordResetService.createTokenForUser(u);
         return link != null ? link : "Token created (email sent - check console for link)";
     }
@@ -171,8 +174,9 @@ public class DebugController {
 
     @GetMapping("/debug/set-role")
     public String setRole(@RequestParam String username, @RequestParam String role) {
-        User u = userRepository.findByUsername(username);
-        if (u == null) return "user-not-found";
+        List<User> users = userRepository.findByUsername(username);
+        if (users.isEmpty()) return "user-not-found";
+        User u = users.get(0);
         try {
             u.setRole(com.bypass.bypasstransers.enums.Role.valueOf(role));
         } catch (IllegalArgumentException ex) {
