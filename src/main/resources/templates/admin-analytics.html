@@ -116,6 +116,13 @@
                     <p>Expenditure This Month</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+                <div class="stat-info">
+                    <h3 th:text="'$' + ${#numbers.formatDecimal(@staffPerformance.?[walletBalance].![#this].sum(), 0, 2)}">$0.00</h3>
+                    <p>Total Staff Wallet Balance</p>
+                </div>
+            </div>
         </div>
 
         <!-- Charts Row -->
@@ -156,6 +163,7 @@
                             <th>Staff</th>
                             <th>Transactions</th>
                             <th>Total Amount</th>
+                            <th>Balance</th>
                             <th>Performance</th>
                         </tr>
                     </thead>
@@ -166,6 +174,7 @@
                             </td>
                             <td th:text="${staff.totalTransactions}">0</td>
                             <td th:text="'$' + ${#numbers.formatDecimal(staff.totalAmount, 0, 2)}">$0.00</td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(staff.walletBalance, 0, 2)}">$0.00</td>
                             <td>
                                 <span class="badge" th:classappend="${staff.performanceLevel == 'High' ? 'badge-high' : (staff.performanceLevel == 'Medium' ? 'badge-medium' : 'badge-low')}" th:text="${staff.performanceLevel}">Level</span>
                             </td>
@@ -211,6 +220,11 @@
                     label: 'Total Amount ($)',
                     data: staffAmounts,
                     backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                }, {
+                    label: 'Wallet Balance ($)',
+                    data: staffData.map(s => s.walletBalance),
+                    backgroundColor: '#10b981',
                     borderRadius: 6
                 }]
             },

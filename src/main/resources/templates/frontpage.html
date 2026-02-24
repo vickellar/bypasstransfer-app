@@ -39,7 +39,7 @@
         .hero {
             background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
             color: white;
-            padding: 80px 32px;
+            padding: 60px 24px;
             position: relative;
             overflow: hidden;
             min-height: 100vh;
@@ -85,10 +85,56 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 60px;
+            gap: 40px;
             align-items: center;
             position: relative;
             z-index: 1;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .hero-content {
+                gap: 30px;
+            }
+            .hero {
+                padding: 50px 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                text-align: center;
+            }
+            .hero-text p {
+                margin-left: auto;
+                margin-right: auto;
+                max-width: 500px;
+            }
+            .hero-stats {
+                justify-content: center;
+                gap: 24px;
+            }
+            .exchange-card {
+                padding: 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero {
+                padding: 40px 16px;
+            }
+            .section-header h2 {
+                font-size: 28px;
+            }
+            .hero-text h1 {
+                font-size: 36px;
+            }
+            .hero-stats {
+                flex-direction: column;
+                gap: 16px;
+            }
         }
         .hero-text h1 {
             font-size: 52px;
@@ -127,7 +173,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 24px;
-            padding: 32px;
+            padding: 24px;
         }
         
         .exchange-rates-container {
@@ -198,7 +244,7 @@
         /* Calculator Section */
         .calculator-section {
             background: #f8fafc;
-            padding: 80px 32px;
+            padding: 60px 24px;
         }
         .calculator-container {
             max-width: 1000px;
@@ -223,7 +269,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 24px;
-            padding: 40px;
+            padding: 32px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .calc-row {
@@ -289,7 +335,7 @@
         
         /* Features Grid */
         .features-section {
-            padding: 80px 32px;
+            padding: 60px 24px;
             background: rgba(255,255,255,0.08);
             backdrop-filter: blur(5px);
         }
@@ -475,6 +521,9 @@
     </style>
 </head>
 <body>
+    <video class="hero-video-bg" autoplay loop muted playsinline>
+        <source src="https://cdn.jsdelivr.net/gh/yusufcan1703/coinbase-clone@main/src/assets/videos/hero-video.mp4" type="video/mp4">
+    </video>
     <div th:insert="fragments/header :: header"></div>
     
     <!-- Alert for deactivated users -->

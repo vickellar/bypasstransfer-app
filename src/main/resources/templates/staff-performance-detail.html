@@ -121,6 +121,13 @@
                     <p>Total Fees</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+                <div class="stat-info">
+                    <h3 th:text="'$' + ${#numbers.formatDecimal(@staffPerformance.?[walletBalance].![#this].sum(), 0, 2)}">$0.00</h3>
+                    <p>Total Wallet Balance</p>
+                </div>
+            </div>
         </div>
 
         <!-- Charts -->
@@ -148,7 +155,7 @@
                         <th>Total Fees</th>
                         <th>Net Amount</th>
                         <th>Wallets</th>
-                        <th>Balance</th>
+                        <th>Balance (Current)</th>
                         <th>Performance</th>
                     </tr>
                 </thead>
@@ -195,6 +202,11 @@
                     label: 'Transactions Count',
                     data: staffTransactions,
                     backgroundColor: '#8b5cf6',
+                    borderRadius: 6
+                }, {
+                    label: 'Wallet Balance ($)',
+                    data: staffData.map(s => s.walletBalance),
+                    backgroundColor: '#10b981',
                     borderRadius: 6
                 }]
             },
