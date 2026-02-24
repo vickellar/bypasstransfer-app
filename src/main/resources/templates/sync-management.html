@@ -227,7 +227,7 @@
             if (confirm('Are you sure you want to sync all pending transactions?')) {
                 showSyncProgress();
                 
-                fetch('/offline/sync', {
+                fetch('/offline/api/sync', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -253,7 +253,7 @@
         
         function retryFailed() {
             if (confirm('Retry all failed transactions?')) {
-                fetch('/offline/sync/retry', {
+                fetch('/offline/api/sync/retry', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit Visualizations - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin: 0; }
+        .page-header p { color: #64748b; font-size: 15px; margin: 8px 0 0 0; }
+        
+        .controls { display: flex; gap: 16px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+        .control-group select, .control-group input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        @media (max-width: 1200px) { .charts-grid { grid-template-columns: 1fr; } }
+        
+        .card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-header h2 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
+        
+        .chart-container { position: relative; height: 400px; margin-bottom: 24px; }
+        
+        .chart-type-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+        .chart-type-btn {
+            padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; 
+            cursor: pointer; font-weight: 500; transition: all 0.2s;
+        }
+        .chart-type-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .chart-type-btn:hover { background: #f1f5f9; }
+        
+        .quick-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="admin-container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-chart-bar" style="margin-right: 12px; color: #3b82f6;"></i>Profit Visualizations</h1>
+                <p>Interactive charts and graphs for profit analysis</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="period">Time Period</label>
+                <select id="period" onchange="updateCharts()">
+                    <option value="daily" th:selected="${period == 'daily'}">Daily</option>
+                    <option value="weekly" th:selected="${period == 'weekly'}">Weekly</option>
+                    <option value="monthly" th:selected="${period == 'monthly'}">Monthly</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="days">Days to Show</label>
+                <select id="days" onchange="updateCharts()">
+                    <option value="7" th:selected="${days == 7}">Last 7 Days</option>
+                    <option value="30" th:selected="${days == 30}">Last 30 Days</option>
+                    <option value="90" th:selected="${days == 90}">Last 90 Days</option>
+                    <option value="365" th:selected="${days == 365}">Last Year</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Chart Type Selector -->
+        <div class="chart-type-selector">
+            <button class="chart-type-btn active" onclick="showChartType('line')">Line Chart</button>
+            <button class="chart-type-btn" onclick="showChartType('bar')">Bar Chart</button>
+            <button class="chart-type-btn" onclick="showChartType('area')">Area Chart</button>
+            <button class="chart-type-btn" onclick="showChartType('candlestick')">Candlestick</button>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- Daily Profit Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line" style="margin-right: 8px; color: #3b82f6;"></i>Daily Profit Trend</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dailyProfitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Weekly Profit Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar" style="margin-right: 8px; color: #22c55e;"></i>Weekly Profit Summary</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="weeklyProfitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Monthly Profit Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-pie" style="margin-right: 8px; color: #a855f7;"></i>Monthly Profit Distribution</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="monthlyProfitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Profit Comparison Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale" style="margin-right: 8px; color: #f97316;"></i>Profit vs Volume Comparison</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a th:href="@{/admin/profit-analytics}" class="btn btn-primary"><i class="fas fa-chart-line"></i> Back to Analytics</a>
+            <a th:href="@{/admin/profit-analytics/trend-analysis}" class="btn btn-secondary"><i class="fas fa-line-chart"></i> Trend Analysis</a>
+            <a th:href="@{/admin/profit}" class="btn btn-secondary"><i class="fas fa-money-bill-wave"></i> Overall Profit</a>
+            <a th:href="@{/admin/profit-analytics/export}" class="btn btn-secondary"><i class="fas fa-download"></i> Export Data</a>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+
+    <script th:inline="javascript">
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initDailyProfitChart();
+            initWeeklyProfitChart();
+            initMonthlyProfitChart();
+            initComparisonChart();
+        });
+
+        function initDailyProfitChart() {
+            const ctx = document.getElementById('dailyProfitChart').getContext('2d');
+            
+            // Mock data for demo purposes - in real app, this would come from backend
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = [1200, 1900, 1500, 1800, 2200, 1300, 1600];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Profit',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Profit Trend'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initWeeklyProfitChart() {
+            const ctx = document.getElementById('weeklyProfitChart').getContext('2d');
+            
+            // Mock data for demo purposes
+            const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            const data = [8500, 9200, 7800, 10200];
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Weekly Profit',
+                        data: data,
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderColor: '#22c55e',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Weekly Profit Summary'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initMonthlyProfitChart() {
+            const ctx = document.getElementById('monthlyProfitChart').getContext('2d');
+            
+            // Mock data for demo purposes
+            const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const data = [32000, 28000, 35000, 42000, 38000, 41000];
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Profit',
+                        data: data,
+                        backgroundColor: [
+                            '#3b82f6', '#22c55e', '#a855f7', 
+                            '#f97316', '#ef4444', '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Monthly Profit Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initComparisonChart() {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            // Mock data for demo purposes
+            const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const profitData = [32000, 28000, 35000, 42000, 38000, 41000];
+            const volumeData = [640000, 560000, 700000, 840000, 760000, 820000];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Profit',
+                            data: profitData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Volume',
+                            data: volumeData,
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Profit vs Volume Comparison'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Profit ($)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Volume ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+
+        function showChartType(type) {
+            // Update active button
+            document.querySelectorAll('.chart-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // In a real implementation, this would change the chart type
+            console.log('Showing chart type:', type);
+        }
+
+        function updateCharts() {
+            const period = document.getElementById('period').value;
+            const days = document.getElementById('days').value;
+            window.location.href = `/admin/profit-analytics/visualizations?period=${period}&days=${days}`;
+        }
+    </script>
+</body>
+</html>

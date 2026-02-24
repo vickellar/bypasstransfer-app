@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>User Transaction History</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+    
+    <div class="container">
+        <h1>Transaction History for <span th:text="${user.username}">User</span></h1>
+        
+        <div class="user-info-card">
+            <div class="user-basic-info">
+                <h3>User Details</h3>
+                <p><strong>Username:</strong> <span th:text="${user.username}">Username</span></p>
+                <p><strong>Email:</strong> <span th:text="${user.email}">Email</span></p>
+                <p><strong>Phone:</strong> <span th:text="${user.phoneNumber}">Phone</span></p>
+                <p><strong>Role:</strong> <span th:text="${user.role}">Role</span></p>
+                <p><strong>Status:</strong> 
+                    <span th:if="${user.isActive}" class="badge badge-success">Active</span>
+                    <span th:unless="${user.isActive}" class="badge badge-danger">Inactive</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- User's Wallets -->
+        <div class="card">
+            <h2>User Wallets</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Account Type</th>
+                        <th>Currency</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="wallet : ${wallets}">
+                        <td th:text="${wallet.id}">ID</td>
+                        <td th:text="${wallet.accountType}">Type</td>
+                        <td th:text="${wallet.currency}">Currency</td>
+                        <td th:text="${#numbers.formatDecimal(wallet.balance, 0, 'COMMA', 2, 'DOT')}">Balance</td>
+                        <td>
+                            <span th:if="${wallet.locked}" class="badge badge-danger">Locked</span>
+                            <span th:unless="${wallet.locked}" class="badge badge-success">Active</span>
+                        </td>
+                        <td th:text="${wallet.createdAt}">Created</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- User's Transactions -->
+        <div class="card">
+            <h2>Transaction History</h2>
+            <div class="export-buttons">
+                <a th:href="@{/users/{id}/export/excel(id=${user.id})}" class="btn btn-success">Export to Excel</a>
+                <a th:href="@{/users/{id}/export/pdf(id=${user.id})}" class="btn btn-danger">Export to PDF</a>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                        <th>From Account</th>
+                        <th>To Account</th>
+                        <th>Wallet</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${transactions}">
+                        <td th:text="${tx.id}">ID</td>
+                        <td th:text="${tx.date}">Date</td>
+                        <td>
+                            <span th:class="'badge badge-' + 
+                                (${tx.type.name() == 'INCOME'} ? 'success' : 
+                                 ${tx.type.name() == 'EXPENSE'} ? 'danger' : 
+                                 ${tx.type.name() == 'TRANSFER'} ? 'warning' : 'info')"
+                                th:text="${tx.type}">Type</span>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(tx.amount, 0, 'COMMA', 2, 'DOT')}">Amount</td>
+                        <td th:text="${#numbers.formatDecimal(tx.fee, 0, 'COMMA', 2, 'DOT')}">Fee</td>
+                        <td th:text="${tx.fromAccount}">From</td>
+                        <td th:text="${tx.toAccount}">To</td>
+                        <td th:text="${tx.wallet?.accountType ?: 'N/A'}">Wallet</td>
+                        <td th:text="${tx.syncStatus}">Status</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- User's Offline Transactions -->
+        <div class="card">
+            <h2>Offline Transaction History</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                        <th>From Account</th>
+                        <th>To Account</th>
+                        <th>Status</th>
+                        <th>Synced At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${offlineTransactions}">
+                        <td th:text="${tx.id}">ID</td>
+                        <td th:text="${tx.offlineRecordedAt}">Date</td>
+                        <td>
+                            <span th:class="'badge badge-' + 
+                                (${tx.type.name() == 'INCOME'} ? 'success' : 
+                                 ${tx.type.name() == 'EXPENSE'} ? 'danger' : 
+                                 ${tx.type.name() == 'TRANSFER'} ? 'warning' : 'info')"
+                                th:text="${tx.type}">Type</span>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(tx.amount, 0, 'COMMA', 2, 'DOT')}">Amount</td>
+                        <td th:text="${#numbers.formatDecimal(tx.fee, 0, 'COMMA', 2, 'DOT')}">Fee</td>
+                        <td th:text="${tx.fromAccount}">From</td>
+                        <td th:text="${tx.toAccount}">To</td>
+                        <td>
+                            <span th:class="'badge badge-' + ${tx.syncStatus.toLowerCase()}" 
+                                  th:text="${tx.syncStatus}">Status</span>
+                        </td>
+                        <td th:text="${tx.syncedAt}">Synced At</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

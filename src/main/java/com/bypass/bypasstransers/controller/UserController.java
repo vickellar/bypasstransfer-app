@@ -17,17 +17,13 @@ import com.bypass.bypasstransers.service.UserProvisioningService;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.properties.TextAlignment;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -96,8 +92,8 @@ public class UserController {
         // Get user's accounts/wallets
         model.addAttribute("accounts", walletRepository.findByOwnerId(id));
         
-        // Get user's transactions
-        model.addAttribute("transactions", transactionRepository.findByCreatedBy(user.getUsername()));
+        // Get user's transactions - include all transactions related to user's wallets
+        model.addAttribute("transactions", transactionRepository.findByWalletOwnerId(id));
         
         // Get user's expenditures
         model.addAttribute("expenditures", expenditureRepository.findByRecordedBy(user));
@@ -127,6 +123,85 @@ public class UserController {
         model.addAttribute("roles", Role.values());
         return "user-form";
     }
+    
+    @GetMapping("/users/{id}/accounts")
+    public String editUserAccounts(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "User not found");
+            return "redirect:/users";
+        }
+        
+        User user = userOpt.get();
+        model.addAttribute("user", user);
+        model.addAttribute("accounts", walletRepository.findByOwnerId(id));
+        return "user-accounts";
+    }
+    
+    @PostMapping("/users/{id}/accounts/save")
+    public String saveUserAccounts(@PathVariable Long id, 
+                                  @RequestParam Map<String, String> accountData,
+                                  RedirectAttributes ra) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
+            }
+            
+            User user = userOpt.get();
+            
+            // Process account updates
+            for (Map.Entry<String, String> entry : accountData.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                
+                if (key.startsWith("account_") && key.endsWith("_balance")) {
+                    // Extract account ID from key: account_123_balance
+                    String accountIdStr = key.replace("account_", "").replace("_balance", "");
+                    try {
+                        Long accountId = Long.parseLong(accountIdStr);
+                        Optional<Wallet> walletOpt = walletRepository.findById(accountId);
+                        if (walletOpt.isPresent() && walletOpt.get().getOwner().getId().equals(id)) {
+                            Wallet wallet = walletOpt.get();
+                            double newBalance = Double.parseDouble(value);
+                            wallet.setBalance(newBalance);
+                            walletRepository.save(wallet);
+                        }
+                    } catch (NumberFormatException e) {
+                        // Skip invalid account IDs
+                        continue;
+                    }
+                }
+            }
+            
+            auditService.logEntity("admin", "accounts", id, "UPDATE_USER_ACCOUNTS", null, user.getUsername());
+            ra.addFlashAttribute("success", "User accounts updated successfully");
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Failed to update user accounts: " + ex.getMessage());
+        }
+        return "redirect:/users/" + id + "/accounts";
+    }
+    
+    @PostMapping("/users/{id}/accounts/create-default")
+    public String createDefaultAccounts(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
+            }
+            
+            User user = userOpt.get();
+            userProvisioningService.createDefaultWalletsForUser(user);
+            
+            auditService.logEntity("admin", "accounts", id, "CREATE_DEFAULT_ACCOUNTS", null, user.getUsername());
+            ra.addFlashAttribute("success", "Default accounts (Mukuru, Econet, Innbucks) created successfully for user " + user.getUsername());
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Failed to create default accounts: " + ex.getMessage());
+        }
+        return "redirect:/users/" + id + "/accounts";
+    }
 
     @PostMapping("/users/save")
     public String saveUser(@ModelAttribute User user, @RequestParam(required = false) String rawPassword, RedirectAttributes ra) {
@@ -137,7 +212,11 @@ public class UserController {
                 List<User> existingUsers = userRepository.findByUsername(user.getUsername());
                 if (!existingUsers.isEmpty()) {
                     ra.addFlashAttribute("error", "Username '" + user.getUsername() + "' is already taken. Please choose a different username.");
-                    return "redirect:/users/new";
+                    String redirectUrl = "/users/new";
+                    if (user.getRole() != null) {
+                        redirectUrl += "?role=" + user.getRole();
+                    }
+                    return redirectUrl;
                 }
             } else {
                 // When editing, check if another user has the same username
@@ -170,7 +249,14 @@ public class UserController {
 
             // If newly created, create default wallets (Mukuru, Econet, Innbucks)
             if (isNew) {
-                userProvisioningService.createDefaultWalletsForUser(savedUser);
+                try {
+                    userProvisioningService.createDefaultWalletsForUser(savedUser);
+                    // Log success for debugging
+                    System.out.println("[USER CREATION] Default wallets created for user: " + savedUser.getUsername());
+                } catch (Exception e) {
+                    System.err.println("[USER CREATION] Failed to create default wallets for user: " + savedUser.getUsername() + ", Error: " + e.getMessage());
+                    e.printStackTrace();
+                }
                 
                 // Send password reset link if email exists
                 if (user.getEmail() != null && !user.getEmail().isBlank()) {
@@ -178,6 +264,7 @@ public class UserController {
                         passwordResetService.createTokenForUser(savedUser);
                     } catch (Exception ex) {
                         // ignore send failures but log audit
+                        System.err.println("[USER CREATION] Failed to create password reset token for user: " + savedUser.getUsername());
                     }
                 }
             }
@@ -185,9 +272,20 @@ public class UserController {
             // audit log
             auditService.logEntity("admin", "users", savedUser.getId(), isNew ? "CREATE_USER" : "UPDATE_USER", null, savedUser.getUsername());
 
-            ra.addFlashAttribute("success", isNew ? 
-                "User created successfully with default wallets (Mukuru, Econet, Innbucks)" : 
-                "User updated successfully");
+            if (isNew) {
+                // Check if default wallets were created successfully
+                List<Wallet> userWallets = walletRepository.findByOwnerId(savedUser.getId());
+                if (userWallets.isEmpty()) {
+                    ra.addFlashAttribute("warning", "User created successfully, but default wallets could not be created. Please create accounts manually.");
+                } else {
+                    String walletNames = userWallets.stream()
+                        .map(Wallet::getAccountType)
+                        .collect(Collectors.joining(", "));
+                    ra.addFlashAttribute("success", "User created successfully with default wallets: " + walletNames);
+                }
+            } else {
+                ra.addFlashAttribute("success", "User updated successfully");
+            }
         } catch (Exception ex) {
             ra.addFlashAttribute("error", "Failed to save user: " + ex.getMessage());
         }

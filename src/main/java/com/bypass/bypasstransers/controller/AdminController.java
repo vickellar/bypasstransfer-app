@@ -76,6 +76,29 @@ public class AdminController {
         
         return "admin";
     }
+    
+    @GetMapping("/profit")  // This maps to /admin/profit due to the @RequestMapping("/admin") on the class
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    public String viewProfit(Model model) {
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null || !securityService.isSuperAdmin()) {
+            return "redirect:/admin";
+        }
+        
+        // Calculate total profit
+        double totalProfit = transactionRepository.findAll()
+            .stream()
+            .mapToDouble(Transaction::getFee)
+            .sum();
+            
+        long totalTransactions = transactionRepository.count();
+            
+        model.addAttribute("totalProfit", totalProfit);
+        model.addAttribute("totalTransactions", totalTransactions);
+        model.addAttribute("user", currentUser);
+        
+        return "admin-profit";
+    }
 
     @GetMapping("/reports")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR','SUPER_ADMIN')")
@@ -146,6 +169,36 @@ public class AdminController {
             }
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Failed to create wallets: " + e.getMessage());
+        }
+        
+        return "redirect:/users";
+    }
+    
+    /**
+     * Activate a user and create default wallets for them
+     */
+    @PostMapping("/activate-user")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String activateUser(@RequestParam Long userId, RedirectAttributes ra) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "User not found.");
+            return "redirect:/users";
+        }
+        
+        User user = userOpt.get();
+        try {
+            // Activate the user
+            user.setIsActive(true);
+            user.setDeletedAt(null); // Clear the deletion timestamp
+            userRepository.save(user);
+            
+            // Create default wallets for the activated user
+            userProvisioningService.createDefaultWalletsForUser(user);
+            
+            ra.addFlashAttribute("success", "User " + user.getUsername() + " has been activated and default wallets created.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Failed to activate user: " + e.getMessage());
         }
         
         return "redirect:/users";

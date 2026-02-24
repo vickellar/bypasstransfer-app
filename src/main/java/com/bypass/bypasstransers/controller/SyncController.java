@@ -1,130 +1,118 @@
 package com.bypass.bypasstransers.controller;
 
 import com.bypass.bypasstransers.model.OfflineTransaction;
-import com.bypass.bypasstransers.model.Transaction;
+import com.bypass.bypasstransers.model.User;
+import com.bypass.bypasstransers.model.Wallet;
+import com.bypass.bypasstransers.repository.OfflineTransactionRepository;
+import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.repository.UserRepository;
+import com.bypass.bypasstransers.repository.WalletRepository;
 import com.bypass.bypasstransers.service.OfflineSyncService;
-import com.bypass.bypasstransers.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.List;
 import java.util.Map;
 
-/**
- * REST API for sync operations
- * @author Vickeller.01
- */
-@RestController
-@RequestMapping("/api/sync")
+@Controller
+@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','SUPERVISOR')")
 public class SyncController {
 
     @Autowired
     private OfflineSyncService offlineSyncService;
-    
-    @Autowired
-    private SecurityService securityService;
 
-    /**
-     * Sync offline transactions to main system
-     */
-    @PostMapping("/transactions")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> syncTransactions(@RequestBody List<OfflineTransaction> offlineTransactions) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            int successCount = 0;
-            int failedCount = 0;
-            
-            for (OfflineTransaction offlineTx : offlineTransactions) {
-                try {
-                    offlineSyncService.syncSingleTransaction(offlineTx);
-                    successCount++;
-                } catch (Exception e) {
-                    failedCount++;
-                    System.err.println("Failed to sync transaction: " + e.getMessage());
-                }
-            }
-            
-            response.put("success", true);
-            response.put("successCount", successCount);
-            response.put("failedCount", failedCount);
-            response.put("message", "Sync completed: " + successCount + " successful, " + failedCount + " failed");
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Sync failed: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
+    @Autowired
+    private OfflineTransactionRepository offlineTransactionRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private WalletRepository walletRepository;
+
+    @GetMapping("/sync")
+    public String syncDashboard(Model model) {
+        // Get sync statistics
+        Map<String, Long> stats = offlineSyncService.getSyncStatistics();
+        model.addAttribute("syncStats", stats);
+
+        // Get recent offline transactions
+        List<OfflineTransaction> recentOffline = offlineTransactionRepository.findTop10ByOrderByOfflineRecordedAtDesc();
+        model.addAttribute("recentOffline", recentOffline);
+
+        // Get recent synced transactions
+        model.addAttribute("recentSynced", transactionRepository.findAll());
+
+        return "sync-dashboard";
     }
-    
-    /**
-     * Get sync statistics
-     */
-    @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> getSyncStats() {
-        try {
-            Map<String, Long> stats = offlineSyncService.getSyncStatistics();
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", stats);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to get sync stats: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
-    /**
-     * Get user's pending offline transactions
-     */
-    @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> getPendingTransactions() {
-        try {
-            String username = securityService.getCurrentUser().getUsername();
-            List<OfflineTransaction> pendingTransactions = offlineSyncService.getUserOfflineTransactions(username);
-            pendingTransactions.removeIf(tx -> !"PENDING".equals(tx.getSyncStatus()));
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", pendingTransactions);
-            response.put("count", pendingTransactions.size());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to get pending transactions: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
-    /**
-     * Trigger sync for all pending transactions
-     */
-    @PostMapping("/trigger")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> triggerSync() {
+
+    @PostMapping("/sync/process-all")
+    public String processAllPending(RedirectAttributes ra) {
         try {
             Map<String, Object> result = offlineSyncService.syncAllPendingTransactions();
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", result);
-            response.put("message", "Sync completed successfully");
-            return ResponseEntity.ok(response);
+            ra.addFlashAttribute("success", 
+                "Sync completed: " + result.get("successCount") + " succeeded, " + 
+                result.get("failedCount") + " failed out of " + result.get("totalProcessed") + " total");
         } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Sync trigger failed: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            ra.addFlashAttribute("error", "Sync failed: " + e.getMessage());
         }
+        return "redirect:/sync";
+    }
+
+    @PostMapping("/sync/retry-failed")
+    public String retryFailedTransactions(RedirectAttributes ra) {
+        try {
+            int retryCount = offlineSyncService.retryFailedTransactions();
+            ra.addFlashAttribute("success", "Retried " + retryCount + " failed transactions");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Retry failed: " + e.getMessage());
+        }
+        return "redirect:/sync";
+    }
+
+    @GetMapping("/users/{userId}/transactions")
+    public String getUserTransactions(@PathVariable Long userId, Model model) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Get user's wallets
+        List<Wallet> userWallets = walletRepository.findByOwnerId(userId);
+        model.addAttribute("user", user);
+        model.addAttribute("wallets", userWallets);
+
+        // Get all transactions related to user's wallets
+        List<com.bypass.bypasstransers.model.Transaction> userTransactions = 
+            transactionRepository.findByWalletOwnerId(userId);
+        model.addAttribute("transactions", userTransactions);
+
+        // Get offline transactions for this user
+        List<OfflineTransaction> offlineTransactions = 
+            offlineTransactionRepository.findByUsernameOrderByOfflineRecordedAtDesc(user.getUsername());
+        model.addAttribute("offlineTransactions", offlineTransactions);
+
+        return "user-transactions";
+    }
+    
+    @PostMapping("/sync/process-single")
+    public String processSingleTransaction(@RequestParam Long id, RedirectAttributes ra) {
+        try {
+            OfflineTransaction offlineTx = offlineTransactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Offline transaction not found"));
+            offlineSyncService.syncSingleTransaction(offlineTx);
+            ra.addFlashAttribute("success", "Transaction synced successfully");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Sync failed: " + e.getMessage());
+        }
+        return "redirect:/sync";
     }
 }

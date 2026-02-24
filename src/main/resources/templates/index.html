@@ -624,7 +624,60 @@
                 </table>
             </div>
         </div>
-
+        
+        <!-- Exchange Rates Card -->
+        <div class="card">
+            <h3 class="card-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Live Exchange Rates (USD Base)
+            </h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Currency</th>
+                            <th>Symbol</th>
+                            <th>Rate vs USD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${exchangeRates['USD']} != null">
+                            <td>US Dollar</td>
+                            <td>USD</td>
+                            <td th:text="${exchangeRates['USD']}">1.0000</td>
+                        </tr>
+                        <tr th:if="${exchangeRates['ZWL']} != null">
+                            <td>Zimbabwe Dollar</td>
+                            <td>ZWL</td>
+                            <td th:text="${exchangeRates['ZWL']}">3.7500</td>
+                        </tr>
+                        <tr th:if="${exchangeRates['ZAR']} != null">
+                            <td>South African Rand</td>
+                            <td>ZAR</td>
+                            <td th:text="${exchangeRates['ZAR']}">18.4500</td>
+                        </tr>
+                        <tr th:if="${exchangeRates['GBP']} != null">
+                            <td>British Pound</td>
+                            <td>GBP</td>
+                            <td th:text="${exchangeRates['GBP']}">0.7900</td>
+                        </tr>
+                        <tr th:if="${exchangeRates['EUR']} != null">
+                            <td>Euro</td>
+                            <td>EUR</td>
+                            <td th:text="${exchangeRates['EUR']}">0.9200</td>
+                        </tr>
+                        <tr th:if="${exchangeRates['RUB']} != null">
+                            <td>Russian Ruble</td>
+                            <td>RUB</td>
+                            <td th:text="${exchangeRates['RUB']}">92.5000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
         <!-- Quick Actions -->
         <div class="card">
             <h3 class="card-title">

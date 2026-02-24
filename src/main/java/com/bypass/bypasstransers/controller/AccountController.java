@@ -8,6 +8,7 @@ import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.DailyReconciliationRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.service.AlertService;
+import com.bypass.bypasstransers.service.ExchangeRateService;
 import com.bypass.bypasstransers.service.ReconsiliationService;
 import com.bypass.bypasstransers.service.SecurityService;
 import com.bypass.bypasstransers.service.TransactionService;
@@ -56,6 +57,9 @@ public class AccountController {
     @Autowired
     private WalletTransactionService walletTransactionService;
 
+    @Autowired
+    private ExchangeRateService exchangeRateService;
+
     /**
      * Main dashboard - routes to appropriate view based on user role
      */
@@ -65,6 +69,9 @@ public class AccountController {
         if (currentUser == null) {
             return "redirect:/login";
         }
+
+        // Add exchange rates to the model for all dashboards
+        model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
 
         // Route to appropriate dashboard based on role
         if (securityService.isSupervisorOrAbove()) {
@@ -95,6 +102,9 @@ public class AccountController {
         model.addAttribute("totalBalance", totalBalance);
         model.addAttribute("walletCount", walletCount);
         model.addAttribute("txSummary", txSummary);
+        
+        // Add exchange rates to the model
+        model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
 
         return "staff-dashboard";
     }
@@ -125,6 +135,9 @@ public class AccountController {
         model.addAttribute("userSummaries", userSummaries);
         model.addAttribute("isSupervisor", securityService.isSupervisorOrAbove());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
+        
+        // Add exchange rates to the model
+        model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
 
         return "supervisor-dashboard";
     }

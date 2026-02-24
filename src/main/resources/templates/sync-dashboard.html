@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Offline Sync Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+    
+    <div class="container">
+        <h1>Offline Transaction Sync Dashboard</h1>
+        
+        <!-- Sync Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Pending Transactions</h3>
+                <p class="stat-number" th:text="${syncStats['pending']}">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Synced Transactions</h3>
+                <p class="stat-number" th:text="${syncStats['synced']}">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Failed Transactions</h3>
+                <p class="stat-number" th:text="${syncStats['failed']}">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Transactions</h3>
+                <p class="stat-number" th:text="${syncStats['total']}">0</p>
+            </div>
+        </div>
+        
+        <!-- Sync Actions -->
+        <div class="card">
+            <h2>Sync Actions</h2>
+            <div class="button-group">
+                <form th:action="@{/sync/process-all}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-primary">Process All Pending</button>
+                </form>
+                <form th:action="@{/sync/retry-failed}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Retry Failed</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recent Offline Transactions -->
+        <div class="card">
+            <h2>Recent Offline Transactions</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                        <th>From Account</th>
+                        <th>To Account</th>
+                        <th>Status</th>
+                        <th>Recorded At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${recentOffline}">
+                        <td th:text="${tx.id}">ID</td>
+                        <td th:text="${tx.username}">User</td>
+                        <td th:text="${tx.type}">Type</td>
+                        <td th:text="${#numbers.formatDecimal(tx.amount, 0, 'COMMA', 2, 'DOT')}">Amount</td>
+                        <td th:text="${#numbers.formatDecimal(tx.fee, 0, 'COMMA', 2, 'DOT')}">Fee</td>
+                        <td th:text="${tx.fromAccount}">From</td>
+                        <td th:text="${tx.toAccount}">To</td>
+                        <td>
+                            <span th:class="'badge badge-' + ${tx.syncStatus.toLowerCase()}" 
+                                  th:text="${tx.syncStatus}">Status</span>
+                        </td>
+                        <td th:text="${tx.offlineRecordedAt}">Date</td>
+                        <td>
+                            <form th:action="@{/sync/process-single(id=${tx.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-secondary">Sync Now</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Recent Synced Transactions -->
+        <div class="card">
+            <h2>Recent Synced Transactions</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                        <th>From Account</th>
+                        <th>To Account</th>
+                        <th>Wallet Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${recentSynced}">
+                        <td th:text="${tx.id}">ID</td>
+                        <td th:text="${tx.date}">Date</td>
+                        <td th:text="${tx.type}">Type</td>
+                        <td th:text="${#numbers.formatDecimal(tx.amount, 0, 'COMMA', 2, 'DOT')}">Amount</td>
+                        <td th:text="${#numbers.formatDecimal(tx.fee, 0, 'COMMA', 2, 'DOT')}">Fee</td>
+                        <td th:text="${tx.fromAccount}">From</td>
+                        <td th:text="${tx.toAccount}">To</td>
+                        <td th:text="${tx.wallet?.owner?.username ?: 'N/A'}">Owner</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

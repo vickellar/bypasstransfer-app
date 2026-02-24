@@ -1,6 +1,7 @@
 package com.bypass.bypasstransers.dto;
 
 import java.time.LocalDate;
+import com.bypass.bypasstransers.enums.Currency;
 
 public class ExpenditureDTO {
     private Long id;
@@ -10,6 +11,7 @@ public class ExpenditureDTO {
     private LocalDate date;
     private String recordedBy;
     private String notes;
+    private Currency currency;
     
     public ExpenditureDTO() {}
 
@@ -34,4 +36,7 @@ public class ExpenditureDTO {
     
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    
+    public Currency getCurrency() { return currency; }
+    public void setCurrency(Currency currency) { this.currency = currency; }
 }

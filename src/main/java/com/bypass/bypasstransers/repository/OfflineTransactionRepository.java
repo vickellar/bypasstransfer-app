@@ -31,4 +31,6 @@ public interface OfflineTransactionRepository extends JpaRepository<OfflineTrans
     
     @Query("SELECT o FROM OfflineTransaction o WHERE o.username = :username ORDER BY o.offlineRecordedAt DESC")
     List<OfflineTransaction> findByUsernameOrderByOfflineRecordedAtDesc(@Param("username") String username);
+    
+    List<OfflineTransaction> findTop10ByOrderByOfflineRecordedAtDesc();
 }

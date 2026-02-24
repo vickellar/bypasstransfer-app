@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Expense - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; }
+        
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: #fef2f2; color: #dc2626; }
+        .btn-danger:hover { background: #fee2e2; }
+        
+        .alert { padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-body { padding: 24px; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; }
+        .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .form-select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; background: white; }
+        .form-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        
+        .required { color: #dc2626; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-receipt" style="margin-right: 12px; color: #3b82f6;"></i>
+                <span th:if="${isEdit}">Edit Expense</span>
+                <span th:unless="${isEdit}">Record New Expense</span>
+            </h1>
+            <p style="color: #64748b; margin-top: 4px;">
+                <span th:if="${isEdit}">Update your expense details</span>
+                <span th:unless="${isEdit}">Record a personal expense from your wallet</span>
+            </p>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success"><i class="fas fa-check-circle" style="margin-right: 8px;"></i><span th:text="${success}"></span></div>
+        <div th:if="${error}" class="alert alert-error"><i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i><span th:text="${error}"></span></div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">
+                    <span th:if="${isEdit}">Edit Expense Details</span>
+                    <span th:unless="${isEdit}">Expense Information</span>
+                </h2>
+            </div>
+            <div class="card-body">
+                <form th:action="@{${isEdit ? '/staff/expenses/' + expense.id + '/update' : '/staff/expenses/save'}}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" th:if="${isEdit}" th:name="id" th:value="${expense.id}"/>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wallet">Wallet <span class="required">*</span></label>
+                            <select name="walletId" class="form-select" id="wallet" required>
+                                <option value="">Select Wallet</option>
+                                <option th:each="wallet : ${wallets}" 
+                                        th:value="${wallet.id}" 
+                                        th:text="${wallet.accountType + ' (' + wallet.currency + ')'}">
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="amount">Amount <span class="required">*</span></label>
+                            <input type="number" name="amount" class="form-control" id="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category">Category <span class="required">*</span></label>
+                            <select name="category" class="form-select" id="category" required>
+                                <option value="">Select Category</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Meals">Meals</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Accommodation">Accommodation</option>
+                                <option value="Communication">Communication</option>
+                                <option value="Equipment">Equipment</option>
+                                <option value="Training">Training</option>
+                                <option value="Miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="currency">Currency <span class="required">*</span></label>
+                            <select name="currency" class="form-select" id="currency" required>
+                                <option value="">Select Currency</option>
+                                <option th:each="curr : ${currencies}" 
+                                        th:value="${curr}" 
+                                        th:text="${curr}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date">Date <span class="required">*</span></label>
+                            <input type="date" name="date" class="form-control" id="date" th:value="${#temporals.format(#dates.createNow(), 'yyyy-MM-dd')}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea name="description" class="form-control" id="description" rows="3" placeholder="Enter expense description..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; margin-top: 32px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            <span th:if="${isEdit}">Update Expense</span>
+                            <span th:unless="${isEdit}">Record Expense</span>
+                        </button>
+                        <a th:href="@{/staff/expenses}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <a th:if="${isEdit}" th:href="@{|/staff/expenses/${expense.id}/delete|}" 
+                           class="btn btn-danger" 
+                           onclick="return confirm('Delete this expense? The amount will be refunded to your wallet.');">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

@@ -7,8 +7,10 @@ import com.bypass.bypasstransers.repository.ContactMessageRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.service.EmailVerificationService;
 import com.bypass.bypasstransers.service.EmailService;
+import com.bypass.bypasstransers.service.ExchangeRateService;
 import com.bypass.bypasstransers.service.PasswordResetService;
 import com.bypass.bypasstransers.service.SmsService;
+import com.bypass.bypasstransers.service.UserProvisioningService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +34,8 @@ public class PublicController {
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
     private final SmsService smsService;
+    private final ExchangeRateService exchangeRateService;
+    private final UserProvisioningService userProvisioningService;
 
     public PublicController(UserRepository userRepository,
                             PasswordEncoder passwordEncoder,
@@ -39,7 +43,9 @@ public class PublicController {
                             ContactMessageRepository contactMessageRepository,
                             EmailVerificationService emailVerificationService,
                             EmailService emailService,
-                            SmsService smsService) {
+                            SmsService smsService,
+                            ExchangeRateService exchangeRateService,
+                            UserProvisioningService userProvisioningService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetService = passwordResetService;
@@ -47,6 +53,8 @@ public class PublicController {
         this.emailVerificationService = emailVerificationService;
         this.emailService = emailService;
         this.smsService = smsService;
+        this.exchangeRateService = exchangeRateService;
+        this.userProvisioningService = userProvisioningService;
     }
 
     @GetMapping("/")
@@ -61,6 +69,10 @@ public class PublicController {
             authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
             return "redirect:/app";
         }
+        
+        // Add exchange rates to the model for the frontpage
+        model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
+        
         // Otherwise show the landing page
         return "frontpage";
     }
@@ -112,6 +124,7 @@ public class PublicController {
             String temp = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 12);
             u.setPassword(passwordEncoder.encode(temp));
             userRepository.save(u);
+            
             try {
                 String link = passwordResetService.createTokenForUser(u);
                 // if no email on user, createTokenForUser returns link so we can show it

@@ -11,7 +11,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +41,7 @@ public class OfflineTransactionController {
         
         model.addAttribute("transactions", transactions);
         model.addAttribute("user", currentUser);
-        model.addAttribute("syncStats", offlineSyncService.getSyncStatistics());
+        model.addAttribute("syncStats", offlineSyncService.getUserSyncStatistics(currentUser.getUsername()));
         
         return "offline-transactions";
     }
@@ -137,5 +139,47 @@ public class OfflineTransactionController {
             ra.addFlashAttribute("error", "Retry failed: " + e.getMessage());
             return "redirect:/offline/transactions";
         }
+    }
+    
+    // JSON API endpoints for sync management page
+    
+    @PostMapping("/api/sync")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<Map<String, Object>> apiSyncAllTransactions() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> result = offlineSyncService.syncAllPendingTransactions();
+            
+            String message = String.format("Sync completed: %d processed, %d successful, %d failed",
+                                         (Integer) result.get("totalProcessed"),
+                                         (Integer) result.get("successCount"),
+                                         (Integer) result.get("failedCount"));
+            
+            response.put("success", true);
+            response.put("message", message);
+            response.put("result", result);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Sync failed: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/api/sync/retry")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<Map<String, Object>> apiRetryFailedTransactions() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            int retryCount = offlineSyncService.retryFailedTransactions();
+            response.put("success", true);
+            response.put("message", "Retried " + retryCount + " failed transactions");
+            response.put("retryCount", retryCount);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Retry failed: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(response);
     }
 }

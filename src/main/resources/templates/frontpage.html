@@ -42,6 +42,7 @@
             padding: 80px 32px;
             position: relative;
             overflow: hidden;
+            min-height: 100vh;
         }
         .hero::before {
             content: '';
@@ -50,6 +51,30 @@
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/></svg>');
             background-size: 100px 100px;
             animation: float 20s linear infinite;
+            z-index: -2; /* Behind video but above gradient */
+        }
+        .hero-video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.3; /* Adjust this value to control video transparency */
+        }
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4); /* Reduced opacity to make content more transparent for better video visibility */
+            z-index: 0;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
         }
         @keyframes float {
             0% { transform: translateY(0); }
@@ -103,6 +128,32 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 24px;
             padding: 32px;
+        }
+        
+        .exchange-rates-container {
+            max-height: 320px; /* Show approximately 5 rate rows */
+            overflow-y: auto;
+            padding-right: 8px;
+            margin-top: 10px;
+        }
+        
+        /* Custom scrollbar for exchange rates */
+        .exchange-rates-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .exchange-rates-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        
+        .exchange-rates-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        
+        .exchange-rates-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
         }
         .exchange-card h3 {
             font-size: 18px;
@@ -168,10 +219,12 @@
             font-size: 18px;
         }
         .calculator-card {
-            background: white;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .calc-row {
             display: grid;
@@ -237,7 +290,8 @@
         /* Features Grid */
         .features-section {
             padding: 80px 32px;
-            background: white;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(5px);
         }
         .features-grid {
             max-width: 1200px;
@@ -247,11 +301,12 @@
             gap: 32px;
         }
         .feature-card {
-            background: #f8fafc;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 32px;
             transition: all 0.3s;
-            border: 2px solid transparent;
+            border: 1px solid rgba(255,255,255,0.15);
         }
         .feature-card:hover {
             transform: translateY(-5px);
@@ -282,10 +337,12 @@
         
         /* Trust Badges */
         .trust-section {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            background: rgba(30, 41, 59, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
             padding: 60px 32px;
             text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .trust-section h2 {
             font-size: 28px;
@@ -316,8 +373,10 @@
         .cta-section {
             padding: 100px 32px;
             text-align: center;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: rgba(59,130,246, 0.2);
+            backdrop-filter: blur(10px);
             color: white;
+            border: 1px solid rgba(255,255,255,0.15);
         }
         .cta-section h2 {
             font-size: 42px;
@@ -361,6 +420,7 @@
             .rate-row { padding: 12px 0; }
             .rate-flag { width: 32px; height: 32px; font-size: 16px; }
             .rate-value h4 { font-size: 18px; }
+            .exchange-rates-container { max-height: 280px; }
             
             .calculator-card { padding: 24px; }
             .calc-result .amount { font-size: 32px; }
@@ -377,6 +437,11 @@
             .cta-section h2 { font-size: 32px; }
             .cta-section p { font-size: 16px; }
             .btn-white { padding: 16px 32px; font-size: 16px; }
+            
+            /* Video background adjustments for mobile */
+            .hero-video-bg {
+                opacity: 0.4; /* Slightly higher opacity on mobile to preserve battery life */
+            }
         }
         
         @media (max-width: 480px) {
@@ -386,6 +451,11 @@
             .hero-stats { gap: 16px; }
             .stat-item h3 { font-size: 24px; }
             
+            /* Video background adjustments for small mobile */
+            .hero-video-bg {
+                opacity: 0.5; /* Higher opacity on very small screens */
+            }
+            
             .section-header h2 { font-size: 28px; }
             .section-header p { font-size: 16px; }
             
@@ -393,6 +463,7 @@
             .calc-field input, .calc-field select { padding: 12px; font-size: 16px; }
             .calc-swap { width: 40px; height: 40px; font-size: 16px; }
             .calc-result .amount { font-size: 24px; }
+            .exchange-rates-container { max-height: 240px; }
             
             .feature-icon { width: 50px; height: 50px; font-size: 20px; }
             .feature-card h3 { font-size: 18px; }
@@ -404,29 +475,92 @@
     </style>
 </head>
 <body>
+    <div th:insert="fragments/header :: header"></div>
+    
+    <!-- Alert for deactivated users -->
+    <div th:if="${#authentication.name != null}" class="deactivation-alert" style="display:none;">
+        <div th:attr="data-username=${#authentication.name}" style="display:none;" id="currentUser"></div>
+    </div>
+    
+    <script th:inline="javascript">
+        // Check if user is active by querying backend
+        window.onload = function() {
+            fetch('/api/user/check-active')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.active) {
+                        // Create and show deactivation alert
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert-deactivated';
+                        alertDiv.innerHTML = `
+                            <div style="
+                                position: fixed;
+                                top: 100px;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                background: #fee2e2;
+                                color: #991b1b;
+                                padding: 16px 24px;
+                                border-radius: 8px;
+                                border: 1px solid #fecaca;
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                z-index: 10000;
+                                text-align: center;
+                                max-width: 90%;
+                                width: 500px;
+                            ">
+                                <h3 style="margin: 0 0 8px 0; font-size: 18px;">
+                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                    Account Locked
+                                </h3>
+                                <p style="margin: 0; font-size: 14px;">
+                                    Your account has been locked by the administrator. 
+                                    You cannot perform any transactions until your account is reactivated.
+                                </p>
+                            </div>
+                        `;
+                        document.body.appendChild(alertDiv);
+                        
+                        // Also disable interactive elements
+                        const interactiveElements = document.querySelectorAll('input, button, select, textarea, a[href^="/transfer"], a[href^="/transaction"]');
+                        interactiveElements.forEach(el => {
+                            el.disabled = true;
+                            el.style.opacity = '0.5';
+                            el.style.pointerEvents = 'none';
+                        });
+                    }
+                })
+                .catch(error => console.error('Error checking user status:', error));
+        };
+    </script>
+    
     <!-- Live Market Ticker -->
     <div class="ticker-wrap">
         <div class="ticker">
-            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 6,500.00 (+2.3%)</span></span>
-            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0845 (-0.5%)</span></span>
-            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2678 (+0.8%)</span></span>
-            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+1.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,420 (+5.6%)</span></span>
-            <span class="ticker-item"><i class="fas fa-coins"></i> ETH/USD <span class="ticker-down">▼ $3,420 (-1.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 3,750.00 (+0.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0850 (-0.1%)</span></span>
+            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2670 (+0.3%)</span></span>
+            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+0.5%)</span></span>
+            <span class="ticker-item"><i class="fas fa-ruble-sign"></i> RUB/USD <span class="ticker-down">▼ 0.0108 (-0.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,520 (+0.4%)</span></span>
             <!-- Duplicate for seamless loop -->
-            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 6,500.00 (+2.3%)</span></span>
-            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0845 (-0.5%)</span></span>
-            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2678 (+0.8%)</span></span>
-            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+1.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,420 (+5.6%)</span></span>
-            <span class="ticker-item"><i class="fas fa-coins"></i> ETH/USD <span class="ticker-down">▼ $3,420 (-1.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 3,750.00 (+0.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0850 (-0.1%)</span></span>
+            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2670 (+0.3%)</span></span>
+            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+0.5%)</span></span>
+            <span class="ticker-item"><i class="fas fa-ruble-sign"></i> RUB/USD <span class="ticker-down">▼ 0.0108 (-0.2%)</span></span>
+            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,520 (+0.4%)</span></span>
         </div>
     </div>
 
-    <div th:insert="fragments/header :: header"></div>
-
     <!-- Hero Section -->
     <section class="hero">
+        <video autoplay muted loop playsinline class="hero-video-bg">
+            <source th:src="@{/videos/AdobeStock.mp4}" type="video/mp4">
+            <!-- Fallback image if video doesn't load -->
+            Your browser does not support the video tag.
+        </video>
+        <div class="hero-overlay"></div>
         <div class="hero-content">
             <div class="hero-text">
                 <h1>Global Money Transfers Made Simple</h1>
@@ -454,69 +588,162 @@
             <!-- Live Exchange Rates Card -->
             <div class="exchange-card">
                 <h3><i class="fas fa-chart-line"></i> Live Exchange Rates</h3>
-                <div class="rate-row">
-                    <div class="rate-country">
-                        <div class="rate-flag" style="background: linear-gradient(135deg, #ef4444, #dc2626);">🇿🇼</div>
-                        <div class="rate-info">
-                            <h4>Zimbabwe Dollar</h4>
-                            <p>ZWL</p>
+                <div class="exchange-rates-container">
+                    <div class="rate-row">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">🇺🇸</div>
+                            <div class="rate-info">
+                                <h4>US Dollar</h4>
+                                <p>USD</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4>1.0000</h4>
+                            <span class="rate-change">Base</span>
                         </div>
                     </div>
-                    <div class="rate-value">
-                        <h4>6,500.00</h4>
-                        <span class="rate-change up">▲ +2.3%</span>
-                    </div>
-                </div>
-                <div class="rate-row">
-                    <div class="rate-country">
-                        <div class="rate-flag" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">🇺🇸</div>
-                        <div class="rate-info">
-                            <h4>US Dollar</h4>
-                            <p>USD</p>
+                    <div class="rate-row" th:if="${exchangeRates['ZWL']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #ef4444, #dc2626);">🇿🇼</div>
+                            <div class="rate-info">
+                                <h4>Zimbabwe Dollar</h4>
+                                <p>ZWL</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['ZWL']}">3,750.00</h4>
+                            <span class="rate-change up">▲ +0.2%</span>
                         </div>
                     </div>
-                    <div class="rate-value">
-                        <h4>1.0000</h4>
-                        <span class="rate-change">Base</span>
-                    </div>
-                </div>
-                <div class="rate-row">
-                    <div class="rate-country">
-                        <div class="rate-flag" style="background: linear-gradient(135deg, #22c55e, #16a34a);">🇿🇦</div>
-                        <div class="rate-info">
-                            <h4>South African Rand</h4>
-                            <p>ZAR</p>
+                    <div class="rate-row" th:if="${exchangeRates['ZAR']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #22c55e, #16a34a);">🇿🇦</div>
+                            <div class="rate-info">
+                                <h4>South African Rand</h4>
+                                <p>ZAR</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['ZAR']}">18.4520</h4>
+                            <span class="rate-change up">▲ +0.5%</span>
                         </div>
                     </div>
-                    <div class="rate-value">
-                        <h4>18.4520</h4>
-                        <span class="rate-change up">▲ +0.8%</span>
-                    </div>
-                </div>
-                <div class="rate-row">
-                    <div class="rate-country">
-                        <div class="rate-flag" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🇬🇧</div>
-                        <div class="rate-info">
-                            <h4>British Pound</h4>
-                            <p>GBP</p>
+                    <div class="rate-row" th:if="${exchangeRates['GBP']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🇬🇧</div>
+                            <div class="rate-info">
+                                <h4>British Pound</h4>
+                                <p>GBP</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['GBP']}">0.7890</h4>
+                            <span class="rate-change up">▲ +0.3%</span>
                         </div>
                     </div>
-                    <div class="rate-value">
-                        <h4>0.7890</h4>
-                        <span class="rate-change down">▼ -0.3%</span>
-                    </div>
-                </div>
-                <div class="rate-row">
-                    <div class="rate-country">
-                        <div class="rate-flag" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">🇪🇺</div>
-                        <div class="rate-info">
-                            <h4>Euro</h4>
-                            <p>EUR</p>
+                    <div class="rate-row" th:if="${exchangeRates['EUR']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">🇪🇺</div>
+                            <div class="rate-info">
+                                <h4>Euro</h4>
+                                <p>EUR</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['EUR']}">0.9220</h4>
+                            <span class="rate-change down">▼ -0.1%</span>
                         </div>
                     </div>
-                    <div class="rate-value">
-                        <h4>0.9220</h4>
-                        <span class="rate-change down">▼ -0.5%</span>
+                    <div class="rate-row" th:if="${exchangeRates['RUB']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #ec4899, #db2777);">🇷🇺</div>
+                            <div class="rate-info">
+                                <h4>Russian Ruble</h4>
+                                <p>RUB</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['RUB']}">92.50</h4>
+                            <span class="rate-change down">▼ -0.2%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['KES']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #f97316, #ea580c);">🇰🇪</div>
+                            <div class="rate-info">
+                                <h4>Kenyan Shilling</h4>
+                                <p>KES</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['KES']}">150.00</h4>
+                            <span class="rate-change up">▲ +0.1%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['UGX']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #84cc16, #65a30d);">🇺🇬</div>
+                            <div class="rate-info">
+                                <h4>Ugandan Shilling</h4>
+                                <p>UGX</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['UGX']}">3700.00</h4>
+                            <span class="rate-change down">▼ -0.1%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['TZS']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #a855f7, #9333ea);">🇹🇿</div>
+                            <div class="rate-info">
+                                <h4>Tanzanian Shilling</h4>
+                                <p>TZS</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['TZS']}">2300.00</h4>
+                            <span class="rate-change up">▲ +0.2%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['MWK']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">🇲🇼</div>
+                            <div class="rate-info">
+                                <h4>Malawian Kwacha</h4>
+                                <p>MWK</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['MWK']}">1700.00</h4>
+                            <span class="rate-change down">▼ -0.1%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['ZMW']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #f43f5e, #e11d48);">🇿🇲</div>
+                            <div class="rate-info">
+                                <h4>Zambian Kwacha</h4>
+                                <p>ZMW</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['ZMW']}">25.00</h4>
+                            <span class="rate-change up">▲ +0.3%</span>
+                        </div>
+                    </div>
+                    <div class="rate-row" th:if="${exchangeRates['BWP']} != null">
+                        <div class="rate-country">
+                            <div class="rate-flag" style="background: linear-gradient(135deg, #14b8a6, #0d9488);">🇧🇼</div>
+                            <div class="rate-info">
+                                <h4>Botswana Pula</h4>
+                                <p>BWP</p>
+                            </div>
+                        </div>
+                        <div class="rate-value">
+                            <h4 th:text="${exchangeRates['BWP']}">12.50</h4>
+                            <span class="rate-change down">▼ -0.2%</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -533,40 +760,74 @@
             <div class="calculator-card">
                 <div class="calc-row">
                     <div class="calc-field">
-                        <label>You Send</label>
+                        <label>Calculation Mode</label>
+                        <select id="calculationMode" onchange="updateCalculationMode()">
+                            <option value="payIn">Pay-In Amount (I want to send/pay)</option>
+                            <option value="receive">Receive Amount (Recipient gets)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="calc-row">
+                    <div class="calc-field">
+                        <label id="amountInputLabel">Pay-In Amount</label>
                         <input type="number" id="sendAmount" value="1000" min="1" oninput="calculateTransfer()">
                     </div>
                     <div class="calc-field">
-                        <label>From</label>
+                        <label>From Currency</label>
                         <select id="fromCurrency" onchange="calculateTransfer()">
-                            <option value="USD">🇺🇸 USD</option>
-                            <option value="ZWL">🇿🇼 ZWL</option>
-                            <option value="ZAR">🇿🇦 ZAR</option>
-                            <option value="GBP">🇬🇧 GBP</option>
-                            <option value="EUR">🇪🇺 EUR</option>
+                            <option value="USD">🇺🇸 United States (USD)</option>
+                            <option value="ZWL">🇿🇼 Zimbabwe (ZWL)</option>
+                            <option value="ZAR">🇿🇦 South Africa (ZAR)</option>
+                            <option value="GBP">🇬🇧 United Kingdom (GBP)</option>
+                            <option value="EUR">🇪🇺 Europe (EUR)</option>
+                            <option value="RUB">🇷🇺 Russia (RUB)</option>
+                            <option value="KES">🇰🇪 Kenya (KES)</option>
+                            <option value="UGX">🇺🇬 Uganda (UGX)</option>
+                            <option value="TZS">🇹🇿 Tanzania (TZS)</option>
+                            <option value="MWK">🇲🇼 Malawi (MWK)</option>
+                            <option value="ZMW">🇿🇲 Zambia (ZMW)</option>
+                            <option value="BWP">🇧🇼 Botswana (BWP)</option>
                         </select>
                     </div>
                     <button class="calc-swap" onclick="swapCurrencies()">
                         <i class="fas fa-exchange-alt"></i>
                     </button>
                     <div class="calc-field">
-                        <label>To</label>
-                        <select id="toCurrency" onchange="calculateTransfer()">
-                            <option value="ZWL">🇿🇼 ZWL</option>
-                            <option value="USD">🇺🇸 USD</option>
-                            <option value="ZAR">🇿🇦 ZAR</option>
-                            <option value="GBP">🇬🇧 GBP</option>
-                            <option value="EUR">🇪🇺 EUR</option>
+                        <label>To Currency (Receiving)</label>
+                        <select id="toCurrency" onchange="calculateTransfer()" disabled>
+                            <option value="USD" selected>🇺🇸 United States (USD)</option>
                         </select>
+                        <small class="text-muted">USD is fixed as receiving currency</small>
+                    </div>
+                </div>
+                <div class="calc-row" style="grid-template-columns: 1fr 1fr;">
+                    <div class="calc-field">
+                        <label>Company Fee (%)</label>
+                        <input type="number" id="feePercentage" value="5" min="0" max="100" step="0.1" oninput="calculateTransfer()">
+                    </div>
+                    <div class="calc-field">
+                        <label>Final Amount Received</label>
+                        <input type="number" id="finalReceiveAmount" readonly style="background-color: #f8fafc; cursor: not-allowed;">
+                    </div>
+                </div>
+                <div class="calc-row" style="grid-template-columns: 1fr 1fr;">
+                    <div class="calc-field">
+                        <label>Pay-In Equivalent in USD</label>
+                        <input type="number" id="payInUsdAmount" readonly style="background-color: #f8fafc; cursor: not-allowed;">
+                    </div>
+                    <div class="calc-field">
+                        <label>Amount to Pay-In</label>
+                        <input type="number" id="payInAmount" readonly style="background-color: #f8fafc; cursor: not-allowed;">
                     </div>
                 </div>
                 <div class="calc-result">
-                    <h4>Recipient Gets</h4>
-                    <div class="amount" id="receiveAmount">ZWL 6,435,000.00</div>
+                    <h4>Transfer Details</h4>
+                    <div class="amount" id="receiveAmount">USD 950.00</div>
                     <div class="fee">
                         <i class="fas fa-info-circle"></i> 
-                        Fee: <span id="feeAmount">$15.00</span> | 
-                        Exchange Rate: <span id="exchangeRate">1 USD = 6,500 ZWL</span>
+                        Fee: <span id="feeAmount">$50.00</span> | 
+                        Exchange Rate: <span id="exchangeRate">1 USD = 1.00 USD</span> |
+                        Net Amount: <span id="netAmount">$950.00</span>
                     </div>
                 </div>
             </div>
@@ -648,42 +909,139 @@
     <div th:insert="fragments/footer :: footer"></div>
 
     <script>
-        // Exchange rates (simulated)
+        // Exchange rates (simulated) - USD is the fixed receiving currency
         const rates = {
-            'USD': { 'ZWL': 6500, 'ZAR': 18.45, 'GBP': 0.789, 'EUR': 0.922, 'USD': 1 },
-            'ZWL': { 'USD': 0.000154, 'ZAR': 0.00284, 'GBP': 0.000121, 'EUR': 0.000142, 'ZWL': 1 },
-            'ZAR': { 'USD': 0.0542, 'ZWL': 352, 'GBP': 0.0428, 'EUR': 0.0500, 'ZAR': 1 },
-            'GBP': { 'USD': 1.267, 'ZWL': 8235, 'ZAR': 23.38, 'EUR': 1.168, 'GBP': 1 },
-            'EUR': { 'USD': 1.085, 'ZWL': 7042, 'ZAR': 20.01, 'GBP': 0.856, 'EUR': 1 }
+            'USD': {'USD': 1},
+            'ZWL': {'USD': 0.000267}, // 1 ZWL = 0.000267 USD (approximately 1 USD = 3,750 ZWL)
+            'ZAR': {'USD': 0.0542},   // 1 ZAR = 0.0542 USD
+            'GBP': {'USD': 1.267},    // 1 GBP = 1.267 USD
+            'EUR': {'USD': 1.085},    // 1 EUR = 1.085 USD
+            'RUB': {'USD': 0.0108},   // 1 RUB = 0.0108 USD
+            'KES': {'USD': 0.00667},  // 1 KES = 0.00667 USD (approximately 1 USD = 150 KES)
+            'UGX': {'USD': 0.000270}, // 1 UGX = 0.000270 USD (approximately 1 USD = 3,700 UGX)
+            'TZS': {'USD': 0.000435}, // 1 TZS = 0.000435 USD (approximately 1 USD = 2,300 TZS)
+            'MWK': {'USD': 0.000588}, // 1 MWK = 0.000588 USD (approximately 1 USD = 1,700 MWK)
+            'ZMW': {'USD': 0.040000}, // 1 ZMW = 0.040000 USD (approximately 1 USD = 25 ZMW)
+            'BWP': {'USD': 0.080000}  // 1 BWP = 0.080000 USD (approximately 1 USD = 12.50 BWP)
         };
 
+        function updateCalculationMode() {
+            const mode = document.getElementById('calculationMode').value;
+            const amountInputLabel = document.getElementById('amountInputLabel');
+            
+            if (mode === 'payIn') {
+                amountInputLabel.textContent = 'Pay-In Amount';
+                document.getElementById('sendAmount').value = '1000';
+            } else if (mode === 'receive') {
+                amountInputLabel.textContent = 'Amount to Receive (USD)';
+                document.getElementById('sendAmount').value = '100';
+            }
+            
+            calculateTransfer();
+        }
+
         function calculateTransfer() {
+            const mode = document.getElementById('calculationMode').value;
             const amount = parseFloat(document.getElementById('sendAmount').value) || 0;
             const from = document.getElementById('fromCurrency').value;
-            const to = document.getElementById('toCurrency').value;
+            const feePercent = parseFloat(document.getElementById('feePercentage').value) || 5; // Default to 5%
             
-            const rate = rates[from][to];
-            const fee = amount * 0.015; // 1.5% fee
-            const netAmount = amount - fee;
-            const received = netAmount * rate;
+            // Get exchange rate from sending currency to USD (fixed receiving currency)
+            const rate = rates[from] && rates[from]['USD'] ? rates[from]['USD'] : 1;
+            
+            let receivedInUSD, payInAmount, payInAmountInUSD;
+            
+            if (mode === 'payIn') {
+                // PAY-IN MODE: User enters amount they want to pay in
+                // Calculate the fee amount
+                const fee = amount * (feePercent / 100);
+                const amountAfterFee = amount - fee;
+                
+                // Calculate the final amount received in USD
+                receivedInUSD = amountAfterFee * rate;
+                
+                // Calculate equivalent in original currency (for display purposes)
+                payInAmount = amount;
+                payInAmountInUSD = amount * rate;
+            } else if (mode === 'receive') {
+                // RECEIVE MODE: User enters amount they want the recipient to receive (in USD)
+                // We need to reverse calculate the pay-in amount
+                receivedInUSD = amount; // This is what the recipient should get
+                
+                // Reverse calculation: amount / rate = amount in original currency before conversion
+                // Then we need to account for the fee
+                // If x is the pay-in amount in original currency, then:
+                // x * (1 - feePercent/100) * rate = receivedInUSD
+                // So x = receivedInUSD / rate / (1 - feePercent/100)
+                const netRate = 1 - (feePercent / 100);
+                payInAmount = (receivedInUSD / rate) / netRate;
+                payInAmountInUSD = payInAmount * rate;
+            }
             
             // Format based on currency
             const formatCurrency = (val, curr) => {
                 if (curr === 'ZWL') return 'ZWL ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'KES') return 'KES ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'UGX') return 'UGX ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'TZS') return 'TZS ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'MWK') return 'MWK ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'ZMW') return 'ZMW ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'BWP') return 'BWP ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (curr === 'RUB') return 'RUB ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 return curr + ' ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             };
             
-            document.getElementById('receiveAmount').textContent = formatCurrency(received, to);
-            document.getElementById('feeAmount').textContent = from + ' ' + fee.toFixed(2);
-            document.getElementById('exchangeRate').textContent = '1 ' + from + ' = ' + rate.toLocaleString() + ' ' + to;
+            // Update the display elements
+            document.getElementById('receiveAmount').textContent = formatCurrency(receivedInUSD, 'USD');
+            document.getElementById('finalReceiveAmount').value = receivedInUSD.toFixed(2);
+            document.getElementById('payInUsdAmount').value = payInAmountInUSD.toFixed(2);
+            document.getElementById('payInAmount').value = payInAmount.toFixed(2);
+            
+            // Calculate fee in original currency for display
+            // The payInAmount is the total amount before fees, so the fee is applied to it
+            const feeInOriginalCurrency = payInAmount * (feePercent / 100);
+            
+            // Net amount after fee deduction
+            const netAmountAfterFee = payInAmount - feeInOriginalCurrency;
+                
+            document.getElementById('feeAmount').textContent = formatCurrency(feeInOriginalCurrency, from);
+            document.getElementById('netAmount').textContent = formatCurrency(netAmountAfterFee, from);
+            document.getElementById('exchangeRate').textContent = '1 ' + from + ' = ' + rate.toFixed(6) + ' USD';
         }
 
         function swapCurrencies() {
+            // Since we're fixing USD as the receiving currency, we'll just swap the "from" currency
+            // and keep "to" as USD
             const from = document.getElementById('fromCurrency');
-            const to = document.getElementById('toCurrency');
-            const temp = from.value;
-            from.value = to.value;
-            to.value = temp;
+            const tempOptions = Array.from(from.options).map(option => option.value);
+            
+            // Rotate the currency options (simple rotation)
+            if (from.value === 'USD') {
+                from.value = 'ZWL';
+            } else if (from.value === 'ZWL') {
+                from.value = 'ZAR';
+            } else if (from.value === 'ZAR') {
+                from.value = 'GBP';
+            } else if (from.value === 'GBP') {
+                from.value = 'EUR';
+            } else if (from.value === 'EUR') {
+                from.value = 'RUB';
+            } else if (from.value === 'RUB') {
+                from.value = 'KES';
+            } else if (from.value === 'KES') {
+                from.value = 'UGX';
+            } else if (from.value === 'UGX') {
+                from.value = 'TZS';
+            } else if (from.value === 'TZS') {
+                from.value = 'MWK';
+            } else if (from.value === 'MWK') {
+                from.value = 'ZMW';
+            } else if (from.value === 'ZMW') {
+                from.value = 'BWP';
+            } else {
+                from.value = 'USD';
+            }
+            
             calculateTransfer();
         }
 

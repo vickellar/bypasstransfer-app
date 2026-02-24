@@ -213,6 +213,88 @@
                 <p>Configure system settings</p>
             </a>
         </div>
+        
+        <!-- Staff Actions Section -->
+        <div class="admin-actions" style="margin-top: 24px;">
+            <a th:href="@{/staff/expenses}" class="action-card">
+                <i class="fas fa-receipt"></i>
+                <h3>My Expenses</h3>
+                <p>Record and manage personal expenses</p>
+            </a>
+            <a th:href="@{/staff/expenses/new}" class="action-card">
+                <i class="fas fa-plus-circle"></i>
+                <h3>Record New Expense</h3>
+                <p>Quickly add a new personal expense</p>
+            </a>
+            <a th:href="@{/staff/transactions}" class="action-card">
+                <i class="fas fa-history"></i>
+                <h3>Transaction History</h3>
+                <p>View expense transaction records</p>
+            </a>
+            <a th:href="@{/offline/transactions}" class="action-card">
+                <i class="fas fa-sync-alt"></i>
+                <h3>Offline Transactions</h3>
+                <p>Manage offline transaction records</p>
+            </a>
+        </div>
+        
+        <!-- Exchange Rates Card -->
+        <div class="admin-actions" style="margin-top: 24px;">
+            <div class="action-card" style="min-width: 100%;">
+                <i class="fas fa-chart-line"></i>
+                <h3>Live Exchange Rates (USD Base)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; width: 100%; margin-top: 16px;">
+                    <div th:if="${exchangeRates['USD']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <strong>USD</strong><br>
+                        <span th:text="${exchangeRates['USD']}">1.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['ZWL']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                        <strong>ZWL</strong><br>
+                        <span th:text="${exchangeRates['ZWL']}">3.7500</span>
+                    </div>
+                    <div th:if="${exchangeRates['ZAR']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                        <strong>ZAR</strong><br>
+                        <span th:text="${exchangeRates['ZAR']}">18.4500</span>
+                    </div>
+                    <div th:if="${exchangeRates['GBP']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                        <strong>GBP</strong><br>
+                        <span th:text="${exchangeRates['GBP']}">0.7900</span>
+                    </div>
+                    <div th:if="${exchangeRates['EUR']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                        <strong>EUR</strong><br>
+                        <span th:text="${exchangeRates['EUR']}">0.9200</span>
+                    </div>
+                    <div th:if="${exchangeRates['RUB']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #ec4899;">
+                        <strong>RUB</strong><br>
+                        <span th:text="${exchangeRates['RUB']}">92.5000</span>
+                    </div>
+                    <div th:if="${exchangeRates['KES']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #f97316;">
+                        <strong>KES</strong><br>
+                        <span th:text="${exchangeRates['KES']}">150.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['UGX']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #84cc16;">
+                        <strong>UGX</strong><br>
+                        <span th:text="${exchangeRates['UGX']}">3700.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['TZS']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7;">
+                        <strong>TZS</strong><br>
+                        <span th:text="${exchangeRates['TZS']}">2300.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['MWK']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #06b6d4;">
+                        <strong>MWK</strong><br>
+                        <span th:text="${exchangeRates['MWK']}">1700.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['ZMW']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #f43f5e;">
+                        <strong>ZMW</strong><br>
+                        <span th:text="${exchangeRates['ZMW']}">25.0000</span>
+                    </div>
+                    <div th:if="${exchangeRates['BWP']} != null" style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #14b8a6;">
+                        <strong>BWP</strong><br>
+                        <span th:text="${exchangeRates['BWP']}">12.5000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div th:insert="fragments/footer :: footer"></div>

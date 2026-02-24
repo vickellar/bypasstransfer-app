@@ -126,6 +126,27 @@
             </div>
         </div>
 
+        <!-- Quick Expense Actions -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h2><i class="fas fa-receipt" style="margin-right: 8px; color: #f59e0b;"></i>Personal Expenses</h2>
+                <div style="display: flex; gap: 12px;">
+                    <a th:href="@{/staff/expenses}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 14px;">
+                        <i class="fas fa-list"></i> View All Expenses
+                    </a>
+                    <a th:href="@{/staff/expenses/new}" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
+                        <i class="fas fa-plus"></i> Record New Expense
+                    </a>
+                </div>
+            </div>
+            <div style="padding: 16px; background: #f8fafc; border-radius: 8px; margin-top: 16px;">
+                <p style="margin: 0; color: #64748b; font-size: 14px;">
+                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                    Track your personal business expenses and manage your spending records here.
+                </p>
+            </div>
+        </div>
+
         <!-- Transaction Forms -->
         <div class="content-grid">
             <!-- Cash In (Receive) -->
@@ -247,6 +268,65 @@
                     <tr>
                         <td><i class="fas fa-percentage" style="margin-right: 8px; color: #94a3b8;"></i>Total Fees</td>
                         <td th:text="'$' + ${#numbers.formatDecimal(txSummary.totalFees, 0, 2)}">$0.00</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Exchange Rates Card -->
+        <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-line" style="margin-right: 8px; color: #3b82f6;"></i>Live Exchange Rates (USD Base)</h2>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="summary-table">
+                    <tr>
+                        <td><i class="fas fa-dollar-sign" style="margin-right: 8px; color: #94a3b8;"></i>US Dollar (USD)</td>
+                        <td th:text="${exchangeRates['USD'] != null ? exchangeRates['USD'] : '1.0000'}">1.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['ZWL'] != null}">
+                        <td><i class="fas fa-donate" style="margin-right: 8px; color: #94a3b8;"></i>Zimbabwe Dollar (ZWL)</td>
+                        <td th:text="${exchangeRates['ZWL']}">3.7500</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['ZAR'] != null}">
+                        <td><i class="fas fa-flag" style="margin-right: 8px; color: #94a3b8;"></i>South African Rand (ZAR)</td>
+                        <td th:text="${exchangeRates['ZAR']}">18.4500</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['GBP'] != null}">
+                        <td><i class="fas fa-pound-sign" style="margin-right: 8px; color: #94a3b8;"></i>British Pound (GBP)</td>
+                        <td th:text="${exchangeRates['GBP']}">0.7900</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['EUR'] != null}">
+                        <td><i class="fas fa-euro-sign" style="margin-right: 8px; color: #94a3b8;"></i>Euro (EUR)</td>
+                        <td th:text="${exchangeRates['EUR']}">0.9200</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['RUB'] != null}">
+                        <td><i class="fas fa-ruble-sign" style="margin-right: 8px; color: #94a3b8;"></i>Russian Ruble (RUB)</td>
+                        <td th:text="${exchangeRates['RUB']}">92.5000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['KES'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Kenyan Shilling (KES)</td>
+                        <td th:text="${exchangeRates['KES']}">150.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['UGX'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Ugandan Shilling (UGX)</td>
+                        <td th:text="${exchangeRates['UGX']}">3700.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['TZS'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Tanzanian Shilling (TZS)</td>
+                        <td th:text="${exchangeRates['TZS']}">2300.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['MWK'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Malawian Kwacha (MWK)</td>
+                        <td th:text="${exchangeRates['MWK']}">1700.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['ZMW'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Zambian Kwacha (ZMW)</td>
+                        <td th:text="${exchangeRates['ZMW']}">25.0000</td>
+                    </tr>
+                    <tr th:if="${exchangeRates != null and exchangeRates['BWP'] != null}">
+                        <td><i class="fas fa-coins" style="margin-right: 8px; color: #94a3b8;"></i>Botswana Pula (BWP)</td>
+                        <td th:text="${exchangeRates['BWP']}">12.5000</td>
                     </tr>
                 </table>
             </div>

@@ -21,10 +21,11 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "currency")
     @Enumerated(EnumType.STRING)
     private Currency currency;
 
-    @Column
+    @Column(name = "balance")
     private double balance;
 
     @Column(name = "name")
@@ -35,6 +36,15 @@ public class Wallet {
     
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "transfer_fee", columnDefinition = "double precision default 0.0")
+    private double transferFee = 0.0;
+
+    @Column(name = "low_balance_threshold", columnDefinition = "double precision default 50.0")
+    private double lowBalanceThreshold = 50.0;
+
+    @Column(name = "low_balance_alert_sent", nullable = false, columnDefinition = "boolean default false")
+    private boolean lowBalanceAlertSent = false;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -107,5 +117,29 @@ public class Wallet {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public double getLowBalanceThreshold() {
+        return lowBalanceThreshold;
+    }
+
+    public void setLowBalanceThreshold(double lowBalanceThreshold) {
+        this.lowBalanceThreshold = lowBalanceThreshold;
+    }
+
+    public boolean isLowBalanceAlertSent() {
+        return lowBalanceAlertSent;
+    }
+
+    public void setLowBalanceAlertSent(boolean lowBalanceAlertSent) {
+        this.lowBalanceAlertSent = lowBalanceAlertSent;
+    }
+
+    public double getTransferFee() {
+        return transferFee;
+    }
+
+    public void setTransferFee(double transferFee) {
+        this.transferFee = transferFee;
     }
 }

@@ -132,9 +132,9 @@
                                     <input type="hidden" name="id" th:value="${u.id}" />
                                     <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-user-slash"></i> Deactivate</button>
                                 </form>
-                                <form th:unless="${u.active}" th:action="@{/users/restore}" method="post" style="display:inline" onsubmit="return confirm('Restore this user account?');">
-                                    <input type="hidden" name="id" th:value="${u.id}" />
-                                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-undo"></i> Restore</button>
+                                <form th:unless="${u.active}" th:action="@{/admin/activate-user}" method="post" style="display:inline" onsubmit="return confirm('Activate this user and create default wallets?');">
+                                    <input type="hidden" name="userId" th:value="${u.id}" />
+                                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-user-check"></i> Activate</button>
                                 </form>
                             </div>
                         </td>

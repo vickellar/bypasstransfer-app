@@ -3,6 +3,7 @@ package com.bypass.bypasstransers.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.bypass.bypasstransers.enums.Currency;
 
 @Entity
 @Table(name = "expenditures")
@@ -34,6 +35,14 @@ public class Expenditure {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency")
+    private Currency currency;
+    
+    @ManyToOne
+    @JoinColumn(name = "wallet_id")
+    private Wallet wallet;
+    
     public Expenditure() {}
 
     // Getters and Setters
@@ -60,4 +69,10 @@ public class Expenditure {
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public Currency getCurrency() { return currency; }
+    public void setCurrency(Currency currency) { this.currency = currency; }
+    
+    public Wallet getWallet() { return wallet; }
+    public void setWallet(Wallet wallet) { this.wallet = wallet; }
 }

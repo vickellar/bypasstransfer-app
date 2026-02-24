@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trend Analysis - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin: 0; }
+        .page-header p { color: #64748b; font-size: 15px; margin: 8px 0 0 0; }
+        
+        .controls { display: flex; gap: 16px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+        .control-group select, .control-group input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        
+        .trend-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .trend-card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .trend-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .trend-card-header h3 { margin: 0; font-size: 18px; font-weight: 600; color: #1e293b; }
+        .trend-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .trend-up { background: #dcfce7; color: #16a34a; }
+        .trend-down { background: #fee2e2; color: #dc2626; }
+        .trend-stable { background: #e5e7eb; color: #4b5563; }
+        
+        .metric-value { font-size: 28px; font-weight: 700; color: #1e293b; margin: 8px 0; }
+        .metric-description { color: #64748b; font-size: 14px; }
+        
+        .card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-header h2 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
+        
+        .chart-container { position: relative; height: 400px; margin-bottom: 24px; }
+        
+        .predictions-section { margin-top: 32px; }
+        .predictions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        
+        .quick-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="admin-container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-line-chart" style="margin-right: 12px; color: #3b82f6;"></i>Trend Analysis</h1>
+                <p>Advanced trend analysis and predictive insights for profit management</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="period">Time Period</label>
+                <select id="period" onchange="updateTrends()">
+                    <option value="daily" th:selected="${period == 'daily'}">Daily</option>
+                    <option value="weekly" th:selected="${period == 'weekly'}">Weekly</option>
+                    <option value="monthly" th:selected="${period == 'monthly'}">Monthly</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="days">Days to Analyze</label>
+                <select id="days" onchange="updateTrends()">
+                    <option value="7" th:selected="${days == 7}">Last 7 Days</option>
+                    <option value="30" th:selected="${days == 30}">Last 30 Days</option>
+                    <option value="90" th:selected="${days == 90}">Last 90 Days</option>
+                    <option value="365" th:selected="${days == 365}">Last Year</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Trend Cards -->
+        <div class="trend-cards">
+            <div class="trend-card">
+                <div class="trend-card-header">
+                    <h3>Profit Trend</h3>
+                    <span th:switch="${trendData.trendDirection}" class="trend-indicator">
+                        <span th:case="increasing" class="trend-indicator trend-up"><i class="fas fa-arrow-up"></i> Upward</span>
+                        <span th:case="decreasing" class="trend-indicator trend-down"><i class="fas fa-arrow-down"></i> Downward</span>
+                        <span th:case="stable" class="trend-indicator trend-stable"><i class="fas fa-minus"></i> Stable</span>
+                        <span th:case="*" class="trend-indicator trend-stable"><i class="fas fa-question"></i> Unknown</span>
+                    </span>
+                </div>
+                <div class="metric-value" th:text="'$' + ${#numbers.formatDecimal(trendData.currentAverage, 0, 2)}">$0.00</div>
+                <div class="metric-description">Current average profit per day</div>
+            </div>
+
+            <div class="trend-card">
+                <div class="trend-card-header">
+                    <h3>Volatility</h3>
+                    <span th:if="${trendData.volatility > 50}" class="trend-indicator trend-down">High</span>
+                    <span th:if="${trendData.volatility >= 20 and trendData.volatility <= 50}" class="trend-indicator trend-stable">Medium</span>
+                    <span th:if="${trendData.volatility < 20}" class="trend-indicator trend-up">Low</span>
+                </div>
+                <div class="metric-value" th:text="${#numbers.formatDecimal(trendData.volatility, 0, 2)} + '%'">0%</div>
+                <div class="metric-description">Profit fluctuation rate</div>
+            </div>
+
+            <div class="trend-card">
+                <div class="trend-card-header">
+                    <h3>Seasonality</h3>
+                    <span th:if="${trendData.seasonalPattern == 'high'}" class="trend-indicator trend-up">Strong</span>
+                    <span th:if="${trendData.seasonalPattern == 'medium'}" class="trend-indicator trend-stable">Moderate</span>
+                    <span th:if="${trendData.seasonalPattern == 'low' or trendData.seasonalPattern == null}" class="trend-indicator trend-down">Weak</span>
+                </div>
+                <div class="metric-value" th:text="${trendData.seasonalPattern ?: 'Unknown'}">Unknown</div>
+                <div class="metric-description">Seasonal pattern strength</div>
+            </div>
+        </div>
+
+        <!-- Trend Charts -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-line" style="margin-right: 8px; color: #3b82f6;"></i>Historical Trends</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Moving Averages -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-calculator" style="margin-right: 8px; color: #22c55e;"></i>Moving Averages</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="movingAverageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Predictions Section -->
+        <div class="predictions-section">
+            <h2 style="margin-bottom: 20px; color: #1e293b;"><i class="fas fa-lightbulb" style="margin-right: 8px; color: #f59e0b;"></i>Forecast & Predictions</h2>
+            <div class="predictions-grid">
+                <div class="trend-card">
+                    <h3>Expected Profit (Next Week)</h3>
+                    <div class="metric-value" th:text="'$' + ${#numbers.formatDecimal(trendData.predictedWeeklyProfit, 0, 2)}">$0.00</div>
+                    <div class="metric-description">Based on current trend analysis</div>
+                </div>
+                <div class="trend-card">
+                    <h3>Confidence Level</h3>
+                    <div class="metric-value" th:text="${trendData.confidenceLevel ?: 'N/A'}">N/A</div>
+                    <div class="metric-description">Accuracy of predictions</div>
+                </div>
+                <div class="trend-card">
+                    <h3>Peak Day Prediction</h3>
+                    <div class="metric-value" th:text="${trendData.peakDayPrediction ?: 'N/A'}">N/A</div>
+                    <div class="metric-description">Expected highest profit day</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a th:href="@{/admin/profit-analytics}" class="btn btn-primary"><i class="fas fa-chart-line"></i> Back to Analytics</a>
+            <a th:href="@{/admin/profit-analytics/visualizations}" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Visualizations</a>
+            <a th:href="@{/admin/profit}" class="btn btn-secondary"><i class="fas fa-money-bill-wave"></i> Overall Profit</a>
+            <a th:href="@{/admin/profit-analytics/predictions}" class="btn btn-secondary"><i class="fas fa-brain"></i> AI Predictions</a>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+
+    <script th:inline="javascript">
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrendChart();
+            initMovingAverageChart();
+        });
+
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            // Mock data for demo purposes
+            const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'];
+            const profitData = [8500, 9200, 7800, 10200, 9800, 11500, 10800];
+            const trendLine = [8500, 8800, 9100, 9400, 9700, 10000, 10300]; // Upward trend
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual Profit',
+                            data: profitData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Trend Line',
+                            data: trendLine,
+                            borderColor: '#f97316',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Profit Trend Analysis'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initMovingAverageChart() {
+            const ctx = document.getElementById('movingAverageChart').getContext('2d');
+            
+            // Mock data for demo purposes
+            const labels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'];
+            const actualData = [1200, 1500, 1300, 1800, 1600, 1400, 1700, 1900, 1550, 1650];
+            const ma5Data = [1300, 1400, 1440, 1520, 1540, 1600, 1650, 1680]; // 5-day moving average
+            const ma10Data = [1400, 1450, 1480, 1520, 1550]; // 10-day moving average
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual Profit',
+                            data: actualData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: '5-Day Moving Average',
+                            data: ma5Data,
+                            borderColor: '#22c55e',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: '10-Day Moving Average',
+                            data: ma10Data,
+                            borderColor: '#f97316',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Moving Average Analysis'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTrends() {
+            const period = document.getElementById('period').value;
+            const days = document.getElementById('days').value;
+            window.location.href = `/admin/profit-analytics/trend-analysis?period=${period}&days=${days}`;
+        }
+    </script>
+</body>
+</html>

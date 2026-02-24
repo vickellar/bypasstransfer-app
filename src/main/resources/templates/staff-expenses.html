@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expenses - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; }
+        
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: #fef2f2; color: #dc2626; }
+        .btn-danger:hover { background: #fee2e2; }
+        .btn-success { background: #f0fdf4; color: #16a34a; }
+        .btn-success:hover { background: #dcfce7; }
+        .btn-sm { padding: 8px 16px; font-size: 14px; }
+        
+        .alert { padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        .card-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-body { padding: 24px; }
+        
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 16px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .data-table td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .data-table tr:hover { background: #f8fafc; }
+        .data-table tr:last-child td { border-bottom: none; }
+        
+        .summary-box { display: flex; gap: 24px; margin-bottom: 24px; }
+        .summary-card { flex: 1; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .summary-card h3 { font-size: 14px; color: #64748b; margin-bottom: 8px; }
+        .summary-card .amount { font-size: 24px; font-weight: 700; color: #1e293b; }
+        
+        .actions { display: flex; gap: 8px; }
+        
+        .empty-state { text-align: center; padding: 60px; color: #64748b; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; color: #cbd5e1; }
+        .empty-state h3 { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-receipt" style="margin-right: 12px; color: #3b82f6;"></i>My Expenses</h1>
+                <p style="color: #64748b; margin-top: 4px;">Track and manage your personal expenses</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a th:href="@{/app}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                <a th:href="@{/staff/expenses/new}" class="btn btn-primary"><i class="fas fa-plus"></i> Record New Expense</a>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success"><i class="fas fa-check-circle" style="margin-right: 8px;"></i><span th:text="${success}"></span></div>
+        <div th:if="${error}" class="alert alert-error"><i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i><span th:text="${error}"></span></div>
+
+        <!-- Summary Cards -->
+        <div class="summary-box">
+            <div class="summary-card">
+                <h3>Total Expenses</h3>
+                <div class="amount" th:text="${#numbers.formatDecimal(totalAmount, 1, 2)}">0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Records</h3>
+                <div class="amount" th:text="${#lists.size(expenses)}">0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 style="font-size: 18px; font-weight: 600; color: #1e293b;">Expense Records</h2>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(expenses)}" class="empty-state">
+                    <i class="fas fa-receipt"></i>
+                    <h3>No expenses recorded</h3>
+                    <p>Get started by recording your first expense</p>
+                    <a th:href="@{/staff/expenses/new}" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fas fa-plus"></i> Record Expense
+                    </a>
+                </div>
+                
+                <table th:if="${!#lists.isEmpty(expenses)}" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Currency</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="expense : ${expenses}">
+                            <td data-label="Date" th:text="${#temporals.format(expense.date, 'MMM dd, yyyy')}">date</td>
+                            <td data-label="Category" th:text="${expense.category}">category</td>
+                            <td data-label="Description" th:text="${expense.description}">description</td>
+                            <td data-label="Currency" th:text="${expense.currency}">currency</td>
+                            <td data-label="Amount" th:text="${expense.currency + ' ' + #numbers.formatDecimal(expense.amount, 1, 2)}">amount</td>
+                            <td data-label="Actions">
+                                <div class="actions">
+                                    <a th:href="@{|/staff/expenses/${expense.id}/edit|}" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <form th:action="@{|/staff/expenses/${expense.id}/delete|}" method="post" style="display:inline" onsubmit="return confirm('Delete this expense? The amount will be refunded to your wallet.');">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

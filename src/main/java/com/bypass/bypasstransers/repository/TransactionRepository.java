@@ -1,6 +1,7 @@
 package com.bypass.bypasstransers.repository;
 
 import com.bypass.bypasstransers.model.Transaction;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -76,6 +77,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
      * Find transactions by wallet
      */
     List<Transaction> findByWallet(com.bypass.bypasstransers.model.Wallet wallet);
+
+    /**
+     * Find transactions within a date range
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.date BETWEEN :startDate AND :endDate ORDER BY t.date DESC")
+    List<Transaction> findByDateBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     // ===============================
     // COMPANY OVERVIEW QUERIES (SUPERVISORS)

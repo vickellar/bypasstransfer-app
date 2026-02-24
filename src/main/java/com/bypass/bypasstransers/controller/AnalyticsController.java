@@ -135,4 +135,27 @@ public class AnalyticsController {
         
         return "expenditure-report";
     }
+    
+    // Advanced Profit Analytics Endpoints
+    @GetMapping("/profit-trends")
+    public String profitTrends(Model model) {
+        User currentUser = securityService.getCurrentUser();
+        
+        // Calculate profit trends
+        model.addAttribute("user", currentUser);
+        model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
+        
+        return "profit-trends";
+    }
+    
+    @GetMapping("/profit-forecast")
+    public String profitForecast(Model model) {
+        User currentUser = securityService.getCurrentUser();
+        
+        // Calculate profit forecasts
+        model.addAttribute("user", currentUser);
+        model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
+        
+        return "profit-forecast";
+    }
 }

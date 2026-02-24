@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 public class Account {
 
     public Account() {
+        this.lowBalanceAlertSent = false; // ensure default value
     }
 
     public Account(Long id, String name, double balance, double transferFee) {
@@ -18,21 +19,28 @@ public class Account {
         this.name = name;
         this.balance = balance;
         this.transferFee = transferFee;
+        this.lowBalanceThreshold = 50; // default
+        this.lowBalanceAlertSent = false; // default
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name")
     private String name;
-    @Column
+    @Column(name = "balance")
     private double balance;
+    @Column(name = "transfer_fee")
     private double transferFee;
 
     @ManyToOne
     private User owner;
+    @Column(name = "low_balance_threshold")
     private double lowBalanceThreshold = 50; // default
-    private boolean lowBalanceAlertSent = false;
+    
+    @Column(name = "low_balance_alert_sent", nullable = false, columnDefinition = "boolean default false")
+    private boolean lowBalanceAlertSent = false; // default
 
     // getters & setters
 

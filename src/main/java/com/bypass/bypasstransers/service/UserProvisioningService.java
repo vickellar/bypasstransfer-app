@@ -37,9 +37,9 @@ public class UserProvisioningService {
         }
 
         for (DefaultAccount defAcc : DEFAULT_ACCOUNTS) {
-            // Check if wallet already exists for this user
-            boolean exists = walletRepository.findByOwnerId(user.getId()).stream()
-                .anyMatch(w -> w.getAccountType().equalsIgnoreCase(defAcc.name));
+            // Check if wallet already exists for this user by account type
+            List<Wallet> existingWallets = walletRepository.findByOwnerIdAndAccountType(user.getId(), defAcc.name);
+            boolean exists = !existingWallets.isEmpty();
             
             if (!exists) {
                 Wallet wallet = new Wallet();
@@ -49,6 +49,9 @@ public class UserProvisioningService {
                 wallet.setBalance(0.0);
                 wallet.setLocked(false);
                 walletRepository.save(wallet);
+                System.out.println("[WALLET CREATION] Created wallet " + defAcc.name + " for user " + user.getUsername());
+            } else {
+                System.out.println("[WALLET CREATION] Wallet " + defAcc.name + " already exists for user " + user.getUsername());
             }
         }
     }

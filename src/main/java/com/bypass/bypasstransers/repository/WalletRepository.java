@@ -50,4 +50,9 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
      * Find wallets by account type
      */
     List<Wallet> findByAccountType(String accountType);
+    
+    /**
+     * Find wallets by owner ID and account type
+     */
+    List<Wallet> findByOwnerIdAndAccountType(Long ownerId, String accountType);
 }

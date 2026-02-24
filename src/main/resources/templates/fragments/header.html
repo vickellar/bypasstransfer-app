@@ -36,10 +36,26 @@
                     <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="btn btn-info" style="background:#0ea5e9; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
                         <i class="fas fa-sync-alt"></i> Sync
                     </a>
-                    <!-- Analytics link for SUPERVISOR, ADMIN and SUPER_ADMIN roles -->
-                    <a sec:authorize="hasAnyRole('SUPERVISOR', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/admin/analytics}" class="btn btn-success" style="background:#22c55e; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
-                        <i class="fas fa-chart-line"></i> Analytics
-                    </a>
+                    <!-- Analytics dropdown for SUPERVISOR, ADMIN and SUPER_ADMIN roles -->
+                    <div sec:authorize="hasAnyRole('SUPERVISOR', 'ADMIN', 'SUPER_ADMIN')" class="dropdown" style="position:relative; display:inline-block;">
+                        <button class="btn btn-success" style="background:#22c55e; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px; border:none; cursor:pointer;">
+                            <i class="fas fa-chart-line"></i> Analytics <i class="fas fa-caret-down" style="margin-left:6px; font-size:12px;"></i>
+                        </button>
+                        <div class="dropdown-content" style="display:none; position:absolute; right:0; top:100%; min-width:200px; background:white; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:1000; margin-top:4px;">
+                            <a th:href="@{/admin/analytics}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
+                                <i class="fas fa-chart-bar" style="margin-right:8px; color:#22c55e;"></i> Analytics Dashboard
+                            </a>
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
+                                <i class="fas fa-chart-area" style="margin-right:8px; color:#8b5cf6;"></i> Profit Analytics
+                            </a>
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/visualizations}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
+                                <i class="fas fa-chart-pie" style="margin-right:8px; color:#f59e0b;"></i> Visualizations
+                            </a>
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/trends}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px;">
+                                <i class="fas fa-chart-line" style="margin-right:8px; color:#3b82f6;"></i> Trend Analysis
+                            </a>
+                        </div>
+                    </div>
                     <span sec:authentication="name" style="color:#64748b; font-weight:500; font-size:15px; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; margin:0 4px;">User</span>
                     <a th:href="@{/change-password}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px; display:flex; align-items:center; gap:6px;">
                         <i class="fas fa-key"></i> Password
@@ -70,6 +86,35 @@
                 padding: 12px 16px;
             }
         }
+        
+        /* Dropdown styles */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8fafc;
+        }
     </style>
+    <script>
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                if (!dropdown.contains(event.target)) {
+                    dropdown.querySelector('.dropdown-content').style.display = 'none';
+                }
+            });
+        });
+        
+        // Toggle dropdown on click for mobile
+        document.querySelectorAll('.dropdown button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdownContent = this.nextElementSibling;
+                dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+    </script>
 </div>
 </html>
