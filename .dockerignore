@@ -1,0 +1,16 @@
+target/
+.idea/
+.vscode/
+.qodo/
+.settings/
+.mvn/
+bin/
+*.md
+*.sql
+*.txt
+*.html
+.git
+.gitignore
+.classpath
+.factorypath
+.project
