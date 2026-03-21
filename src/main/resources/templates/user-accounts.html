@@ -167,6 +167,20 @@
                                        min="0"
                                        placeholder="Enter new balance">
                             </div>
+
+                            <div class="form-group">
+                                <label th:for="${'account_' + account.id + '_currency'}">Wallet Currency:</label>
+                                <select th:id="${'account_' + account.id + '_currency'}"
+                                        th:name="${'account_' + account.id + '_currency'}"
+                                        class="form-control">
+                                    <option th:each="cur : ${T(com.bypass.bypasstransers.enums.Currency).values()}"
+                                            th:value="${cur}"
+                                            th:text="${cur}"
+                                            th:selected="${account.currency == cur}">
+                                        USD
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     

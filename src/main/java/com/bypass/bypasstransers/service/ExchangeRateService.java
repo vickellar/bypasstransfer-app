@@ -2,6 +2,7 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.enums.TransactionType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 
 @Service
 public class ExchangeRateService {
@@ -128,9 +130,11 @@ public class ExchangeRateService {
         BigDecimal totalProfit = BigDecimal.ZERO;
         
         for (Transaction transaction : allTransactions) {
-            // Add the fee from each transaction to the total profit
-            BigDecimal fee = new BigDecimal(transaction.getFee());
-            totalProfit = totalProfit.add(fee);
+            if (transaction.getType() != null && transaction.getType() != TransactionType.INCOME) {
+                BigDecimal profit = new BigDecimal(transaction.getAmount()).multiply(
+                        BigDecimal.valueOf(ChargeCalculator.BASE_PROFIT_DEFAULT));
+                totalProfit = totalProfit.add(profit);
+            }
         }
         
         return totalProfit.setScale(2, RoundingMode.HALF_UP);
@@ -146,8 +150,11 @@ public class ExchangeRateService {
         for (Transaction transaction : allTransactions) {
             java.time.LocalDate transactionDate = transaction.getDate().toLocalDate();
             if (!transactionDate.isBefore(startDate) && !transactionDate.isAfter(endDate)) {
-                BigDecimal fee = new BigDecimal(transaction.getFee());
-                totalProfit = totalProfit.add(fee);
+                if (transaction.getType() != null && transaction.getType() != TransactionType.INCOME) {
+                    BigDecimal profit = new BigDecimal(transaction.getAmount()).multiply(
+                            BigDecimal.valueOf(ChargeCalculator.BASE_PROFIT_DEFAULT));
+                    totalProfit = totalProfit.add(profit);
+                }
             }
         }
         

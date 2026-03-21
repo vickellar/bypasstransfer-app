@@ -10,6 +10,7 @@ import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.repository.WalletRepository;
 import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -41,6 +42,9 @@ public class TransactionService {
 
     @Autowired
     private SmsService smsService;
+
+    @Autowired
+    private WalletRepository walletRepository;
 
     private static void validateAmount(double amount) {
         if (amount <= 0) {
@@ -214,10 +218,14 @@ public class TransactionService {
 
         for (Object[] row : results) {
             UserTransactionSummary summary = new UserTransactionSummary();
-            summary.setUsername((String) row[0]);
-            summary.setTransactionCount((Long) row[1]);
-            summary.setTotalAmount((Double) row[2]);
-            summary.setTotalFees((Double) row[3]);
+            Long ownerId = (Long) row[0];
+            summary.setUserId(ownerId);
+            summary.setUsername((String) row[1]);
+            summary.setTransactionCount((Long) row[2]);
+            summary.setTotalAmount(row[3] != null ? (Double) row[3] : 0.0);
+            summary.setTotalFees(row[4] != null ? (Double) row[4] : 0.0);
+            Double walletBalance = walletRepository.getTotalBalanceByOwnerId(ownerId);
+            summary.setWalletBalance(walletBalance != null ? walletBalance : 0.0);
             summaries.add(summary);
         }
 

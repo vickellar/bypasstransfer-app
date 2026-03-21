@@ -4,27 +4,29 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "exchange_rate", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"from_currency", "to_currency"}, name = "uk_currency_pair")
+})
 public class ExchangeRate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String fromCurrency; // RUB
-    private String toCurrency;   // USD / ZWL
-    private double rate;
-    private LocalDateTime updatedAt;
-
-    private String baseCurrency;   // RUB
-    private String targetCurrency; // USD / ZWL
-
-    private LocalDateTime fetchedAt;
-    private String source; // "MANUAL", "API"
-
-    // getters & setters
+    private String fromCurrency;
+    
+    private String toCurrency;
+    
+    private Double rate;
+    
+    private String source; // API or MANUAL
+    
+    private LocalDateTime lastUpdated = LocalDateTime.now();
 
     public Long getId() {
         return id;
@@ -50,44 +52,12 @@ public class ExchangeRate {
         this.toCurrency = toCurrency;
     }
 
-    public double getRate() {
+    public Double getRate() {
         return rate;
     }
 
-    public void setRate(double rate) {
+    public void setRate(Double rate) {
         this.rate = rate;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public String getBaseCurrency() {
-        return baseCurrency;
-    }
-
-    public void setBaseCurrency(String baseCurrency) {
-        this.baseCurrency = baseCurrency;
-    }
-
-    public String getTargetCurrency() {
-        return targetCurrency;
-    }
-
-    public void setTargetCurrency(String targetCurrency) {
-        this.targetCurrency = targetCurrency;
-    }
-
-    public LocalDateTime getFetchedAt() {
-        return fetchedAt;
-    }
-
-    public void setFetchedAt(LocalDateTime fetchedAt) {
-        this.fetchedAt = fetchedAt;
     }
 
     public String getSource() {
@@ -98,4 +68,11 @@ public class ExchangeRate {
         this.source = source;
     }
 
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 }

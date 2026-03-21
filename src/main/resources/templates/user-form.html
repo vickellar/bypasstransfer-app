@@ -88,6 +88,34 @@
                     </select>
                 </div>
                 
+                <div class="form-group" th:if="${branches != null}">
+                    <label for="branch"><i class="fas fa-building" style="margin-right: 6px; color: #64748b;"></i>Assign to Branch</label>
+                    <select id="branch" name="branchId">
+                        <option value="">No Branch Assignment</option>
+                        <option th:each="branch : ${branches}" 
+                                th:value="${branch.id}" 
+                                th:text="${branch.name} + ' (' + ${branch.country} + ' - ' + ${branch.currency} + ')'"
+                                th:selected="${user.branch != null and user.branch.id == branch.id}"></option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 4px;">Users will use this branch's default currency</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="baseCurrency"><i class="fas fa-coins" style="margin-right: 6px; color: #64748b;"></i>Base Currency</label>
+                    <select id="baseCurrency" name="baseCurrency">
+                        <option value="">Select currency...</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="ZAR">ZAR - South African Rand</option>
+                        <option value="RUB">RUB - Russian Ruble</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="ZWL">ZWL - Zimbabwean Dollar</option>
+                        <option value="NGN">NGN - Nigerian Naira</option>
+                        <option value="KES">KES - Kenyan Shilling</option>
+                    </select>
+                    <small style="color: #6b7280; display: block; margin-top: 4px;">Override branch default if needed</small>
+                </div>
+                
                 <div class="form-group">
                     <label for="rawPassword"><i class="fas fa-lock" style="margin-right: 6px; color: #64748b;"></i>Password 
                         <span th:if="${user.id} != null" style="font-weight: 400; color: #6b7280;">(leave blank to keep existing)</span>

@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/admin/analytics")
@@ -36,6 +37,11 @@ public class AnalyticsController {
         // Staff Performance Data
         List<StaffPerformanceDTO> staffPerformance = analyticsService.getStaffPerformance();
         model.addAttribute("staffPerformance", staffPerformance);
+        double totalStaffWalletBalance = staffPerformance.stream()
+                .filter(Objects::nonNull)
+                .mapToDouble(StaffPerformanceDTO::getWalletBalance)
+                .sum();
+        model.addAttribute("totalStaffWalletBalance", totalStaffWalletBalance);
         
         // Account Performance Data
         List<AccountPerformanceDTO> accountPerformance = analyticsService.getAccountPerformance();

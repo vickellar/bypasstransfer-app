@@ -2,6 +2,8 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.enums.TransactionType;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -24,7 +26,8 @@ public class ReportService {
     public double profit() {
         return txRepo.findAll()
                 .stream()
-                .mapToDouble(Transaction::getFee)
+                .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
+                .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
                 .sum();
     }
 

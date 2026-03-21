@@ -2,6 +2,8 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.enums.TransactionType;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -73,7 +75,9 @@ public class AnalysisService {
     public double totalProfit() {
         return repo.findAll()
                 .stream()
-                .mapToDouble(Transaction::getFee)
+                // Profit is always the company 5% component on chargeable transactions
+                .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
+                .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
                 .sum();
     }
 }

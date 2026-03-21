@@ -3,7 +3,9 @@ package com.bypass.bypasstransers.controller;
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import com.bypass.bypasstransers.enums.TransactionType;
 import com.bypass.bypasstransers.service.SecurityService;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.YearMonth;
 import java.util.*;
 
@@ -39,8 +42,11 @@ public class AdvancedProfitAnalyticsController {
         
         // Calculate profit data based on period
         Map<String, Object> profitData = calculateProfitData(recentTransactions, period);
+        Map<String, Object> trendData = prepareTrendAnalysis(recentTransactions, period);
         
         model.addAttribute("profitData", profitData);
+        model.addAttribute("trendData", trendData);
+        model.addAttribute("peakDay", findPeakProfitDayLabel(recentTransactions));
         model.addAttribute("period", period);
         model.addAttribute("days", days);
         model.addAttribute("user", currentUser);
@@ -102,7 +108,7 @@ public class AdvancedProfitAnalyticsController {
         
         // Calculate total profit
         double totalProfit = transactions.stream()
-                .mapToDouble(Transaction::getFee)
+                .mapToDouble(this::profitFromTransaction)
                 .sum();
         
         // Calculate total volume
@@ -143,23 +149,104 @@ public class AdvancedProfitAnalyticsController {
 
     private Map<String, Object> prepareTrendAnalysis(List<Transaction> transactions, String period) {
         Map<String, Object> trendData = new HashMap<>();
+        // Defaults to prevent template errors
+        trendData.put("trendDirection", "insufficient_data");
+        trendData.put("volatility", 0.0);
+        trendData.put("currentAverage", 0.0);
+        trendData.put("seasonalPattern", null);
+        trendData.put("predictedWeeklyProfit", 0.0);
+        trendData.put("confidenceLevel", "Low");
+        trendData.put("peakDayPrediction", "N/A");
         
         // Calculate profit trend
         if ("daily".equalsIgnoreCase(period)) {
             List<Double> dailyProfits = getDailyProfitValues(transactions);
             trendData.put("trendDirection", calculateTrend(dailyProfits));
-            trendData.put("volatility", calculateVolatility(dailyProfits));
+            double vol = calculateVolatility(dailyProfits);
+            double avg = dailyProfits.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            trendData.put("volatility", vol);
+            trendData.put("currentAverage", avg);
+            trendData.put("predictedWeeklyProfit", avg * 7);
+            trendData.put("confidenceLevel", confidenceLabel(dailyProfits.size()));
+            trendData.put("seasonalPattern", seasonalityLabel(avg, vol));
         } else if ("weekly".equalsIgnoreCase(period)) {
             List<Double> weeklyProfits = getWeeklyProfitValues(transactions);
             trendData.put("trendDirection", calculateTrend(weeklyProfits));
-            trendData.put("volatility", calculateVolatility(weeklyProfits));
+            double vol = calculateVolatility(weeklyProfits);
+            double avg = weeklyProfits.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            trendData.put("volatility", vol);
+            trendData.put("currentAverage", avg);
+            // weekly average already represents a week
+            trendData.put("predictedWeeklyProfit", avg);
+            trendData.put("confidenceLevel", confidenceLabel(weeklyProfits.size()));
+            trendData.put("seasonalPattern", seasonalityLabel(avg, vol));
         } else if ("monthly".equalsIgnoreCase(period)) {
             List<Double> monthlyProfits = getMonthlyProfitValues(transactions);
             trendData.put("trendDirection", calculateTrend(monthlyProfits));
-            trendData.put("volatility", calculateVolatility(monthlyProfits));
+            double vol = calculateVolatility(monthlyProfits);
+            double avg = monthlyProfits.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            trendData.put("volatility", vol);
+            trendData.put("currentAverage", avg);
+            // rough weekly estimate from monthly average
+            trendData.put("predictedWeeklyProfit", avg / 4.0);
+            trendData.put("confidenceLevel", confidenceLabel(monthlyProfits.size()));
+            trendData.put("seasonalPattern", seasonalityLabel(avg, vol));
         }
+
+        trendData.put("peakDayPrediction", predictPeakDayOfWeek(transactions));
         
         return trendData;
+    }
+
+    private String findPeakProfitDayLabel(List<Transaction> transactions) {
+        if (transactions == null || transactions.isEmpty()) return "N/A";
+
+        Map<LocalDate, Double> daily = new HashMap<>();
+        for (Transaction t : transactions) {
+            if (t.getDate() == null) continue;
+            LocalDate d = t.getDate().toLocalDate();
+            daily.merge(d, profitFromTransaction(t), Double::sum);
+        }
+        return daily.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(e -> e.getKey().toString())
+                .orElse("N/A");
+    }
+
+    private String predictPeakDayOfWeek(List<Transaction> transactions) {
+        if (transactions == null || transactions.isEmpty()) return "N/A";
+
+        Map<DayOfWeek, Double> byDow = new EnumMap<>(DayOfWeek.class);
+        for (Transaction t : transactions) {
+            if (t.getDate() == null) continue;
+            DayOfWeek dow = t.getDate().toLocalDate().getDayOfWeek();
+            byDow.merge(dow, profitFromTransaction(t), Double::sum);
+        }
+        return byDow.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(e -> e.getKey().toString())
+                .orElse("N/A");
+    }
+
+    private double profitFromTransaction(Transaction t) {
+        if (t == null || t.getType() == null) return 0.0;
+        // Profit is the company 5% component on chargeable transactions.
+        if (t.getType() == TransactionType.INCOME) return 0.0;
+        return t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT;
+    }
+
+    private String confidenceLabel(int sampleSize) {
+        if (sampleSize >= 12) return "High";
+        if (sampleSize >= 6) return "Medium";
+        return "Low";
+    }
+
+    private String seasonalityLabel(double mean, double stdev) {
+        if (mean <= 0) return null;
+        double cv = stdev / mean; // coefficient of variation
+        if (cv >= 0.6) return "high";
+        if (cv >= 0.3) return "medium";
+        return "low";
     }
 
     private List<String> getDailyLabels(List<Transaction> transactions) {
@@ -182,7 +269,7 @@ public class AdvancedProfitAnalyticsController {
         for (Transaction t : transactions) {
             if (t.getDate() != null) {
                 LocalDate date = t.getDate().toLocalDate();
-                dailyProfits.merge(date, t.getFee(), Double::sum);
+                dailyProfits.merge(date, profitFromTransaction(t), Double::sum);
             }
         }
         
@@ -222,7 +309,7 @@ public class AdvancedProfitAnalyticsController {
                 LocalDate date = t.getDate().toLocalDate();
                 LocalDate startOfWeek = date.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
                 String weekLabel = startOfWeek.toString();
-                weeklyProfits.merge(weekLabel, t.getFee(), Double::sum);
+                weeklyProfits.merge(weekLabel, profitFromTransaction(t), Double::sum);
             }
         }
         
@@ -259,7 +346,7 @@ public class AdvancedProfitAnalyticsController {
             if (t.getDate() != null) {
                 YearMonth yearMonth = YearMonth.from(t.getDate().toLocalDate());
                 String monthLabel = yearMonth.toString();
-                monthlyProfits.merge(monthLabel, t.getFee(), Double::sum);
+                monthlyProfits.merge(monthLabel, profitFromTransaction(t), Double::sum);
             }
         }
         
@@ -281,7 +368,7 @@ public class AdvancedProfitAnalyticsController {
         for (Transaction t : transactions) {
             if (t.getDate() != null) {
                 LocalDate date = t.getDate().toLocalDate();
-                dailyProfits.merge(date, t.getFee(), Double::sum);
+                dailyProfits.merge(date, profitFromTransaction(t), Double::sum);
             }
         }
         
@@ -296,7 +383,7 @@ public class AdvancedProfitAnalyticsController {
                 LocalDate date = t.getDate().toLocalDate();
                 LocalDate startOfWeek = date.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
                 String weekLabel = startOfWeek.toString();
-                weeklyProfits.merge(weekLabel, t.getFee(), Double::sum);
+                weeklyProfits.merge(weekLabel, profitFromTransaction(t), Double::sum);
             }
         }
         
@@ -310,7 +397,7 @@ public class AdvancedProfitAnalyticsController {
             if (t.getDate() != null) {
                 YearMonth yearMonth = YearMonth.from(t.getDate().toLocalDate());
                 String monthLabel = yearMonth.toString();
-                monthlyProfits.merge(monthLabel, t.getFee(), Double::sum);
+                monthlyProfits.merge(monthLabel, profitFromTransaction(t), Double::sum);
             }
         }
         

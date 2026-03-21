@@ -7,6 +7,11 @@ package com.bypass.bypasstransers.enums;
 public enum Currency {
     USD,
     RUB,
-    ZAR
+    ZAR,
+    EUR,
+    GBP,
+    ZWL,
+    NGN,
+    KES
 }
 

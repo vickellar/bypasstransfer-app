@@ -8,6 +8,7 @@ import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.OfflineTransactionRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,70 +72,121 @@ public class OfflineSyncService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void syncSingleTransaction(OfflineTransaction offlineTx) {
+        // Decide provider account type and calculate fee if missing.
+        double amount = offlineTx.getAmount() != null ? offlineTx.getAmount() : 0.0;
+        TransactionType type = offlineTx.getType();
+
+        String providerAccountType = null;
+        if (type == TransactionType.EXPENSE || type == TransactionType.OUTCOME) {
+            providerAccountType = offlineTx.getFromAccount();
+        } else if (type == TransactionType.TRANSFER) {
+            providerAccountType = offlineTx.getToAccount(); // receiving method chosen
+        }
+
+        double fee = offlineTx.getFee() != null ? offlineTx.getFee() : 0.0;
+        if (type == TransactionType.INCOME) {
+            fee = 0.0;
+        } else if (fee <= 0.0) {
+            fee = ChargeCalculator.calculateTotalCharge(providerAccountType, amount);
+        }
+
+        // In this system, credited/transferred amount is the net amount.
+        double netAmount = amount;
+
+        // Find source and destination wallets (owner-scoped).
+        Wallet fromWallet = null;
+        Wallet toWallet = null;
+        if (offlineTx.getFromAccount() != null) {
+            fromWallet = walletRepository
+                    .findByOwnerIdAndAccountType(offlineTx.getUserId(), offlineTx.getFromAccount())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (offlineTx.getToAccount() != null) {
+            toWallet = walletRepository
+                    .findByOwnerIdAndAccountType(offlineTx.getUserId(), offlineTx.getToAccount())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+        }
+
         // Create main transaction from offline transaction
         Transaction mainTx = new Transaction();
-        mainTx.setAmount(offlineTx.getAmount());
-        mainTx.setFee(offlineTx.getFee());
-        mainTx.setNetAmount(offlineTx.getNetAmount());
-        mainTx.setType(offlineTx.getType());
+        mainTx.setAmount(amount);
+        mainTx.setFee(fee);
+        mainTx.setNetAmount(netAmount);
+        mainTx.setType(type);
         mainTx.setFromAccount(offlineTx.getFromAccount());
         mainTx.setToAccount(offlineTx.getToAccount());
         mainTx.setSyncStatus("SYNCED");
         mainTx.setCreatedBy(offlineTx.getUsername());
         mainTx.setDate(offlineTx.getOfflineRecordedAt());
-        
-        // Set wallet if fromAccount exists
-        Wallet wallet = null;
-        if (offlineTx.getFromAccount() != null) {
-            List<Wallet> wallets = walletRepository.findByAccountType(offlineTx.getFromAccount());
-            if (!wallets.isEmpty()) {
-                wallet = wallets.get(0); // Use the first wallet found
-                mainTx.setWallet(wallet);
-            }
-        }
-        
+        mainTx.setCurrency(fromWallet != null ? fromWallet.getCurrency() : (toWallet != null ? toWallet.getCurrency() : Currency.USD));
+        // For audit purposes, attach the source wallet when possible
+        mainTx.setWallet(fromWallet != null ? fromWallet : toWallet);
+
         // Save main transaction first
         Transaction savedMainTx = transactionRepository.save(mainTx);
-        
-        // Update user's account balance based on transaction type
-        if (wallet != null) {
-            try {
-                // Adjust wallet balance based on transaction type
-                if (offlineTx.getType() == TransactionType.EXPENSE || offlineTx.getType() == TransactionType.TRANSFER) {
-                    // For expenses and transfers OUT, deduct from wallet (amount + fee)
-                    double totalDeduction = offlineTx.getAmount() + offlineTx.getFee();
-                    wallet.setBalance(wallet.getBalance() - totalDeduction);
-                } else if (offlineTx.getType() == TransactionType.INCOME) {
-                    // For income, add to wallet (only the amount, no fees for income)
-                    wallet.setBalance(wallet.getBalance() + offlineTx.getAmount());
+
+        // Update wallet balances based on transaction type
+        // - EXPENSE/OUTCOME: deduct amount + fee from fromWallet
+        // - TRANSFER: deduct amount + fee from fromWallet, credit amount to toWallet
+        // - INCOME: credit amount to toWallet
+        try {
+            if (type == TransactionType.EXPENSE || type == TransactionType.OUTCOME) {
+                if (fromWallet != null) {
+                    double totalDeduction = amount + fee;
+                    fromWallet.setBalance(fromWallet.getBalance() - totalDeduction);
+                    walletRepository.save(fromWallet);
+                    auditService.logEntity("system", "wallets", fromWallet.getId(),
+                            "BALANCE_ADJUSTMENT", "OfflineSync",
+                            "Balance adjusted by -" + totalDeduction + " after syncing offline transaction " + savedMainTx.getId());
                 }
-                walletRepository.save(wallet);
-                
-                // Log the financial adjustment
-                auditService.logEntity("system", "wallets", wallet.getId(), 
-                        "BALANCE_ADJUSTMENT", 
-                        "OfflineSync", 
-                        "Balance adjusted by " + (offlineTx.getType() == TransactionType.INCOME ? "+" : "-") + 
-                        (offlineTx.getType() == TransactionType.INCOME ? offlineTx.getAmount() : 
-                         (offlineTx.getAmount() + offlineTx.getFee())) + 
-                        " after syncing offline transaction " + savedMainTx.getId());
-            } catch (Exception e) {
-                // If wallet update fails, we should still complete the sync but log the error
-                System.err.println("Failed to update wallet balance for transaction ID " + offlineTx.getId() + ": " + e.getMessage());
-                throw e; // Re-throw to ensure transaction rolls back if wallet update fails
+            } else if (type == TransactionType.TRANSFER) {
+                if (fromWallet != null) {
+                    double totalDeduction = amount + fee;
+                    fromWallet.setBalance(fromWallet.getBalance() - totalDeduction);
+                    walletRepository.save(fromWallet);
+                    auditService.logEntity("system", "wallets", fromWallet.getId(),
+                            "BALANCE_ADJUSTMENT", "OfflineSync",
+                            "Balance adjusted by -" + totalDeduction + " after syncing offline transaction " + savedMainTx.getId());
+                }
+                if (toWallet != null) {
+                    toWallet.setBalance(toWallet.getBalance() + amount);
+                    walletRepository.save(toWallet);
+                    auditService.logEntity("system", "wallets", toWallet.getId(),
+                            "BALANCE_ADJUSTMENT", "OfflineSync",
+                            "Balance adjusted by +" + amount + " after syncing offline transaction " + savedMainTx.getId());
+                }
+            } else if (type == TransactionType.INCOME) {
+                if (toWallet != null) {
+                    toWallet.setBalance(toWallet.getBalance() + amount);
+                    walletRepository.save(toWallet);
+                    auditService.logEntity("system", "wallets", toWallet.getId(),
+                            "BALANCE_ADJUSTMENT", "OfflineSync",
+                            "Balance adjusted by +" + amount + " after syncing offline transaction " + savedMainTx.getId());
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Failed to update wallet balances for offline transaction ID " + offlineTx.getId() + ": " + e.getMessage());
+            throw e;
         }
-        
+
+        // Persist calculated values back to the offline record as well
+        offlineTx.setFee(fee);
+        offlineTx.setNetAmount(netAmount);
+
         // Update offline transaction status
         offlineTx.setSyncStatus("SYNCED");
         offlineTx.setSyncedAt(LocalDateTime.now());
         offlineTx.setTransactionRef("SYNCED_" + savedMainTx.getId());
         offlineTransactionRepository.save(offlineTx);
-        
+
         // Log audit
-        auditService.logEntity("system", "offline_transactions", offlineTx.getId(), 
-                              "SYNC_TRANSACTION", offlineTx.getUsername(), 
-                              "Offline transaction synced to main system with financial adjustment applied");
+        auditService.logEntity("system", "offline_transactions", offlineTx.getId(),
+                "SYNC_TRANSACTION", offlineTx.getUsername(),
+                "Offline transaction synced to main system with financial adjustment applied");
     }
     
     /**
@@ -203,7 +255,8 @@ public class OfflineSyncService {
             offlineTx.setFee(0.0);
         }
         if (offlineTx.getNetAmount() == null) {
-            offlineTx.setNetAmount(offlineTx.getAmount() - offlineTx.getFee());
+            // Fees are charged on top; netAmount is the credited/transferred amount.
+            offlineTx.setNetAmount(offlineTx.getAmount());
         }
         
         return offlineTransactionRepository.save(offlineTx);

@@ -55,4 +55,19 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
      * Find wallets by owner ID and account type
      */
     List<Wallet> findByOwnerIdAndAccountType(Long ownerId, String accountType);
+
+    /**
+     * Find wallets by branch
+     */
+    List<Wallet> findByBranchId(Long branchId);
+
+    /**
+     * Find wallets by branch and currency
+     */
+    List<Wallet> findByBranchIdAndCurrency(Long branchId, String currency);
+
+    /**
+     * Count wallets by branch
+     */
+    long countByBranchId(Long branchId);
 }

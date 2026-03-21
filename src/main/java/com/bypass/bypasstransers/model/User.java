@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers.model;
 
+import com.bypass.bypasstransers.enums.Currency;
 import com.bypass.bypasstransers.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
@@ -51,6 +54,16 @@ public class User {
     // Deletion timestamp for audit
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // Branch assignment
+    @ManyToOne
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
+    // User's base currency (defaults to branch currency)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "base_currency")
+    private Currency baseCurrency;
 
     public String getPhoneNumber() {
         return phoneNumber;
@@ -134,5 +147,21 @@ public class User {
 
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public Branch getBranch() {
+        return branch;
+    }
+
+    public void setBranch(Branch branch) {
+        this.branch = branch;
+    }
+
+    public Currency getBaseCurrency() {
+        return baseCurrency;
+    }
+
+    public void setBaseCurrency(Currency baseCurrency) {
+        this.baseCurrency = baseCurrency;
     }
 }

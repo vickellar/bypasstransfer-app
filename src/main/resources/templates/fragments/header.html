@@ -1,120 +1,330 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <div th:fragment="header">
-    <header style="padding:16px 32px; background:white; border-bottom:1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <div style="max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <header class="site-header-bar">
+        <div class="header-inner">
+            <!-- Brand Logo -->
             <div class="brand">
-                <a th:href="@{/}" style="font-weight:800; color:#1e293b; text-decoration:none; font-size:22px; display:flex; align-items:center; gap:10px;">
+                <a th:href="@{/}" class="brand-link">
                     <i class="fas fa-exchange-alt" style="color:#3b82f6;"></i>
                     ByPass Transfers
                 </a>
             </div>
-            <nav class="main-nav" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+
+            <!-- Hamburger button (mobile only) -->
+            <button class="hamburger" id="hamburger-btn" aria-label="Toggle menu" aria-expanded="false">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+
+            <!-- Nav drawer -->
+            <nav class="main-nav" id="main-nav">
                 <!-- Public navigation (not logged in) -->
                 <th:block sec:authorize="!isAuthenticated()">
-                    <a th:href="@{/}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">Home</a>
-                    <a th:href="@{/about}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">About</a>
-                    <a th:href="@{/contact}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">Contact</a>
-                    <a th:href="@{/login}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">Login</a>
-                    <a th:href="@{/register}" class="btn btn-primary" style="background:#3b82f6; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:500; font-size:15px;">Register</a>
+                    <a th:href="@{/}" class="nav-link">Home</a>
+                    <a th:href="@{/login}" class="nav-link">Login</a>
+                    <a th:href="@{/contact}" class="nav-link">Contact</a>
+                    <a th:href="@{/about}" class="nav-link">About</a>
+                    <a th:href="@{/register}" class="nav-btn nav-btn-primary">Register</a>
                 </th:block>
-                
+
                 <!-- Authenticated navigation -->
                 <th:block sec:authorize="isAuthenticated()">
-                    <a th:href="@{/app}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">Dashboard</a>
-                    <!-- Offline Transactions link for STAFF, ADMIN and SUPER_ADMIN roles -->
-                    <a sec:authorize="hasAnyRole('STAFF', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/transactions}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px; display:flex; align-items:center; gap:6px;">
-                        <i class="fas fa-wallet"></i> Offline Transactions
+                    <a th:href="@{/app}" class="nav-link">Dashboard</a>
+                    <a sec:authorize="hasAnyRole('STAFF', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/transactions}" class="nav-link">
+                        <i class="fas fa-wallet"></i> Offline Tx
                     </a>
-                    <a th:href="@{/about}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">About</a>
-                    <a th:href="@{/contact}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px;">Contact</a>
-                    <!-- Admin link for ADMIN and SUPER_ADMIN roles -->
-                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}" class="btn btn-secondary" style="background:#f59e0b; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
+                    <!--<a th:href="@{/about}" class="nav-link">About</a>
+                    <a th:href="@{/contact}" class="nav-link">Contact</a>-->
+                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}" class="nav-btn nav-btn-amber">
                         <i class="fas fa-cog"></i> Admin
                     </a>
-                    <!-- Sync Management link for ADMIN and SUPER_ADMIN roles -->
-                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="btn btn-info" style="background:#0ea5e9; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px;">
+                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="nav-btn nav-btn-info">
                         <i class="fas fa-sync-alt"></i> Sync
                     </a>
-                    <!-- Analytics dropdown for SUPERVISOR, ADMIN and SUPER_ADMIN roles -->
-                    <div sec:authorize="hasAnyRole('SUPERVISOR', 'ADMIN', 'SUPER_ADMIN')" class="dropdown" style="position:relative; display:inline-block;">
-                        <button class="btn btn-success" style="background:#22c55e; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:500; font-size:14px; display:flex; align-items:center; gap:6px; border:none; cursor:pointer;">
-                            <i class="fas fa-chart-line"></i> Analytics <i class="fas fa-caret-down" style="margin-left:6px; font-size:12px;"></i>
+
+                    <!-- Analytics dropdown (desktop hover / mobile toggle) -->
+                    <div sec:authorize="hasAnyRole('SUPERVISOR', 'ADMIN', 'SUPER_ADMIN')" class="nav-dropdown">
+                        <button class="nav-btn nav-btn-green dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+                            <i class="fas fa-chart-line"></i> Analytics <i class="fas fa-caret-down"></i>
                         </button>
-                        <div class="dropdown-content" style="display:none; position:absolute; right:0; top:100%; min-width:200px; background:white; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:1000; margin-top:4px;">
-                            <a th:href="@{/admin/analytics}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
-                                <i class="fas fa-chart-bar" style="margin-right:8px; color:#22c55e;"></i> Analytics Dashboard
+                        <div class="dropdown-menu">
+                            <a th:href="@{/admin/analytics}" class="dropdown-item">
+                                <i class="fas fa-chart-bar" style="color:#22c55e;"></i> Analytics Dashboard
                             </a>
-                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
-                                <i class="fas fa-chart-area" style="margin-right:8px; color:#8b5cf6;"></i> Profit Analytics
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics}" class="dropdown-item">
+                                <i class="fas fa-chart-area" style="color:#8b5cf6;"></i> Profit Analytics
                             </a>
-                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/visualizations}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px; border-bottom:1px solid #f1f5f9;">
-                                <i class="fas fa-chart-pie" style="margin-right:8px; color:#f59e0b;"></i> Visualizations
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/visualizations}" class="dropdown-item">
+                                <i class="fas fa-chart-pie" style="color:#f59e0b;"></i> Visualizations
                             </a>
-                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/trends}" class="dropdown-item" style="display:block; padding:12px 16px; color:#475569; text-decoration:none; font-weight:500; font-size:14px;">
-                                <i class="fas fa-chart-line" style="margin-right:8px; color:#3b82f6;"></i> Trend Analysis
+                            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/admin/profit-analytics/trend-analysis}" class="dropdown-item">
+                                <i class="fas fa-chart-line" style="color:#3b82f6;"></i> Trend Analysis
                             </a>
                         </div>
                     </div>
-                    <span sec:authentication="name" style="color:#64748b; font-weight:500; font-size:15px; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; margin:0 4px;">User</span>
-                    <a th:href="@{/change-password}" class="nav-link" style="color:#475569; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px; display:flex; align-items:center; gap:6px;">
+
+                    <span sec:authentication="name" class="nav-user-badge">
+                        <i class="fas fa-user-circle"></i> <span class="nav-username"></span>
+                    </span>
+                    <a th:href="@{/change-password}" class="nav-link">
                         <i class="fas fa-key"></i> Password
                     </a>
-                    <a th:href="@{/logout}" class="nav-link" style="color:#dc2626; text-decoration:none; font-weight:500; font-size:15px; padding:8px 12px; border-radius:6px; display:flex; align-items:center; gap:6px;">
+                    <a th:href="@{/logout}" class="nav-link nav-link-danger">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
                 </th:block>
             </nav>
         </div>
     </header>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ---- Header shell ---- */
+        .site-header-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .brand-link {
+            font-weight: 800;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        /* ---- Desktop nav ---- */
+        .main-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .nav-link {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-link:hover { background: #f1f5f9; color: #1e293b; }
+        .nav-link-danger { color: #dc2626; }
+        .nav-link-danger:hover { background: #fef2f2; }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .nav-btn-primary  { background: #3b82f6; color: white; }
+        .nav-btn-primary:hover  { background: #2563eb; }
+        .nav-btn-amber { background: #f59e0b; color: white; }
+        .nav-btn-amber:hover { background: #d97706; }
+        .nav-btn-info  { background: #0ea5e9; color: white; }
+        .nav-btn-info:hover  { background: #0284c7; }
+        .nav-btn-green { background: #22c55e; color: white; }
+        .nav-btn-green:hover { background: #16a34a; }
+
+        /* user badge */
+        .nav-user-badge {
+            font-size: 14px;
+            color: #64748b;
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ---- Dropdown ---- */
+        .nav-dropdown { position: relative; }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            min-width: 210px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .dropdown-menu.open { display: block; }
+        /* hover open on desktop */
+        @media (min-width: 769px) {
+            .nav-dropdown:hover .dropdown-menu { display: block; }
+        }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            color: #475569;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.15s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: #f8fafc; color: #1e293b; }
+
+        /* ---- Hamburger ---- */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            width: 40px;
+            height: 40px;
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 8px;
+            flex-shrink: 0;
+        }
+        .hamburger .bar {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: #475569;
+            border-radius: 2px;
+            transition: transform 0.25s, opacity 0.25s;
+        }
+        /* Animated X when open */
+        .hamburger.open .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .hamburger.open .bar:nth-child(2) { opacity: 0; }
+        .hamburger.open .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* ---- Mobile layout ---- */
         @media (max-width: 768px) {
+            .header-inner { padding: 12px 16px; }
+
+            .hamburger { display: flex; }
+
             .main-nav {
-                width: 100%;
+                display: none;
                 flex-direction: column;
                 align-items: stretch;
-                gap: 8px;
-                margin-top: 16px;
+                gap: 2px;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top: 1px solid #e2e8f0;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+                padding: 12px 16px 20px;
+                z-index: 800;
             }
-            .nav-link, .btn {
+            .main-nav.open { display: flex; }
+
+            .nav-link,
+            .nav-btn,
+            .nav-user-badge {
                 width: 100%;
-                justify-content: center;
-                text-align: center;
+                justify-content: flex-start;
+                text-align: left;
+                padding: 12px 14px;
+                border-radius: 6px;
+                font-size: 15px;
+                box-sizing: border-box;
+                margin: 0;
             }
-            header {
-                padding: 12px 16px;
+            .nav-btn { display: flex; }
+
+            /* Dropdown: show inline on mobile (no hover) */
+            .nav-dropdown { width: 100%; }
+            .dropdown-toggle { width: 100%; }
+            .dropdown-menu {
+                position: static;
+                box-shadow: none;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                margin-top: 4px;
             }
-        }
-        
-        /* Dropdown styles */
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8fafc;
+            .dropdown-item { padding: 10px 14px; }
         }
     </style>
+
     <script>
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdowns = document.querySelectorAll('.dropdown');
-            dropdowns.forEach(dropdown => {
-                if (!dropdown.contains(event.target)) {
-                    dropdown.querySelector('.dropdown-content').style.display = 'none';
-                }
-            });
-        });
-        
-        // Toggle dropdown on click for mobile
-        document.querySelectorAll('.dropdown button').forEach(button => {
-            button.addEventListener('click', function(e) {
+        (function () {
+            const btn = document.getElementById('hamburger-btn');
+            const nav = document.getElementById('main-nav');
+
+            if (!btn || !nav) return;
+
+            // Toggle drawer
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                const dropdownContent = this.nextElementSibling;
-                dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+                const open = nav.classList.toggle('open');
+                btn.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', open);
             });
-        });
+
+            // Dropdown toggles (for mobile click, desktop relies on CSS hover)
+            nav.querySelectorAll('.dropdown-toggle').forEach(function (toggle) {
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const menu = this.nextElementSibling;
+                    if (menu) menu.classList.toggle('open');
+                    this.setAttribute('aria-expanded', menu.classList.contains('open'));
+                });
+            });
+
+            // Close on outside click
+            document.addEventListener('click', function () {
+                nav.classList.remove('open');
+                btn.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                nav.querySelectorAll('.dropdown-menu').forEach(function (m) {
+                    m.classList.remove('open');
+                });
+            });
+
+            // Close drawer when a nav link is clicked
+            nav.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    nav.classList.remove('open');
+                    btn.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            });
+        })();
     </script>
 </div>
 </html>

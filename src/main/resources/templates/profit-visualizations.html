@@ -11,7 +11,7 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         .admin-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
-        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; }
+        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; margin: 0; }
         .page-header p { color: #64748b; font-size: 15px; margin: 8px 0 0 0; }
         
@@ -20,8 +20,10 @@
         .control-group label { font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
         .control-group select, .control-group input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
         
-        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
         @media (max-width: 1200px) { .charts-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr !important; gap: 16px; } }
+        @media (max-width: 768px) { .chart-container { height: 260px !important; } }
         
         .card {
             background: white; border-radius: 12px; padding: 24px;

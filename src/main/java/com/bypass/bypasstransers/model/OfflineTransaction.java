@@ -98,8 +98,10 @@ public class OfflineTransaction {
     
     public void setAmount(Double amount) {
         this.amount = amount;
-        if (this.fee != null) {
-            this.netAmount = amount - fee;
+        // In this system, 'amount' is the credited/transferred amount.
+        // Fees are charged on top, so netAmount equals the credited amount.
+        if (amount != null) {
+            this.netAmount = amount;
         }
     }
     
@@ -109,8 +111,9 @@ public class OfflineTransaction {
     
     public void setFee(Double fee) {
         this.fee = fee != null ? fee : 0.0;
+        // Fees are charged on top; netAmount remains the credited amount.
         if (this.amount != null) {
-            this.netAmount = this.amount - this.fee;
+            this.netAmount = this.amount;
         }
     }
     

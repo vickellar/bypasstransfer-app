@@ -310,3 +310,6 @@ footer{
     width: 100%;
   }
 }
+
+/* Mobile responsiveness overrides */
+@import url('mobile.css');

@@ -6,6 +6,7 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,10 +71,12 @@ public class WalletTransactionService {
         Transaction tx = new Transaction();
         tx.setType(TransactionType.INCOME);
         tx.setAmount(amount);
-        tx.setFee(0);
+        tx.setFee(0.0);
+        tx.setNetAmount(amount); // receiver credited with 'amount'
         tx.setToAccount(accountType);
         tx.setDate(LocalDateTime.now());
         tx.setWallet(dbWallet);
+        tx.setCurrency(dbWallet.getCurrency());
 
         walletRepository.save(dbWallet);
         transactionRepository.save(tx);
@@ -103,7 +106,8 @@ public class WalletTransactionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + accountType));
 
-        double fee = calculateFee(amount);
+        // Total charge = 5% company profit + provider fee (based on selected method).
+        double fee = ChargeCalculator.calculateTotalCharge(accountType, amount);
         double total = amount + fee;
 
         if (wallet.getBalance() < total) {
@@ -117,9 +121,11 @@ public class WalletTransactionService {
         tx.setType(TransactionType.EXPENSE);
         tx.setAmount(amount);
         tx.setFee(fee);
+        tx.setNetAmount(amount); // receiver gets 'amount'; fee is charged on top
         tx.setFromAccount(accountType);
         tx.setDate(LocalDateTime.now());
         tx.setWallet(wallet);
+        tx.setCurrency(wallet.getCurrency());
 
         walletRepository.save(wallet);
         transactionRepository.save(tx);
@@ -157,7 +163,8 @@ public class WalletTransactionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Destination wallet not found: " + toAccountType));
 
-        double fee = calculateFee(amount);
+        // Provider fee depends on the chosen receiving method (toAccountType).
+        double fee = ChargeCalculator.calculateTotalCharge(toAccountType, amount);
         double total = amount + fee;
 
         if (fromWallet.getBalance() < total) {
@@ -174,10 +181,12 @@ public class WalletTransactionService {
         tx.setType(TransactionType.TRANSFER);
         tx.setAmount(amount);
         tx.setFee(fee);
+        tx.setNetAmount(amount); // receiver gets 'amount'
         tx.setFromAccount(fromAccountType);
         tx.setToAccount(toAccountType);
         tx.setDate(LocalDateTime.now());
         tx.setWallet(fromWallet);
+        tx.setCurrency(fromWallet.getCurrency());
 
         walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
@@ -194,8 +203,5 @@ public class WalletTransactionService {
         }
     }
 
-    private double calculateFee(double amount) {
-        // Simple fee calculation - 1% fee
-        return amount * 0.01;
-    }
+    // Fee calculation is handled by ChargeCalculator (5% profit + provider fee).
 }

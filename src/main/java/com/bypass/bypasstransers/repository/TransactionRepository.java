@@ -91,7 +91,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     /**
      * Get transaction summary by user (for supervisor view)
      */
-    @Query("SELECT w.owner.username, COUNT(t), SUM(t.amount), SUM(t.fee) " +
+    @Query("SELECT w.owner.id, w.owner.username, COUNT(t), SUM(t.amount), SUM(t.fee) " +
            "FROM Transaction t JOIN t.wallet w " +
            "GROUP BY w.owner.id, w.owner.username")
     List<Object[]> getTransactionSummaryByUser();

@@ -36,4 +36,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Find specific user regardless of active status (for audit)
     User findByIdAndIsActive(Long id, Boolean isActive);
+
+    // Find users by branch
+    List<User> findByBranchId(Long branchId);
+
+    // Find users by branch and role
+    List<User> findByBranchIdAndRole(Long branchId, Role role);
+
+    // Count users by branch
+    long countByBranchId(Long branchId);
 }

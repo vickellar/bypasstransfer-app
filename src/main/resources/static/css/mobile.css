@@ -1,0 +1,254 @@
+/* ============================================================
+   ByPass Transfers — Global Mobile Responsiveness
+   Overrides inline styles and grid layouts for small screens
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   1. Base safe-area reset
+---------------------------------------------------------- */
+html {
+  overflow-x: hidden;
+}
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ----------------------------------------------------------
+   2. Responsive utility classes
+      (usable by any template via class="...")
+---------------------------------------------------------- */
+
+/* Two-column grid that collapses on mobile */
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Three-column chart / stat grid */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+/* Transfer form: 3 fields + button */
+.transfer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 16px;
+  align-items: end;
+}
+
+/* Generic flex button row */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Overflow scroll wrapper for tables */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   MOBILE BREAKPOINTS
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   ≤ 768 px  — tablet / large phone
+---------------------------------------------------------- */
+@media (max-width: 768px) {
+
+  /* Page containers */
+  .dashboard-container,
+  .admin-container,
+  .supervisor-container,
+  .page-container-inner,
+  .offline-container,
+  .sync-container,
+  .analytics-container,
+  .profit-container,
+  .expenditure-container,
+  .reconciliation-container {
+    padding: 16px 12px !important;
+    max-width: 100% !important;
+  }
+
+  /* All generic grids collapse to single column */
+  .two-col-grid,
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Transfer form: stack vertically */
+  .transfer-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Inline grids with hard-coded columns (from templates that haven't been refactored) */
+  [style*="grid-template-columns: 1fr 1fr 1fr auto"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr 1fr auto"],
+  [style*="grid-template-columns:1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Two-column inline grids */
+  [style*="grid-template-columns: 1fr 1fr"]:not([style*="minmax"]),
+  [style*="grid-template-columns:1fr 1fr"]:not([style*="minmax"]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* All flex rows: allow wrapping */
+  [style*="display: flex"],
+  [style*="display:flex"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Stat / action cards: full width on small screens */
+  .stat-card,
+  .action-card {
+    width: 100%;
+  }
+
+  /* Cards: reduce padding */
+  .card,
+  .summary-section,
+  .form-card {
+    padding: 16px !important;
+  }
+
+  /* Tables: horizontal scroll */
+  table,
+  .data-table,
+  .summary-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  /* Button rows: stack */
+  .btn-row,
+  .quick-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-row .btn,
+  .quick-actions .btn,
+  .quick-actions a {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Card-header flex rows: wrap and stack */
+  .card-header {
+    flex-wrap: wrap !important;
+    gap: 10px;
+  }
+
+  /* Page header */
+  .page-header h1 {
+    font-size: 22px !important;
+  }
+
+  /* Reduce chart heights so they don't overflow */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Reduce large font sizes */
+  .stat-info h3 {
+    font-size: 22px !important;
+  }
+
+  /* Smaller padding on section titles */
+  .section-title {
+    font-size: 1.4rem !important;
+  }
+
+  /* Form rows: single column */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Filter/search bars: stack */
+  [style*="display: flex"][style*="gap"] form,
+  .filter-bar {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Offline / sync forms */
+  .offline-form-grid,
+  .sync-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   ≤ 480 px  — small phones
+---------------------------------------------------------- */
+@media (max-width: 480px) {
+
+  /* Tighter page padding */
+  .dashboard-container,
+  .admin-container,
+  .supervisor-container,
+  .page-container-inner,
+  .offline-container {
+    padding: 10px 8px !important;
+  }
+
+  /* Heading scale */
+  .page-header h1 {
+    font-size: 18px !important;
+  }
+
+  h1 { font-size: 20px !important; }
+  h2 { font-size: 17px !important; }
+  h3 { font-size: 15px !important; }
+
+  /* Buttons: full width */
+  .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Stat card: tighter */
+  .stat-card {
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+
+  .stat-icon {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+
+  .stat-info h3 {
+    font-size: 20px !important;
+  }
+
+  /* Table cells: smaller font */
+  td, th {
+    font-size: 12px !important;
+    padding: 8px !important;
+  }
+
+  /* Wallet balance font */
+  .wallet-balance {
+    font-size: 15px !important;
+  }
+}

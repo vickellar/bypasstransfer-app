@@ -4,12 +4,16 @@ import com.bypass.bypasstransers.enums.Role;
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
+import com.bypass.bypasstransers.model.Branch;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import com.bypass.bypasstransers.repository.BranchRepository;
+import com.bypass.bypasstransers.enums.TransactionType;
 import com.bypass.bypasstransers.service.BackupService;
 import com.bypass.bypasstransers.service.SecurityService;
 import com.bypass.bypasstransers.service.UserProvisioningService;
+import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,19 +36,24 @@ public class AdminController {
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final BranchRepository branchRepository;
     private final SecurityService securityService;
     private final UserProvisioningService userProvisioningService;
     private final PasswordEncoder passwordEncoder;
     private final BackupService backupService;
 
-    public AdminController(UserRepository userRepository, WalletRepository walletRepository, 
-                          TransactionRepository transactionRepository, SecurityService securityService,
+    public AdminController(UserRepository userRepository, 
+                          WalletRepository walletRepository, 
+                          TransactionRepository transactionRepository, 
+                          BranchRepository branchRepository,
+                          SecurityService securityService,
                           UserProvisioningService userProvisioningService,
                           PasswordEncoder passwordEncoder,
                           BackupService backupService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.branchRepository = branchRepository;
         this.securityService = securityService;
         this.userProvisioningService = userProvisioningService;
         this.passwordEncoder = passwordEncoder;
@@ -65,6 +74,9 @@ public class AdminController {
         List<Wallet> allWallets = walletRepository.findAll();
         double totalBalance = allWallets.stream().mapToDouble(Wallet::getBalance).sum();
         
+        // Get active branches count
+        long activeBranches = branchRepository.findByIsActive(true).size();
+        
         model.addAttribute("user", currentUser);
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("staffCount", staffCount);
@@ -72,6 +84,7 @@ public class AdminController {
         model.addAttribute("adminCount", adminCount);
         model.addAttribute("totalWallets", allWallets.size());
         model.addAttribute("totalBalance", totalBalance);
+        model.addAttribute("totalBranches", activeBranches);
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
         
         return "admin";
@@ -88,7 +101,8 @@ public class AdminController {
         // Calculate total profit
         double totalProfit = transactionRepository.findAll()
             .stream()
-            .mapToDouble(Transaction::getFee)
+            .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
+            .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
             .sum();
             
         long totalTransactions = transactionRepository.count();

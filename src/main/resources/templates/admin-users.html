@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header h1 i {
+            color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .stats-bar {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .filters {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .users-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-admin { background: #667eea; color: white; }
+        .badge-super-admin { background: #764ba2; color: white; }
+        .badge-staff { background: #17a2b8; color: white; }
+        .badge-user { background: #6c757d; color: white; }
+        
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .actions button,
+        .actions a {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 700px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .branch-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .currency-badge {
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-users-cog"></i>
+                User & Branch Assignment
+            </h1>
+            <button class="btn btn-primary" onclick="openAddUserModal()">
+                <i class="fas fa-user-plus"></i>
+                Add New User
+            </button>
+        </div>
+
+        <!-- Statistics Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalBranches">0</div>
+                <div class="stat-label">Branches</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeUsers">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="staffCount">0</div>
+                <div class="stat-label">Staff Members</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="branchFilter">Filter by Branch:</label>
+                <select id="branchFilter" onchange="applyFilters()">
+                    <option value="">All Branches</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="roleFilter">Filter by Role:</label>
+                <select id="roleFilter" onchange="applyFilters()">
+                    <option value="">All Roles</option>
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="STAFF">Staff</option>
+                    <option value="USER">User</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter">Filter by Status:</label>
+                <select id="statusFilter" onchange="applyFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="searchBox">Search:</label>
+                <input type="text" id="searchBox" placeholder="Username or email..." oninput="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Branch</th>
+                        <th>Base Currency</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Data will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #333;">
+                <i class="fas fa-user-edit" style="color: #667eea;"></i>
+                Edit User & Assign Branch
+            </h2>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                
+                <div class="form-group">
+                    <label for="editUsername">Username *</label>
+                    <input type="text" id="editUsername" required readonly style="background: #f5f5f5;">
+                </div>
+
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPhone">Phone Number</label>
+                    <input type="text" id="editPhone">
+                </div>
+
+                <div class="form-group">
+                    <label for="editRole">Role *</label>
+                    <select id="editRole" required>
+                        <option value="USER">User</option>
+                        <option value="STAFF">Staff</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="SUPER_ADMIN">Super Admin</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editBranch">Assign to Branch *</label>
+                    <select id="editBranch" required>
+                        <option value="">Select Branch...</option>
+                    </select>
+                    <small style="color: #666;">Users inherit branch currency by default</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="editBaseCurrency">Base Currency *</label>
+                    <select id="editBaseCurrency" required>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="ZAR">ZAR - South African Rand</option>
+                        <option value="RUB">RUB - Russian Ruble</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="ZWL">ZWL - Zimbabwean Dollar</option>
+                        <option value="NGN">NGN - Nigerian Naira</option>
+                        <option value="KES">KES - Kenyan Shilling</option>
+                    </select>
+                    <small style="color: #666;">Override branch default currency if needed</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPassword">New Password (leave blank to keep current)</label>
+                    <input type="password" id="editPassword" placeholder="Enter new password or leave blank">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')" style="flex: 1;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api'; // Adjust based on your backend
+        let allUsers = [];
+        let allBranches = [];
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        async function loadData() {
+            await Promise.all([
+                loadUsers(),
+                loadBranches()
+            ]);
+            updateStats();
+            populateBranchFilter();
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/users/api/all'); // You'll need to create this endpoint
+                allUsers = await response.json();
+                renderUsers(allUsers);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                // For demo, use Thymeleaf server-side rendering fallback
+                renderUsersFromServer();
+            }
+        }
+
+        async function loadBranches() {
+            try {
+                const response = await fetch('/admin/branches');
+                allBranches = await response.json();
+                populateBranchDropdowns();
+            } catch (error) {
+                console.error('Error loading branches:', error);
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td><strong>${escapeHtml(user.username)}</strong></td>
+                    <td>${escapeHtml(user.email || 'N/A')}</td>
+                    <td><span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></td>
+                    <td>
+                        ${user.branch ? 
+                            `<span class="branch-badge">${escapeHtml(user.branch.name)}</span>` : 
+                            '<span style="color: #dc3545;">Not Assigned</span>'}
+                    </td>
+                    <td><span class="currency-badge">${user.baseCurrency || 'USD'}</span></td>
+                    <td>
+                        <span class="badge ${user.active ? 'badge-active' : 'badge-inactive'}">
+                            ${user.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <button class="btn btn-warning" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <a href="/users/${user.id}/details" class="btn btn-info">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        ${user.active ? `
+                            <button class="btn btn-danger" onclick="deactivateUser(${user.id})">
+                                <i class="fas fa-times"></i> Deactivate
+                            </button>
+                        ` : `
+                            <button class="btn btn-success" onclick="restoreUser(${user.id})">
+                                <i class="fas fa-check"></i> Activate
+                            </button>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function populateBranchFilter() {
+            const select = document.getElementById('branchFilter');
+            allBranches.forEach(branch => {
+                const option = document.createElement('option');
+                option.value = branch.id;
+                option.textContent = `${branch.name} (${branch.currency})`;
+                select.appendChild(option);
+            });
+        }
+
+        function populateBranchDropdowns() {
+            const editBranchSelect = document.getElementById('editBranch');
+            allBranches.forEach(branch => {
+                const option = document.createElement('option');
+                option.value = branch.id;
+                option.textContent = `${branch.name} (${branch.country} - ${branch.currency})`;
+                option.dataset.currency = branch.currency;
+                editBranchSelect.appendChild(option);
+            });
+
+            // Auto-update base currency when branch changes
+            editBranchSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.dataset.currency) {
+                    document.getElementById('editBaseCurrency').value = selectedOption.dataset.currency;
+                }
+            });
+        }
+
+        function applyFilters() {
+            const branchId = document.getElementById('branchFilter').value;
+            const role = document.getElementById('roleFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchBox').value.toLowerCase();
+
+            let filtered = allUsers.filter(user => {
+                const matchBranch = !branchId || (user.branch && user.branch.id == branchId);
+                const matchRole = !role || user.role === role;
+                const matchStatus = !status || String(user.active) === status;
+                const matchSearch = !search || 
+                    user.username.toLowerCase().includes(search) || 
+                    (user.email && user.email.toLowerCase().includes(search));
+                
+                return matchBranch && matchRole && matchStatus && matchSearch;
+            });
+
+            renderUsers(filtered);
+        }
+
+        async function editUser(id) {
+            try {
+                // Fetch user details
+                const user = allUsers.find(u => u.id === id);
+                if (!user) return;
+
+                // Populate form
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUsername').value = user.username;
+                document.getElementById('editEmail').value = user.email || '';
+                document.getElementById('editPhone').value = user.phoneNumber || '';
+                document.getElementById('editRole').value = user.role;
+                
+                // Set branch if assigned
+                if (user.branch) {
+                    document.getElementById('editBranch').value = user.branch.id;
+                }
+                
+                // Set base currency
+                document.getElementById('editBaseCurrency').value = user.baseCurrency || 'USD';
+
+                document.getElementById('editUserModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading user:', error);
+                alert('Failed to load user details');
+            }
+        }
+
+        // Form submission
+        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('editUserId').value;
+            const userData = {
+                username: document.getElementById('editUsername').value,
+                email: document.getElementById('editEmail').value,
+                phoneNumber: document.getElementById('editPhone').value,
+                role: document.getElementById('editRole').value,
+                baseCurrency: document.getElementById('editBaseCurrency').value,
+                branch: {
+                    id: parseInt(document.getElementById('editBranch').value)
+                }
+            };
+
+            const password = document.getElementById('editPassword').value;
+            if (password) {
+                userData.password = password;
+            }
+
+            try {
+                const response = await fetch(`/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    closeModal('editUserModal');
+                    loadData();
+                    alert('User updated successfully!');
+                } else {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+                alert('Failed to update user: ' + error.message);
+            }
+        });
+
+        function updateStats() {
+            document.getElementById('totalUsers').textContent = allUsers.length;
+            document.getElementById('totalBranches').textContent = allBranches.length;
+            document.getElementById('activeUsers').textContent = allUsers.filter(u => u.active).length;
+            document.getElementById('staffCount').textContent = allUsers.filter(u => u.role === 'STAFF').length;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function openAddUserModal() {
+            window.location.href = '/users/new';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Server-side rendering fallback (for Thymeleaf)
+        function renderUsersFromServer() {
+            // This would be populated by Thymeleaf on initial page load
+            // The JavaScript enhances it with dynamic filtering
+            console.log('Using server-side rendered data');
+        }
+    </script>
+</body>
+</html>

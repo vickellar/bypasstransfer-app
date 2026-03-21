@@ -74,6 +74,19 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- WebClient for API calls -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- JSON processing -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20230227</version>
+        </dependency>
+
         <!-- Excel -->
         <dependency>
             <groupId>org.apache.poi</groupId>
