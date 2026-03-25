@@ -42,7 +42,7 @@
     </style>
 </head>
 <body style="background: #f8fafc;">
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <div class="container">
         <div class="page-header">
@@ -68,8 +68,7 @@
                 </h2>
             </div>
             <div class="card-body">
-                <form th:action="@{${isEdit ? '/staff/expenses/' + expense.id + '/update' : '/staff/expenses/save'}}" method="post">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <form th:action="${isEdit != null and isEdit} ? @{'/staff/expenses/' + ${expense.id} + '/update'} : @{/staff/expenses/save}" method="post">
                     <input type="hidden" th:if="${isEdit}" th:name="id" th:value="${expense.id}"/>
                     
                     <div class="form-row">
@@ -122,7 +121,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="date">Date <span class="required">*</span></label>
-                            <input type="date" name="date" class="form-control" id="date" th:value="${#temporals.format(#dates.createNow(), 'yyyy-MM-dd')}" required>
+                            <input type="date" name="date" class="form-control" id="date" th:value="${expense != null and expense.date != null ? expense.date : ''}" required>
                         </div>
                         
                         <div class="form-group">
@@ -151,6 +150,6 @@
         </div>
     </div>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 </body>
 </html>

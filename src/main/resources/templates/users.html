@@ -152,14 +152,17 @@
                                 <a th:href="@{|/users/edit/${u.id}|}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
                                 <!-- Quick Assign Branch Button -->
                                 <button type="button" class="btn btn-primary btn-sm" 
-                                        onclick="openBranchAssignment([[${u.id}]])" 
+                                        th:onclick="|openBranchAssignment(${u.id})|" 
                                         title="Assign Branch"
                                         style="background: #059669; color: white;">
                                     <i class="fas fa-building"></i> Assign Branch
                                 </button>
                                 <!-- Delete Button - Always Visible -->
+                                <form th:id="'delete-form-' + ${u.id}" th:action="@{/users/delete}" method="post" style="display:none">
+                                    <input type="hidden" name="id" th:value="${u.id}" />
+                                </form>
                                 <button type="button" class="btn btn-danger btn-sm" 
-                                        onclick="confirmDelete([[${u.id}]])" 
+                                        th:onclick="|confirmDelete(${u.id})|" 
                                         title="Delete User">
                                     <i class="fas fa-trash"></i> Delete
                                 </button>
@@ -188,7 +191,7 @@
         <div style="background: white; margin: 10% auto; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
             <span onclick="closeBranchAssignment()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
             <h2 style="margin-bottom: 20px; color: #1e293b;"><i class="fas fa-building" style="margin-right: 10px; color: #3b82f6;"></i>Assign Branch to User</h2>
-            <form id="branchAssignmentForm" method="post" action="/users/save">
+            <form id="branchAssignmentForm" method="post" th:action="@{/users/assign-branch}">
                 <input type="hidden" id="userIdForBranch" name="id" />
                 <div style="margin-bottom: 20px;">
                     <label for="branchAssignmentSelect" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Select Branch:</label>

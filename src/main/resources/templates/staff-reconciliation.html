@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+    <title>Daily Reconciliation - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f8fafc; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+        .page-header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .page-header h1 { font-size: 26px; font-weight: 700; color: #1e293b; }
+        .page-header p  { color: #64748b; font-size: 14px; margin-top: 4px; }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 500; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary   { background: #3b82f6; color: white; }
+        .btn-primary:hover   { background: #2563eb; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success   { background: #22c55e; color: white; }
+        .btn-success:hover   { background: #16a34a; }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .summary-card { background: white; border-radius: 12px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.1); border: 1px solid #e2e8f0; }
+        .summary-card .label { color: #64748b; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+        .summary-card .value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .summary-card .sub   { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+        .summary-card.balanced { border-color: #86efac; background: #f0fdf4; }
+        .summary-card.balanced .value { color: #16a34a; }
+        .summary-card.mismatch { border-color: #fca5a5; background: #fef2f2; }
+        .summary-card.mismatch .value { color: #dc2626; }
+
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        .card-header { padding: 18px 22px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h2 { font-size: 17px; font-weight: 600; color: #1e293b; }
+        .card-body { padding: 22px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f8fafc; }
+        th { padding: 10px 16px; text-align: left; font-weight: 600; font-size: 12px; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 13px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f8fafc; }
+
+        /* Manual reconciliation form */
+        .recon-form { background: #f8fafc; border-radius: 10px; padding: 20px; border: 1px solid #e2e8f0; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: end; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; color: #475569; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .form-control:focus { outline: none; border-color: #3b82f6; }
+
+        .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .diff-positive { color: #16a34a; font-weight: 600; }
+        .diff-negative { color: #dc2626; font-weight: 600; }
+        .diff-zero     { color: #64748b; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div th:insert="fragments/header :: header"></div>
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-balance-scale" style="margin-right:10px;color:#3b82f6;"></i>Daily Reconciliation</h1>
+                <p>Compare your expected wallet balances with actual cash on hand</p>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <a th:href="@{/staff/transactions}" class="btn btn-secondary">
+                    <i class="fas fa-history"></i> Transaction History
+                </a>
+                <a th:href="@{/app}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success"><i class="fas fa-check-circle" style="margin-right:8px;"></i><span th:text="${success}"></span></div>
+        <div th:if="${error}"   class="alert alert-error">  <i class="fas fa-exclamation-circle" style="margin-right:8px;"></i><span th:text="${error}"></span></div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label"><i class="fas fa-wallet" style="margin-right:6px;color:#3b82f6;"></i>System Balance</div>
+                <div class="value" th:text="'$' + ${#numbers.formatDecimal(expectedBalance, 0, 2)}">$0.00</div>
+                <div class="sub">Sum of all wallet balances in the system</div>
+            </div>
+            <div class="summary-card">
+                <div class="label"><i class="fas fa-arrow-down" style="margin-right:6px;color:#22c55e;"></i>Total Cash In</div>
+                <div class="value" style="color:#16a34a;" th:text="'$' + ${#numbers.formatDecimal(totalIn, 0, 2)}">$0.00</div>
+                <div class="sub">Received across all accounts</div>
+            </div>
+            <div class="summary-card">
+                <div class="label"><i class="fas fa-arrow-up" style="margin-right:6px;color:#ef4444;"></i>Total Cash Out</div>
+                <div class="value" style="color:#dc2626;" th:text="'$' + ${#numbers.formatDecimal(totalOut, 0, 2)}">$0.00</div>
+                <div class="sub">Sent across all accounts</div>
+            </div>
+            <div class="summary-card">
+                <div class="label"><i class="fas fa-list" style="margin-right:6px;color:#a855f7;"></i>Transactions</div>
+                <div class="value" th:text="${#lists.size(transactions)}">0</div>
+                <div class="sub">Total transaction records</div>
+            </div>
+        </div>
+
+        <!-- Per-Wallet Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-credit-card" style="margin-right:8px;color:#3b82f6;"></i>Per-Account Balances</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(wallets)}" style="padding:40px;text-align:center;color:#94a3b8;">
+                <i class="fas fa-wallet" style="font-size:36px;display:block;margin-bottom:12px;"></i>
+                No wallets found. Contact your administrator.
+            </div>
+            <table th:unless="${#lists.isEmpty(wallets)}">
+                <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Currency</th>
+                        <th>System Balance</th>
+                        <th>View Transactions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="wallet : ${wallets}">
+                        <td>
+                            <strong th:text="${wallet.accountType}">Account</strong>
+                        </td>
+                        <td th:text="${wallet.currency}">USD</td>
+                        <td>
+                            <strong th:text="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}">$0.00</strong>
+                        </td>
+                        <td>
+                            <a th:href="@{/staff/transactions/wallet/{id}(id=${wallet.id})}" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f8fafc;">
+                        <td colspan="2"><strong>TOTAL</strong></td>
+                        <td><strong th:text="'$' + ${#numbers.formatDecimal(expectedBalance, 0, 2)}">$0.00</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Manual Reconciliation Check -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-calculator" style="margin-right:8px;color:#f59e0b;"></i>Manual Balance Check</h2>
+            </div>
+            <div class="card-body">
+                <p style="color:#64748b;font-size:14px;margin-bottom:16px;">
+                    Enter the actual cash on hand for each account. The system will calculate the difference.
+                </p>
+                <form id="reconForm" onsubmit="doReconciliation(event)">
+                    <div th:each="wallet : ${wallets}" style="margin-bottom:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+                        <strong th:text="${wallet.accountType + ' (' + wallet.currency + ')'}">Account</strong>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;margin-top:10px;align-items:end;">
+                            <div>
+                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">System Balance</label>
+                                <input type="text" class="form-control" readonly th:value="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}" style="background:#fff;">
+                            </div>
+                            <div>
+                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">Actual Cash on Hand</label>
+                                <input type="number" step="0.01" min="0" class="form-control actual-input"
+                                       th:id="'actual_' + ${wallet.id}"
+                                       th:data-expected="${wallet.balance}"
+                                       th:data-wallet="${wallet.accountType}"
+                                       placeholder="0.00" oninput="calcDiff(this)">
+                            </div>
+                            <div>
+                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">Difference</label>
+                                <input type="text" class="form-control" th:id="'diff_' + ${wallet.id}" readonly placeholder="—" style="background:#fff;">
+                            </div>
+                            <div>
+                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">&nbsp;</label>
+                                <button type="button" class="btn btn-success" style="height:38px;padding:0 15px;" 
+                                        th:onclick="'submitRecon(' + ${wallet.id} + ')'">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="totalDiffRow" style="margin-top:12px;padding:16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;display:none;">
+                        <strong>Total Difference: </strong><span id="totalDiffValue" style="font-weight:700;">$0.00</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
+    <script>
+        async function submitRecon(walletId) {
+            const actualInput = document.getElementById('actual_' + walletId);
+            const actualValue = parseFloat(actualInput.value);
+            
+            if (isNaN(actualValue)) {
+                alert("Please enter a valid actual balance.");
+                return;
+            }
+            
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+            
+            try {
+                const response = await fetch('/api/reconciliation/wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [header]: token
+                    },
+                    body: JSON.stringify({
+                        walletId: walletId,
+                        actualBalance: actualValue
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert("Reconciliation saved! Difference: $" + result.difference.toFixed(2));
+                } else {
+                    alert("Failed to save reconciliation.");
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        function calcDiff(input) {
+            const expected = parseFloat(input.dataset.expected) || 0;
+            const actual   = parseFloat(input.value)            || 0;
+            const diff     = actual - expected;
+            const diffInput = document.getElementById(input.id.replace('actual_', 'diff_'));
+            if (diffInput) {
+                diffInput.value = (diff >= 0 ? '+' : '') + '$' + diff.toFixed(2);
+                diffInput.style.color = diff > 0 ? '#16a34a' : diff < 0 ? '#dc2626' : '#64748b';
+            }
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const inputs = document.querySelectorAll('.actual-input');
+            let totalDiff = 0;
+            inputs.forEach(inp => {
+                const expected = parseFloat(inp.dataset.expected) || 0;
+                const actual   = parseFloat(inp.value)            || 0;
+                totalDiff += (actual - expected);
+            });
+            const el = document.getElementById('totalDiffValue');
+            if (el) {
+                el.textContent = (totalDiff >= 0 ? '+' : '') + '$' + totalDiff.toFixed(2);
+                el.style.color = totalDiff > 0 ? '#16a34a' : totalDiff < 0 ? '#dc2626' : '#64748b';
+            }
+            document.getElementById('totalDiffRow').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

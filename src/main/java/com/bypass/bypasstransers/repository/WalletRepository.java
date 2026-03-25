@@ -70,4 +70,22 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
      * Count wallets by branch
      */
     long countByBranchId(Long branchId);
+
+    /**
+     * Find all wallets belonging to a specific user OR assigned to their branch
+     */
+    @Query("SELECT w FROM Wallet w WHERE w.owner.id = :ownerId OR (w.branch IS NOT NULL AND w.branch.id = :branchId)")
+    List<Wallet> findByOwnerIdOrBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    /**
+     * Get total balance across all wallets for a user OR their branch
+     */
+    @Query("SELECT SUM(w.balance) FROM Wallet w WHERE w.owner.id = :ownerId OR (w.branch IS NOT NULL AND w.branch.id = :branchId)")
+    Double getTotalBalanceByOwnerIdOrBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    /**
+     * Count wallets belonging to a user OR assigned to their branch
+     */
+    @Query("SELECT COUNT(w) FROM Wallet w WHERE w.owner.id = :ownerId OR (w.branch IS NOT NULL AND w.branch.id = :branchId)")
+    long countByOwnerIdOrBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
 }

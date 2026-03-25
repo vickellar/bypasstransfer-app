@@ -1,26 +1,34 @@
 <!DOCTYPE html>
 
 <html>
-    <head>
-        <title>transaction</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
 
-        <select name="type">
-            <option value="INCOMING">Incoming</option>
-            <option value="OUTGOING">Outgoing</option>
-            <option value="TRANSFER">Transfer</option>
-        </select>
+<head>
+    <title>transaction</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
 
+<body>
 
-        <input type="number" name="amount" step="0.01" required />
-        <input type="text" name="referenceCode" />
-        <input type="file" name="proof" />
+    <select name="type">
+        <option value="INCOMING">Incoming</option>
+        <option value="OUTGOING">Outgoing</option>
+        <option value="TRANSFER">Transfer</option>
+    </select>
 
 
-        <button type="submit">Submit (Pending)</button>
+    <input type="number" name="amount" step="0.01" required />
+    <input type="text" name="referenceCode" />
+    <input type="file" name="proof" />
 
-    </body>
+
+    <button type="submit">Submit (Pending)</button>
+
+</body>
+
 </html>
+
+T1. A deactivated user must not log in into the system
+T2. All Accounts panel in Admin dashboard must show 10 the rest the user has to scrol.
+T3. inside Admin console, under manage user inside that page it shows all users 2 button are not working : 1. Delete
+button its stack, 2. Assign branch button no working as well

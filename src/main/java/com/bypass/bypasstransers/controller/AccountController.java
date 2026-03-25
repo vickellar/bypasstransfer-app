@@ -62,6 +62,8 @@ public class AccountController {
 
     /**
      * Main dashboard - routes to appropriate view based on user role
+     * @param model
+     * @return 
      */
     @GetMapping("/app")
     public String dashboard(Model model) {
@@ -83,6 +85,8 @@ public class AccountController {
 
     /**
      * Staff dashboard - shows only their own data
+     * @param model
+     * @return 
      */
     @GetMapping("/app/staff")
     public String staffDashboard(Model model) {
@@ -111,6 +115,8 @@ public class AccountController {
 
     /**
      * Supervisor/Admin dashboard - shows company overview
+     * @param model
+     * @return 
      */
     @GetMapping("/app/supervisor")
     public String supervisorDashboard(Model model) {

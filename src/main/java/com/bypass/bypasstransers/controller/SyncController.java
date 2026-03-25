@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','SUPERVISOR')")
+@PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
 public class SyncController {
 
     @Autowired

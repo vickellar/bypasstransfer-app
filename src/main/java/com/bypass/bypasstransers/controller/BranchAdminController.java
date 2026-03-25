@@ -49,7 +49,7 @@ public class BranchAdminController {
      * Get all branches (including inactive)
      */
     @GetMapping("/all")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> getAllBranchesIncludingInactive() {
         try {
             List<Branch> branches = branchService.getAllBranches();
@@ -78,7 +78,7 @@ public class BranchAdminController {
      * Create new branch
      */
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> createBranch(@RequestBody Branch branch) {
         try {
             if (branchService.branchNameExists(branch.getName())) {
@@ -96,7 +96,7 @@ public class BranchAdminController {
      * Update existing branch
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> updateBranch(@PathVariable Long id, @RequestBody Branch branchDetails) {
         try {
             Branch updated = branchService.updateBranch(id, branchDetails);
@@ -110,7 +110,7 @@ public class BranchAdminController {
      * Deactivate branch
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> deactivateBranch(@PathVariable Long id) {
         try {
             branchService.deactivateBranch(id);
@@ -126,7 +126,7 @@ public class BranchAdminController {
      * Activate branch
      */
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> activateBranch(@PathVariable Long id) {
         try {
             branchService.activateBranch(id);

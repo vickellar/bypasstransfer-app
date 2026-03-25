@@ -21,7 +21,7 @@ public class WalletService {
 
     /**
      * Get all wallets for the current user
-     * - Staff: returns only their wallets
+     * - Staff: returns their wallets OR wallets assigned to their branch
      * - Supervisor/Admin: can call this but typically use getAllWalletsForSupervisor()
      */
     public List<Wallet> getCurrentUserWallets() {
@@ -30,8 +30,12 @@ public class WalletService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only see their own wallets
+        // Staff can see their own wallets OR wallets assigned to their branch
         if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                return walletRepository.findByOwnerIdOrBranchId(currentUser.getId(), branchId);
+            }
             return walletRepository.findByOwnerId(currentUser.getId());
         }
 
@@ -40,7 +44,7 @@ public class WalletService {
     }
 
     /**
-     * Get wallet by ID - enforces user isolation
+     * Get wallet by ID - enforces user/branch isolation
      */
     public Optional<Wallet> getWalletById(Long id) {
         User currentUser = securityService.getCurrentUser();
@@ -48,9 +52,19 @@ public class WalletService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only access their own wallets
+        // Staff can access their own wallets OR branch wallets
         if (securityService.isStaffOnly()) {
-            return walletRepository.findByIdAndOwnerId(id, currentUser.getId());
+            Optional<Wallet> walletOpt = walletRepository.findById(id);
+            if (walletOpt.isPresent()) {
+                Wallet wallet = walletOpt.get();
+                boolean isOwner = wallet.getOwner() != null && wallet.getOwner().getId().equals(currentUser.getId());
+                boolean isBranchWallet = wallet.getBranch() != null && currentUser.getBranch() != null && 
+                                        wallet.getBranch().getId().equals(currentUser.getBranch().getId());
+                if (isOwner || isBranchWallet) {
+                    return walletOpt;
+                }
+            }
+            return Optional.empty();
         }
 
         // Supervisors and above can access any wallet
@@ -86,7 +100,19 @@ public class WalletService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        Double total = walletRepository.getTotalBalanceByOwnerId(currentUser.getId());
+        Double total;
+        if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                total = walletRepository.getTotalBalanceByOwnerIdOrBranchId(currentUser.getId(), branchId);
+            } else {
+                total = walletRepository.getTotalBalanceByOwnerId(currentUser.getId());
+            }
+        } else {
+            // Supervisors and above see company total balance anyway in their specific method, 
+            // but for this generic method we'll give them their own wallets total.
+            total = walletRepository.getTotalBalanceByOwnerId(currentUser.getId());
+        }
         return total != null ? total : 0.0;
     }
 
@@ -109,7 +135,14 @@ public class WalletService {
     public long countCurrentUserWallets() {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
-            throw new AccessDeniedException("Not authenticated");
+            return 0;
+        }
+        
+        if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                return walletRepository.countByOwnerIdOrBranchId(currentUser.getId(), branchId);
+            }
         }
         return walletRepository.countByOwnerId(currentUser.getId());
     }

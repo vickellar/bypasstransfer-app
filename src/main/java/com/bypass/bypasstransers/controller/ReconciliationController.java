@@ -25,6 +25,32 @@ public class ReconciliationController {
         return service.reconcile(date, req.getActualBalance());
     }
 
+    @PostMapping("/wallet")
+    public DailyReconciliation reconcileWallet(@RequestBody ReconcileWalletRequest req) {
+        return service.reconcileWallet(req.getWalletId(), req.getActualBalance());
+    }
+
+    public static class ReconcileWalletRequest {
+        private Long walletId;
+        private double actualBalance;
+
+        public Long getWalletId() {
+            return walletId;
+        }
+
+        public void setWalletId(Long walletId) {
+            this.walletId = walletId;
+        }
+
+        public double getActualBalance() {
+            return actualBalance;
+        }
+
+        public void setActualBalance(double actualBalance) {
+            this.actualBalance = actualBalance;
+        }
+    }
+
     public static class ReconcileRequest {
         private LocalDate date;
         private double actualBalance;

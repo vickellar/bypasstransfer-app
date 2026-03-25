@@ -141,9 +141,9 @@
                                             </td>
                                             <td th:text="${tx.username}"></td>
                                             <td>
-                                                <span th:class="'badge bg-' + ${tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).DEPOSIT ? 'success' : 
-                                                              tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).WITHDRAWAL ? 'danger' : 
-                                                              tx.type == T(com.bypass.bypasstransers.model.Transaction.TransactionType).TRANSFER ? 'primary' : 'secondary'}"
+                                                <span th:class="'badge bg-' + ${tx.type == T(com.bypass.bypasstransers.enums.TransactionType).INCOME ? 'success' : 
+                                                              tx.type == T(com.bypass.bypasstransers.enums.TransactionType).EXPENSE || tx.type == T(com.bypass.bypasstransers.enums.TransactionType).OUTCOME ? 'danger' : 
+                                                              tx.type == T(com.bypass.bypasstransers.enums.TransactionType).TRANSFER ? 'primary' : 'secondary'}"
                                                       th:text="${tx.type}"></span>
                                             </td>
                                             <td class="fw-bold" th:text="${'$' + #numbers.formatDecimal(tx.amount, 1, 2)}"></td>

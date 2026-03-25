@@ -649,3 +649,9 @@ For questions or issues, refer to the documentation files or check the applicati
 ---
 
 *Last Updated: March 20, 2026*
+
+
+
+Another thing, I think the currency must be specifically stated Because we have another agent who is in South Africa. And another agent is in Russia. and some other agents are USA, and we are openning other  breachs And we are thinking in opening branches in some other countries again. so for branches out  of Zimbabwe, thehy use defferent accounts or wallet we must be able to hamdle that
+
+

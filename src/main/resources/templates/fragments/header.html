@@ -40,7 +40,7 @@
                     <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}" class="nav-btn nav-btn-amber">
                         <i class="fas fa-cog"></i> Admin
                     </a>
-                    <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="nav-btn nav-btn-info">
+                    <a sec:authorize="hasAnyRole('STAFF', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="nav-btn nav-btn-info">
                         <i class="fas fa-sync-alt"></i> Sync
                     </a>
 

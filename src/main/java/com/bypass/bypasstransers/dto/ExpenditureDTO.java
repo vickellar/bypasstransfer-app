@@ -12,6 +12,7 @@ public class ExpenditureDTO {
     private String recordedBy;
     private String notes;
     private Currency currency;
+    private Long walletId;
     
     public ExpenditureDTO() {}
 
@@ -39,4 +40,7 @@ public class ExpenditureDTO {
     
     public Currency getCurrency() { return currency; }
     public void setCurrency(Currency currency) { this.currency = currency; }
+
+    public Long getWalletId() { return walletId; }
+    public void setWalletId(Long walletId) { this.walletId = walletId; }
 }

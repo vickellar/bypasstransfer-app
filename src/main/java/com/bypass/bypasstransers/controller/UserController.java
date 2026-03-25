@@ -6,14 +6,12 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.Expenditure;
-import com.bypass.bypasstransers.model.Branch;
 import com.bypass.bypasstransers.repository.WalletRepository;
 import com.bypass.bypasstransers.repository.EmailVerificationTokenRepository;
 import com.bypass.bypasstransers.repository.ExpenditureRepository;
 import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
-import com.bypass.bypasstransers.repository.BranchRepository;
 import com.bypass.bypasstransers.service.AuditService;
 import com.bypass.bypasstransers.service.PasswordResetService;
 import com.bypass.bypasstransers.service.UserProvisioningService;
@@ -24,10 +22,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.bypass.bypasstransers.model.Branch;
+import com.bypass.bypasstransers.repository.BranchRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -37,8 +40,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -47,7 +48,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class UserController {
 
     private final UserRepository userRepository;
-    private final BranchRepository branchRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
     private final PasswordResetService passwordResetService;
@@ -57,20 +57,18 @@ public class UserController {
     private final ExpenditureRepository expenditureRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final TransactionRepository transactionRepository;
+    private final BranchRepository branchRepository;
 
-    public UserController(UserRepository userRepository, 
-                         BranchRepository branchRepository,
-                         PasswordEncoder passwordEncoder, 
-                         AuditService auditService, 
-                         PasswordResetService passwordResetService,
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, 
+                         AuditService auditService, PasswordResetService passwordResetService,
                          UserProvisioningService userProvisioningService,
                          PasswordResetTokenRepository passwordResetTokenRepository,
                          WalletRepository walletRepository,
                          ExpenditureRepository expenditureRepository,
                          EmailVerificationTokenRepository emailVerificationTokenRepository,
-                         TransactionRepository transactionRepository) {
+                         TransactionRepository transactionRepository,
+                         BranchRepository branchRepository) {
         this.userRepository = userRepository;
-        this.branchRepository = branchRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
         this.passwordResetService = passwordResetService;
@@ -80,90 +78,38 @@ public class UserController {
         this.expenditureRepository = expenditureRepository;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.transactionRepository = transactionRepository;
+        this.branchRepository = branchRepository;
     }
 
     @GetMapping("/users")
     public String listUsers(Model model) {
-        try {
-            // Show all users with inactive ones marked
-            List<User> users = userRepository.findAllByOrderByIsActiveDescCreatedAtDesc();
-            model.addAttribute("users", users);
-            model.addAttribute("branches", branchRepository.findByIsActive(true));
-        } catch (Exception e) {
-            System.err.println("Error loading users: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // Show all users with inactive ones marked
+        model.addAttribute("users", userRepository.findAllByOrderByIsActiveDescCreatedAtDesc());
+        model.addAttribute("branches", branchRepository.findAll());
         return "users";
-    }
-    
-    /**
-     * REST API to get all users with branch info for the admin dashboard
-     */
-    @GetMapping("/users/api/all")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<?> getAllUsersApi() {
-        try {
-            List<User> users = userRepository.findAllByOrderByIsActiveDescCreatedAtDesc();
-            
-            // Convert to DTO with branch info
-            List<Map<String, Object>> userDtos = users.stream().map(user -> {
-                Map<String, Object> dto = new HashMap<>();
-                dto.put("id", user.getId());
-                dto.put("username", user.getUsername());
-                dto.put("email", user.getEmail());
-                dto.put("phoneNumber", user.getPhoneNumber());
-                dto.put("role", user.getRole().name());
-                dto.put("active", user.isActive());
-                dto.put("baseCurrency", user.getBaseCurrency() != null ? user.getBaseCurrency().name() : null);
-                
-                if (user.getBranch() != null) {
-                    Map<String, Object> branchDto = new HashMap<>();
-                    branchDto.put("id", user.getBranch().getId());
-                    branchDto.put("name", user.getBranch().getName());
-                    branchDto.put("country", user.getBranch().getCountry());
-                    branchDto.put("currency", user.getBranch().getCurrency().name());
-                    dto.put("branch", branchDto);
-                } else {
-                    dto.put("branch", null);
-                }
-                
-                return dto;
-            }).collect(Collectors.toList());
-            
-            return ResponseEntity.ok(userDtos);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching users: " + e.getMessage());
-        }
     }
     
     @GetMapping("/users/{id}/details")
     public String viewUserDetails(@PathVariable Long id, Model model, RedirectAttributes ra) {
-        try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            
-            User user = userOpt.get();
-            model.addAttribute("user", user);
-            
-            // Get user's accounts/wallets
-            model.addAttribute("accounts", walletRepository.findByOwnerId(id));
-            
-            // Get user's transactions - include all transactions related to user's wallets
-            model.addAttribute("transactions", transactionRepository.findByWalletOwnerId(id));
-            
-            // Get user's expenditures
-            model.addAttribute("expenditures", expenditureRepository.findByRecordedBy(user));
-            
-            return "user-details";
-        } catch (Exception e) {
-            System.err.println("Error loading user details for ID " + id + ": " + e.getMessage());
-            e.printStackTrace();
-            ra.addFlashAttribute("error", "Failed to load user details: " + e.getMessage());
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "User not found");
             return "redirect:/users";
         }
+        
+        User user = userOpt.get();
+        model.addAttribute("user", user);
+        
+        // Get user's accounts/wallets
+        model.addAttribute("accounts", walletRepository.findByOwnerId(id));
+        
+        // Get user's transactions - include all transactions related to user's wallets
+        model.addAttribute("transactions", transactionRepository.findByWalletOwnerId(id));
+        
+        // Get user's expenditures
+        model.addAttribute("expenditures", expenditureRepository.findByRecordedBy(user));
+        
+        return "user-details";
     }
 
     @GetMapping("/users/new")
@@ -174,7 +120,6 @@ public class UserController {
         }
         model.addAttribute("user", u);
         model.addAttribute("roles", Role.values());
-        model.addAttribute("branches", branchRepository.findByIsActive(true));
         return "user-form";
     }
 
@@ -187,7 +132,6 @@ public class UserController {
         }
         model.addAttribute("user", u.get());
         model.addAttribute("roles", Role.values());
-        model.addAttribute("branches", branchRepository.findByIsActive(true));
         return "user-form";
     }
     
@@ -290,9 +234,8 @@ public class UserController {
 
     @PostMapping("/users/save")
     public String saveUser(@ModelAttribute User user, 
-                          @RequestParam(required = false) String rawPassword,
+                          @RequestParam(required = false) String rawPassword, 
                           @RequestParam(required = false) Long branchId,
-                          @RequestParam(required = false) String baseCurrency,
                           RedirectAttributes ra) {
         boolean isNew = (user.getId() == null);
         try {
@@ -333,15 +276,8 @@ public class UserController {
                 }
             }
             
-            // Set branch assignment if provided
-            if (branchId != null && branchId > 0) {
-                Optional<Branch> branchOpt = branchRepository.findById(branchId);
-                branchOpt.ifPresent(user::setBranch);
-            }
-            
-            // Set base currency if provided
-            if (baseCurrency != null && !baseCurrency.isBlank()) {
-                user.setBaseCurrency(Currency.valueOf(baseCurrency));
+            if (branchId != null) {
+                branchRepository.findById(branchId).ifPresent(user::setBranch);
             }
             
             // Save the user first to get an ID
@@ -392,65 +328,27 @@ public class UserController {
         return "redirect:/users";
     }
 
-    /**
-     * REST API to update user with branch assignment
-     */
-    @PutMapping("/admin/users/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<?> updateUserApi(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> userData) {
+    @PostMapping("/users/assign-branch")
+    public String assignBranch(@RequestParam Long id, @RequestParam(required = false) Long branchId, RedirectAttributes ra) {
         try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+            Optional<User> opt = userRepository.findById(id);
+            if (opt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
             }
-
-            User user = userOpt.get();
-
-            // Update fields from request
-            if (userData.containsKey("email")) {
-                user.setEmail((String) userData.get("email"));
+            User u = opt.get();
+            if (branchId != null) {
+                branchRepository.findById(branchId).ifPresent(u::setBranch);
+            } else {
+                u.setBranch(null);
             }
-            if (userData.containsKey("phoneNumber")) {
-                user.setPhoneNumber((String) userData.get("phoneNumber"));
-            }
-            if (userData.containsKey("role")) {
-                user.setRole(Role.valueOf((String) userData.get("role")));
-            }
-            if (userData.containsKey("baseCurrency")) {
-                user.setBaseCurrency(Currency.valueOf((String) userData.get("baseCurrency")));
-            }
-            if (userData.containsKey("password") && userData.get("password") != null) {
-                String newPassword = (String) userData.get("password");
-                if (!newPassword.isBlank()) {
-                    user.setPassword(passwordEncoder.encode(newPassword));
-                }
-            }
-
-            // Update branch assignment
-            if (userData.containsKey("branch")) {
-                Map<String, Object> branchData = (Map<String, Object>) userData.get("branch");
-                if (branchData != null && branchData.containsKey("id")) {
-                    Long branchId = ((Number) branchData.get("id")).longValue();
-                    Optional<Branch> branchOpt = branchRepository.findById(branchId);
-                    branchOpt.ifPresent(user::setBranch);
-                } else {
-                    user.setBranch(null); // Remove branch assignment
-                }
-            }
-
-            userRepository.save(user);
-            auditService.logEntity("admin", "users", id, "UPDATE_USER_WITH_BRANCH", null, user.getUsername());
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "User updated successfully");
-            response.put("username", user.getUsername());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error updating user: " + e.getMessage());
+            userRepository.save(u);
+            auditService.logEntity("admin", "users", id, "ASSIGN_BRANCH", null, u.getUsername());
+            ra.addFlashAttribute("success", "Branch assigned successfully to user " + u.getUsername());
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Failed to assign branch: " + ex.getMessage());
         }
+        return "redirect:/users";
     }
 
     @PostMapping("/users/delete")
@@ -730,5 +628,85 @@ public class UserController {
         }
         
         document.close();
+    }
+
+    /**
+     * API to get all users with branch info for the admin dashboard
+     */
+    @GetMapping("/users/api/all")
+    @ResponseBody
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<?> getAllUsersApi() {
+        List<User> users = userRepository.findAll();
+        List<Map<String, Object>> userList = users.stream().map(u -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", u.getId());
+            map.put("username", u.getUsername());
+            map.put("email", u.getEmail());
+            map.put("role", u.getRole());
+            map.put("isActive", u.getIsActive());
+            map.put("branch", u.getBranch() != null ? u.getBranch().getName() : "No Branch");
+            map.put("branchId", u.getBranch() != null ? u.getBranch().getId() : null);
+            map.put("baseCurrency", u.getBaseCurrency());
+            return map;
+        }).collect(Collectors.toList());
+        
+        return ResponseEntity.ok(userList);
+    }
+
+    /**
+     * REST endpoint to update user (used by admin-users.html modal)
+     */
+    @PutMapping("/admin/users/{id}")
+    @ResponseBody
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<?> updateUserRest(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        
+        if (updates.containsKey("branch")) {
+            Object branchObj = updates.get("branch");
+            if (branchObj instanceof Map) {
+                Map<?, ?> branchMap = (Map<?, ?>) branchObj;
+                Object bId = branchMap.get("id");
+                if (bId != null && !bId.toString().isEmpty()) {
+                    branchRepository.findById(Long.valueOf(bId.toString())).ifPresent(user::setBranch);
+                } else {
+                    user.setBranch(null);
+                }
+            } else if (branchObj == null) {
+                user.setBranch(null);
+            }
+        } else if (updates.containsKey("branchId")) {
+            Object branchIdObj = updates.get("branchId");
+            Long branchId = (branchIdObj != null && !branchIdObj.toString().isEmpty()) ? Long.valueOf(branchIdObj.toString()) : null;
+            if (branchId != null) {
+                branchRepository.findById(branchId).ifPresent(user::setBranch);
+            } else {
+                user.setBranch(null);
+            }
+        }
+        
+        if (updates.containsKey("baseCurrency")) {
+            String currencyStr = (String) updates.get("baseCurrency");
+            if (currencyStr != null && !currencyStr.isEmpty()) {
+                user.setBaseCurrency(com.bypass.bypasstransers.enums.Currency.valueOf(currencyStr));
+            }
+        }
+        
+        if (updates.containsKey("role")) {
+            user.setRole(com.bypass.bypasstransers.enums.Role.valueOf((String) updates.get("role")));
+        }
+        
+        if (updates.containsKey("isActive")) {
+            user.setIsActive((Boolean) updates.get("isActive"));
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
     }
 }

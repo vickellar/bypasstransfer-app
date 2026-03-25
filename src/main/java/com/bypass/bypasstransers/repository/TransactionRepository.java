@@ -32,38 +32,59 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByWalletOwnerId(@Param("ownerId") Long ownerId);
 
     /**
+     * Find all transactions for wallets belonging to a specific user OR assigned to their branch
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId) ORDER BY t.date DESC")
+    List<Transaction> findByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    /**
      * Find transactions by wallet ID and owner ID
      */
     @Query("SELECT t FROM Transaction t WHERE t.wallet.id = :walletId AND t.wallet.owner.id = :ownerId ORDER BY t.date DESC")
     List<Transaction> findByWalletIdAndWalletOwnerId(@Param("walletId") Long walletId, @Param("ownerId") Long ownerId);
 
     /**
-     * Check if transaction exists with given ID and wallet owner ID
-     */
-    @Query("SELECT COUNT(t) > 0 FROM Transaction t WHERE t.id = :transactionId AND t.wallet.owner.id = :ownerId")
-    boolean existsByIdAndWalletOwnerId(@Param("transactionId") Long transactionId, @Param("ownerId") Long ownerId);
-
-    /**
-     * Get transaction by ID and owner ID
+     * Find transaction by ID and owner ID
      */
     @Query("SELECT t FROM Transaction t WHERE t.id = :id AND t.wallet.owner.id = :ownerId")
     Optional<Transaction> findByIdAndWalletOwnerId(@Param("id") Long id, @Param("ownerId") Long ownerId);
 
     /**
+     * Check if transaction exists with given ID and wallet owner ID
+     */
+    @Query("SELECT COUNT(t) > 0 FROM Transaction t WHERE t.id = :id AND t.wallet.owner.id = :ownerId")
+    boolean existsByIdAndWalletOwnerId(@Param("id") Long id, @Param("ownerId") Long ownerId);
+
+    /**
+     * Check if transaction exists with given ID and wallet owner ID or branch ID
+     */
+    @Query("SELECT COUNT(t) > 0 FROM Transaction t WHERE t.id = :transactionId AND (t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId))")
+    boolean existsByIdAndWalletOwnerIdOrWalletBranchId(@Param("transactionId") Long transactionId, @Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    /**
+     * Get transaction by ID and owner ID
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.id = :id AND (t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId))")
+    Optional<Transaction> findByIdAndWalletOwnerIdOrWalletBranchId(@Param("id") Long id, @Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    /**
      * Count transactions for a specific user's wallets
      */
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId)")
+    long countByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId)")
+    Double getTotalAmountByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
+    @Query("SELECT SUM(t.fee) FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId)")
+    Double getTotalFeesByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+
     @Query("SELECT COUNT(t) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
     long countByWalletOwnerId(@Param("ownerId") Long ownerId);
 
-    /**
-     * Get total transaction amount for a user
-     */
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
     Double getTotalAmountByWalletOwnerId(@Param("ownerId") Long ownerId);
 
-    /**
-     * Get total fees for a user
-     */
     @Query("SELECT SUM(t.fee) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
     Double getTotalFeesByWalletOwnerId(@Param("ownerId") Long ownerId);
 

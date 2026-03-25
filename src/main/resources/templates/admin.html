@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
@@ -115,7 +115,7 @@
                     <p>Create and manage international branches and their currencies</p>
                 </div>
             </a>
-            
+
             <a th:href="@{/admin/change-password}" class="action-card">
                 <div class="action-icon users"><i class="fas fa-key"></i></div>
                 <div class="action-content">
@@ -123,6 +123,7 @@
                     <p>Update your administrator account password</p>
                 </div>
             </a>
+
             <a th:href="@{/admin/backup}" class="action-card" th:if="${isSuperAdmin}">
                 <div class="action-icon migrate"><i class="fas fa-database"></i></div>
                 <div class="action-content">
@@ -130,6 +131,7 @@
                     <p>Backup and restore your entire system data</p>
                 </div>
             </a>
+
             <a th:href="@{/users}" class="action-card">
                 <div class="action-icon users"><i class="fas fa-users-cog"></i></div>
                 <div class="action-content">
@@ -137,13 +139,24 @@
                     <p>View, edit, and manage all system users and their roles</p>
                 </div>
             </a>
+
+            <!-- Manage Users with Branch Assignment -->
+            <a th:href="@{/admin/users}" class="action-card">
+                <div class="action-icon branch"><i class="fas fa-sitemap"></i></div>
+                <div class="action-content">
+                    <h3>User &amp; Branch Assignment</h3>
+                    <p>Assign branches to users and manage roles in one place</p>
+                </div>
+            </a>
+
             <a th:href="@{/users/new?role=STAFF}" class="action-card">
                 <div class="action-icon staff"><i class="fas fa-user-plus"></i></div>
                 <div class="action-content">
                     <h3>Create New Staff</h3>
-                    <p>Add a new staff member with Mukuru, Econet & Innbucks accounts</p>
+                    <p>Add a new staff member with Mukuru, Econet &amp; Innbucks accounts</p>
                 </div>
             </a>
+
             <a th:href="@{/users/new?role=SUPERVISOR}" class="action-card" th:if="${isSuperAdmin}">
                 <div class="action-icon supervisor"><i class="fas fa-user-shield"></i></div>
                 <div class="action-content">
@@ -151,6 +164,7 @@
                     <p>Add a new supervisor who can view all staff accounts</p>
                 </div>
             </a>
+
             <a th:href="@{/admin/contact-messages}" class="action-card">
                 <div class="action-icon messages"><i class="fas fa-envelope"></i></div>
                 <div class="action-content">
@@ -158,6 +172,34 @@
                     <p>View messages from users and website visitors</p>
                 </div>
             </a>
+
+            <!-- Analytics Dashboard -->
+            <a th:href="@{/admin/analytics}" class="action-card">
+                <div class="action-icon" style="background:#f0fdf4;color:#10b981;"><i class="fas fa-chart-bar"></i></div>
+                <div class="action-content">
+                    <h3>Analytics Dashboard</h3>
+                    <p>View transaction analytics, trends and performance metrics</p>
+                </div>
+            </a>
+
+            <!-- Profit Overview â€” SUPER_ADMIN only -->
+            <a th:href="@{/admin/profit}" class="action-card" th:if="${isSuperAdmin}">
+                <div class="action-icon" style="background:#fef9c3;color:#ca8a04;"><i class="fas fa-coins"></i></div>
+                <div class="action-content">
+                    <h3>Profit Overview</h3>
+                    <p>View total profit, fees and financial summaries</p>
+                </div>
+            </a>
+
+            <!-- Offline Transactions -->
+            <a th:href="@{/offline-transactions}" class="action-card">
+                <div class="action-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-wifi"></i></div>
+                <div class="action-content">
+                    <h3>Offline Transactions</h3>
+                    <p>View and manage transactions recorded offline</p>
+                </div>
+            </a>
+
             <a th:href="@{/staff/expenses}" class="action-card">
                 <div class="action-icon reports"><i class="fas fa-receipt"></i></div>
                 <div class="action-content">
@@ -165,6 +207,7 @@
                     <p>Record and manage personal expenses</p>
                 </div>
             </a>
+
             <a th:href="@{/staff/expenses/new}" class="action-card">
                 <div class="action-icon excel"><i class="fas fa-plus-circle"></i></div>
                 <div class="action-content">
@@ -172,6 +215,7 @@
                     <p>Add a new personal expense record</p>
                 </div>
             </a>
+
             <a th:href="@{/app}" class="action-card">
                 <div class="action-icon dashboard"><i class="fas fa-chart-line"></i></div>
                 <div class="action-content">
@@ -179,13 +223,15 @@
                     <p>Go to your main dashboard view</p>
                 </div>
             </a>
+
             <a th:href="@{/admin/reports}" class="action-card">
                 <div class="action-icon reports"><i class="fas fa-file-export"></i></div>
                 <div class="action-content">
-                    <h3>Reports & Exports</h3>
+                    <h3>Reports &amp; Exports</h3>
                     <p>Export transactions to Excel or PDF with date filters</p>
                 </div>
             </a>
+
             <form th:action="@{/admin/migrate-users}" method="post" style="display: contents;">
                 <button type="submit" class="action-card" style="border: none; cursor: pointer; width: 100%; text-align: left;" onclick="return confirm('This will create default wallets (Mukuru, Econet, Innbucks) for all users who do not have them. Continue?')">
                     <div class="action-icon migrate"><i class="fas fa-user-cog"></i></div>

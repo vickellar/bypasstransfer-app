@@ -22,7 +22,7 @@
                 <th>Balance</th>
             </tr>
             <tr th:each="acc : ${accounts}">
-                <td th:text="${acc.name}"></td>
+                <td th:text="${acc.accountType}"></td>
                 <td th:text="${acc.balance}"></td>
             </tr>
         </table>

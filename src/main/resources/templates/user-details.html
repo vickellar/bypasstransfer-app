@@ -196,7 +196,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="account : ${accounts}">
-                            <td data-label="Account Name" th:text="${account.name}">Account Name</td>
+                            <td data-label="Account Name" th:text="${account.accountType}">Account Name</td>
                             <td data-label="Type" th:text="${account.accountType}">Type</td>
                             <td data-label="Balance" th:text="${#numbers.formatDecimal(account.balance, 1, 2)}">0.00</td>
                             <td data-label="Status">
@@ -233,7 +233,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="tx : ${transactions}">
-                            <td data-label="Date" th:text="${#temporals.format(tx.date, 'dd MMM yyyy HH:mm')}">Date</td>
+                            <td data-label="Date" th:text="${tx.date != null ? #temporals.format(tx.date, 'dd MMM yyyy HH:mm') : 'N/A'}">Date</td>
                             <td data-label="Type" th:text="${tx.type}">Type</td>
                             <td data-label="From" th:text="${tx.fromAccount} ?: 'N/A'">From</td>
                             <td data-label="To" th:text="${tx.toAccount} ?: 'N/A'">To</td>

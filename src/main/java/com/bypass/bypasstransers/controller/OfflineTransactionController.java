@@ -91,7 +91,7 @@ public class OfflineTransactionController {
     }
     
     @PostMapping("/sync")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
     public String syncAllTransactions(RedirectAttributes ra) {
         try {
             Map<String, Object> result = offlineSyncService.syncAllPendingTransactions();
@@ -116,7 +116,7 @@ public class OfflineTransactionController {
     }
     
     @GetMapping("/sync-management")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
     public String syncManagement(Model model) {
         User currentUser = securityService.getCurrentUser();
         List<OfflineTransaction> transactions = offlineSyncService.getUserOfflineTransactions(currentUser.getUsername());
@@ -129,7 +129,7 @@ public class OfflineTransactionController {
     }
     
     @PostMapping("/sync/retry")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
     public String retryFailedTransactions(RedirectAttributes ra) {
         try {
             int retryCount = offlineSyncService.retryFailedTransactions();
@@ -144,7 +144,7 @@ public class OfflineTransactionController {
     // JSON API endpoints for sync management page
     
     @PostMapping("/api/sync")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> apiSyncAllTransactions() {
         Map<String, Object> response = new HashMap<>();
         try {
@@ -167,7 +167,7 @@ public class OfflineTransactionController {
     }
     
     @PostMapping("/api/sync/retry")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> apiRetryFailedTransactions() {
         Map<String, Object> response = new HashMap<>();
         try {

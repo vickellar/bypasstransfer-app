@@ -17,6 +17,8 @@ public class DailyReconciliation {
     private double systemBalance;
     private double actualBalance;
     private double difference;
+    private String accountName;
+    private Long walletId;
 
     public Long getId() {
         return id;
@@ -56,6 +58,22 @@ public class DailyReconciliation {
 
     public void setDifference(double difference) {
         this.difference = difference;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public Long getWalletId() {
+        return walletId;
+    }
+
+    public void setWalletId(Long walletId) {
+        this.walletId = walletId;
     }
     
     

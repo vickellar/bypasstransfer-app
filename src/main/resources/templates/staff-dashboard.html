@@ -79,7 +79,7 @@
     </style>
 </head>
 <body style="background: #f8fafc;">
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <div class="dashboard-container">
         <div class="page-header">
@@ -101,7 +101,7 @@
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="fas fa-wallet"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(totalBalance, 0, 2)}">$0.00</h3>
+                    <h3 th:text="${user.baseCurrency} + ' ' + ${#numbers.formatDecimal(totalBalance, 0, 2)}">USD 0.00</h3>
                     <p>Total Balance</p>
                 </div>
             </div>
@@ -122,7 +122,7 @@
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fas fa-chart-line"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(txSummary.totalAmount, 0, 2)}">$0.00</h3>
+                    <h3 th:text="${user.baseCurrency} + ' ' + ${#numbers.formatDecimal(txSummary.totalAmount, 0, 2)}">USD 0.00</h3>
                     <p>Total Volume</p>
                 </div>
             </div>
@@ -149,6 +149,45 @@
             </div>
         </div>
 
+        <!-- Transaction History & Reconciliation -->
+        <div class="content-grid" style="margin-bottom: 24px;">
+            <!-- Transaction History -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-history" style="margin-right: 8px; color: #3b82f6;"></i>Transaction History</h2>
+                </div>
+                <div style="padding: 16px;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                        View all your transactions or drill down per account.
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a th:href="@{/staff/transactions}" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
+                            <i class="fas fa-list"></i> All Transactions
+                        </a>
+                        <a th:each="w : ${wallets}" th:href="@{/staff/transactions/wallet/{id}(id=${w.id})}"
+                           class="btn btn-secondary" style="padding: 8px 16px; font-size: 14px;"
+                           th:text="${w.accountType}">Account</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reconciliation -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale" style="margin-right: 8px; color: #6366f1;"></i>Daily Reconciliation</h2>
+                </div>
+                <div style="padding: 16px;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                        Compare your system balances with actual cash on hand and identify discrepancies.
+                    </p>
+                    <a th:href="@{/staff/reconciliation}" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px; background: #6366f1;">
+                        <i class="fas fa-balance-scale"></i> Open Reconciliation
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Transaction Forms -->
         <div class="content-grid">
             <!-- Cash In (Receive) -->
@@ -165,7 +204,7 @@
                         </select>
                     </div>
                     <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount ($)</label>
+                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount</label>
                         <input type="number" name="amount" step="0.01" min="0.01" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="0.00" required>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%; background: #22c55e;">
@@ -188,7 +227,7 @@
                         </select>
                     </div>
                     <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount ($)</label>
+                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount</label>
                         <input type="number" name="amount" step="0.01" min="0.01" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="0.00" required>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%; background: #ef4444;">
@@ -220,7 +259,7 @@
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount ($)</label>
+                        <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">Amount</label>
                         <input type="number" name="amount" step="0.01" min="0.01" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="0.00" required>
                     </div>
                     <div>
@@ -250,7 +289,7 @@
                             <span th:text="${wallet.currency}">USD</span>
                         </div>
                     </div>
-                    <div class="wallet-balance" th:text="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}">$0.00</div>
+                    <div class="wallet-balance" th:text="${wallet.currency} + ' ' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}">USD 0.00</div>
                 </div>
             </div>
 
@@ -265,11 +304,11 @@
                     </tr>
                     <tr>
                         <td><i class="fas fa-money-bill-wave" style="margin-right: 8px; color: #94a3b8;"></i>Total Amount</td>
-                        <td th:text="'$' + ${#numbers.formatDecimal(txSummary.totalAmount, 0, 2)}">$0.00</td>
+                        <td th:text="${user.baseCurrency} + ' ' + ${#numbers.formatDecimal(txSummary.totalAmount, 0, 2)}">USD 0.00</td>
                     </tr>
                     <tr>
                         <td><i class="fas fa-percentage" style="margin-right: 8px; color: #94a3b8;"></i>Total Fees</td>
-                        <td th:text="'$' + ${#numbers.formatDecimal(txSummary.totalFees, 0, 2)}">$0.00</td>
+                        <td th:text="${user.baseCurrency} + ' ' + ${#numbers.formatDecimal(txSummary.totalFees, 0, 2)}">USD 0.00</td>
                     </tr>
                 </table>
             </div>
@@ -335,6 +374,6 @@
         </div>-->
     </div>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 </body>
 </html>

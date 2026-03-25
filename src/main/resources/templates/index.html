@@ -593,7 +593,7 @@
             </svg>
             <strong>Low balance alert:</strong>
             <span th:each="acc, iterStat : ${lowBalanceAccounts}">
-                <span th:text="|${acc.name} ($${acc.balance}, threshold: $${acc.lowBalanceThreshold})|"></span>
+                <span th:text="|${acc.accountType} ($${acc.balance}, threshold: $${acc.lowBalanceThreshold})|"></span>
                 <span th:if="${!iterStat.last}">; </span>
             </span>
             — Consider topping up.
@@ -607,7 +607,7 @@
                 </svg>
                 Account Balances
             </h3>
-            <div class="table-container">
+            <div class="table-container" style="max-height: 450px; overflow-y: auto;">
                 <table class="balance-table">
                     <thead>
                         <tr>
@@ -617,7 +617,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="acc : ${accounts}">
-                            <td th:text="${acc.name}"></td>
+                            <td th:text="${acc.accountType}"></td>
                             <td th:text="${acc.balance}"></td>
                         </tr>
                     </tbody>
@@ -701,7 +701,7 @@
                         <div class="form-group">
                             <label class="form-label">Account</label>
                             <select name="account" class="form-control" required>
-                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                                <option th:each="acc : ${accounts}" th:text="${acc.accountType}"></option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -726,7 +726,7 @@
                         <div class="form-group">
                             <label class="form-label">Account</label>
                             <select name="account" class="form-control" required>
-                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                                <option th:each="acc : ${accounts}" th:text="${acc.accountType}"></option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -751,13 +751,13 @@
                         <div class="form-group">
                             <label class="form-label">From</label>
                             <select name="from" class="form-control" required>
-                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                                <option th:each="acc : ${accounts}" th:text="${acc.accountType}"></option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">To</label>
                             <select name="to" class="form-control" required>
-                                <option th:each="acc : ${accounts}" th:text="${acc.name}"></option>
+                                <option th:each="acc : ${accounts}" th:text="${acc.accountType}"></option>
                             </select>
                         </div>
                         <div class="form-group">

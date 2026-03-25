@@ -23,7 +23,7 @@ public class Wallet {
 
     @Column(name = "currency")
     @Enumerated(EnumType.STRING)
-    private Currency currency;
+    private Currency currency = Currency.USD;
 
     @Column(name = "balance")
     private double balance;

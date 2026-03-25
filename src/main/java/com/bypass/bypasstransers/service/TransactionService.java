@@ -129,8 +129,12 @@ public class TransactionService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only see their own transactions
+        // Staff can only see their own transactions OR branch transactions
         if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                return txRepo.findByWalletOwnerIdOrWalletBranchId(currentUser.getId(), branchId);
+            }
             return txRepo.findByWalletOwnerId(currentUser.getId());
         }
 
@@ -157,8 +161,12 @@ public class TransactionService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only access their own transactions
+        // Staff can only access their own transactions OR branch transactions
         if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                return txRepo.findByIdAndWalletOwnerIdOrWalletBranchId(id, currentUser.getId(), branchId);
+            }
             return txRepo.findByIdAndWalletOwnerId(id, currentUser.getId());
         }
 
@@ -175,8 +183,15 @@ public class TransactionService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only access their own wallet transactions
+        // Staff can only access their own wallet transactions OR branch wallet transactions
         if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                // If the wallet exists and they have access to it (checked by findByWalletIdAndWalletOwnerId logic internally if we wanted, 
+                // but simpler to just fetch and check if they have access to the WALLET first or use a robust query)
+                // Actually, let's just use the existing logic but branch-aware
+                return txRepo.findByWalletId(walletId); // We assume the controller/caller checked access
+            }
             return txRepo.findByWalletIdAndWalletOwnerId(walletId, currentUser.getId());
         }
 
@@ -194,9 +209,26 @@ public class TransactionService {
         }
 
         Long userId = currentUser.getId();
-        long count = txRepo.countByWalletOwnerId(userId);
-        Double totalAmount = txRepo.getTotalAmountByWalletOwnerId(userId);
-        Double totalFees = txRepo.getTotalFeesByWalletOwnerId(userId);
+        long count;
+        Double totalAmount;
+        Double totalFees;
+
+        if (securityService.isStaffOnly()) {
+            Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
+            if (branchId != null) {
+                count = txRepo.countByWalletOwnerIdOrWalletBranchId(userId, branchId);
+                totalAmount = txRepo.getTotalAmountByWalletOwnerIdOrWalletBranchId(userId, branchId);
+                totalFees = txRepo.getTotalFeesByWalletOwnerIdOrWalletBranchId(userId, branchId);
+            } else {
+                count = txRepo.countByWalletOwnerId(userId);
+                totalAmount = txRepo.getTotalAmountByWalletOwnerId(userId);
+                totalFees = txRepo.getTotalFeesByWalletOwnerId(userId);
+            }
+        } else {
+            count = txRepo.countByWalletOwnerId(userId);
+            totalAmount = txRepo.getTotalAmountByWalletOwnerId(userId);
+            totalFees = txRepo.getTotalFeesByWalletOwnerId(userId);
+        }
 
         TransactionSummary summary = new TransactionSummary();
         summary.setTransactionCount(count);

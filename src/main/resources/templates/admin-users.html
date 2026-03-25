@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <style>
         * {
             margin: 0;
@@ -28,7 +31,7 @@
             background: white;
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
@@ -89,11 +92,16 @@
             color: white;
         }
 
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
         .stats-bar {
             background: white;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -120,7 +128,7 @@
             background: white;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -155,7 +163,7 @@
             background: white;
             border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
         table {
@@ -168,7 +176,8 @@
             color: white;
         }
 
-        th, td {
+        th,
+        td {
             padding: 15px;
             text-align: left;
         }
@@ -190,13 +199,40 @@
             display: inline-block;
         }
 
-        .badge-admin { background: #667eea; color: white; }
-        .badge-super-admin { background: #764ba2; color: white; }
-        .badge-staff { background: #17a2b8; color: white; }
-        .badge-user { background: #6c757d; color: white; }
-        
-        .badge-active { background: #d4edda; color: #155724; }
-        .badge-inactive { background: #f8d7da; color: #721c24; }
+        .badge-super-admin {
+            background: #764ba2;
+            color: white;
+        }
+
+        .badge-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge-supervisor {
+            background: #fd7e14;
+            color: white;
+        }
+
+        .badge-staff {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .badge-user {
+            background: #6c757d;
+            color: white;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
 
         .actions {
             display: flex;
@@ -223,7 +259,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         .modal-content {
@@ -232,7 +268,7 @@
             padding: 40px;
             border-radius: 15px;
             max-width: 700px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -295,20 +331,54 @@
             font-weight: 600;
             display: inline-block;
         }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.4s;
+            max-width: 360px;
+            pointer-events: none;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>
                 <i class="fas fa-users-cog"></i>
-                User & Branch Assignment
+                User &amp; Branch Assignment
             </h1>
-            <button class="btn btn-primary" onclick="openAddUserModal()">
-                <i class="fas fa-user-plus"></i>
-                Add New User
-            </button>
+            <div style="display:flex;gap:10px;">
+                <a href="/admin" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Admin
+                </a>
+                <button class="btn btn-primary" onclick="openAddUserModal()">
+                    <i class="fas fa-user-plus"></i> Add New User
+                </button>
+            </div>
         </div>
 
         <!-- Statistics Bar -->
@@ -345,8 +415,8 @@
                     <option value="">All Roles</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                     <option value="ADMIN">Admin</option>
+                    <option value="SUPERVISOR">Supervisor</option>
                     <option value="STAFF">Staff</option>
-                    <option value="USER">User</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -391,19 +461,19 @@
             <span class="close" onclick="closeModal('editUserModal')">&times;</span>
             <h2 style="margin-bottom: 30px; color: #333;">
                 <i class="fas fa-user-edit" style="color: #667eea;"></i>
-                Edit User & Assign Branch
+                Edit User &amp; Assign Branch
             </h2>
             <form id="editUserForm">
                 <input type="hidden" id="editUserId">
-                
+
                 <div class="form-group">
-                    <label for="editUsername">Username *</label>
+                    <label for="editUsername">Username</label>
                     <input type="text" id="editUsername" required readonly style="background: #f5f5f5;">
                 </div>
 
                 <div class="form-group">
                     <label for="editEmail">Email</label>
-                    <input type="email" id="editEmail" required>
+                    <input type="email" id="editEmail">
                 </div>
 
                 <div class="form-group">
@@ -414,17 +484,17 @@
                 <div class="form-group">
                     <label for="editRole">Role *</label>
                     <select id="editRole" required>
-                        <option value="USER">User</option>
                         <option value="STAFF">Staff</option>
+                        <option value="SUPERVISOR">Supervisor</option>
                         <option value="ADMIN">Admin</option>
                         <option value="SUPER_ADMIN">Super Admin</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="editBranch">Assign to Branch *</label>
-                    <select id="editBranch" required>
-                        <option value="">Select Branch...</option>
+                    <label for="editBranch">Assign to Branch</label>
+                    <select id="editBranch">
+                        <option value="">-- No Branch --</option>
                     </select>
                     <small style="color: #666;">Users inherit branch currency by default</small>
                 </div>
@@ -453,7 +523,8 @@
                     <button type="submit" class="btn btn-primary" style="flex: 1;">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')" style="flex: 1;">
+                    <button type="button" class="btn btn-warning" onclick="closeModal('editUserModal')"
+                        style="flex: 1;">
                         Cancel
                     </button>
                 </div>
@@ -461,42 +532,43 @@
         </div>
     </div>
 
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
     <script>
-        const API_BASE = '/api'; // Adjust based on your backend
         let allUsers = [];
         let allBranches = [];
 
-        // Load data on page load
         document.addEventListener('DOMContentLoaded', loadData);
 
         async function loadData() {
-            await Promise.all([
-                loadUsers(),
-                loadBranches()
-            ]);
+            await Promise.all([loadUsers(), loadBranches()]);
             updateStats();
             populateBranchFilter();
         }
 
         async function loadUsers() {
             try {
-                const response = await fetch('/users/api/all'); // You'll need to create this endpoint
+                const response = await fetch('/users/api/all');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 allUsers = await response.json();
                 renderUsers(allUsers);
             } catch (error) {
                 console.error('Error loading users:', error);
-                // For demo, use Thymeleaf server-side rendering fallback
-                renderUsersFromServer();
+                showToast('Failed to load users: ' + error.message, 'error');
             }
         }
 
         async function loadBranches() {
             try {
-                const response = await fetch('/admin/branches');
+                // Correct JSON API endpoint — NOT the HTML page at /admin/branches
+                const response = await fetch('/admin/branches/all');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 allBranches = await response.json();
                 populateBranchDropdowns();
             } catch (error) {
                 console.error('Error loading branches:', error);
+                // Non-fatal — branch dropdown will be empty but page still works
             }
         }
 
@@ -504,40 +576,45 @@
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
 
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:40px;"><i class="fas fa-users" style="font-size:24px;display:block;margin-bottom:8px;"></i>No users found</td></tr>';
+                return;
+            }
+
             users.forEach(user => {
+                const roleBadgeClass = 'badge-' + user.role.toLowerCase().replace(/_/g, '-');
                 const tr = document.createElement('tr');
+                tr.setAttribute('data-user-id', user.id);
                 tr.innerHTML = `
                     <td>${user.id}</td>
                     <td><strong>${escapeHtml(user.username)}</strong></td>
                     <td>${escapeHtml(user.email || 'N/A')}</td>
-                    <td><span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></td>
+                    <td><span class="badge ${roleBadgeClass}">${user.role.replace('_', ' ')}</span></td>
                     <td>
-                        ${user.branch ? 
-                            `<span class="branch-badge">${escapeHtml(user.branch.name)}</span>` : 
-                            '<span style="color: #dc3545;">Not Assigned</span>'}
+                        ${user.branch
+                        ? `<span class="branch-badge">${escapeHtml(user.branch.name)}</span>`
+                        : '<span style="color:#dc3545;font-size:13px;">Not Assigned</span>'}
                     </td>
-                    <td><span class="currency-badge">${user.baseCurrency || 'USD'}</span></td>
+                    <td><span class="currency-badge">${escapeHtml(user.baseCurrency || 'USD')}</span></td>
                     <td>
                         <span class="badge ${user.active ? 'badge-active' : 'badge-inactive'}">
                             ${user.active ? 'Active' : 'Inactive'}
                         </span>
                     </td>
                     <td class="actions">
-                        <button class="btn btn-warning" onclick="editUser(${user.id})">
+                        <button class="btn btn-warning" style="font-size:12px;padding:6px 10px;" onclick="editUser(${user.id})">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <a href="/users/${user.id}/details" class="btn btn-info">
+                        <a href="/users/${user.id}/details" class="btn btn-info" style="font-size:12px;padding:6px 10px;">
                             <i class="fas fa-eye"></i> View
                         </a>
-                        ${user.active ? `
-                            <button class="btn btn-danger" onclick="deactivateUser(${user.id})">
-                                <i class="fas fa-times"></i> Deactivate
-                            </button>
-                        ` : `
-                            <button class="btn btn-success" onclick="restoreUser(${user.id})">
-                                <i class="fas fa-check"></i> Activate
-                            </button>
-                        `}
+                        ${user.active
+                        ? `<button class="btn btn-danger" style="font-size:12px;padding:6px 10px;" onclick="deactivateUser(${user.id}, '${escapeHtml(user.username)}')">
+                                   <i class="fas fa-ban"></i> Deactivate
+                               </button>`
+                        : `<button class="btn btn-success" style="font-size:12px;padding:6px 10px;" onclick="restoreUser(${user.id}, '${escapeHtml(user.username)}')">
+                                   <i class="fas fa-check"></i> Restore
+                               </button>`}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -546,29 +623,29 @@
 
         function populateBranchFilter() {
             const select = document.getElementById('branchFilter');
+            while (select.options.length > 1) select.remove(1);
             allBranches.forEach(branch => {
-                const option = document.createElement('option');
-                option.value = branch.id;
-                option.textContent = `${branch.name} (${branch.currency})`;
-                select.appendChild(option);
+                const opt = document.createElement('option');
+                opt.value = branch.id;
+                opt.textContent = `${branch.name} (${branch.currency})`;
+                select.appendChild(opt);
             });
         }
 
         function populateBranchDropdowns() {
             const editBranchSelect = document.getElementById('editBranch');
+            while (editBranchSelect.options.length > 1) editBranchSelect.remove(1);
             allBranches.forEach(branch => {
-                const option = document.createElement('option');
-                option.value = branch.id;
-                option.textContent = `${branch.name} (${branch.country} - ${branch.currency})`;
-                option.dataset.currency = branch.currency;
-                editBranchSelect.appendChild(option);
+                const opt = document.createElement('option');
+                opt.value = branch.id;
+                opt.textContent = `${branch.name} (${branch.country} - ${branch.currency})`;
+                opt.dataset.currency = branch.currency;
+                editBranchSelect.appendChild(opt);
             });
-
-            // Auto-update base currency when branch changes
-            editBranchSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.dataset.currency) {
-                    document.getElementById('editBaseCurrency').value = selectedOption.dataset.currency;
+            editBranchSelect.addEventListener('change', function () {
+                const selected = this.options[this.selectedIndex];
+                if (selected.dataset.currency) {
+                    document.getElementById('editBaseCurrency').value = selected.dataset.currency;
                 }
             });
         }
@@ -579,89 +656,128 @@
             const status = document.getElementById('statusFilter').value;
             const search = document.getElementById('searchBox').value.toLowerCase();
 
-            let filtered = allUsers.filter(user => {
-                const matchBranch = !branchId || (user.branch && user.branch.id == branchId);
+            const filtered = allUsers.filter(user => {
+                const matchBranch = !branchId || (user.branch && String(user.branch.id) === branchId);
                 const matchRole = !role || user.role === role;
                 const matchStatus = !status || String(user.active) === status;
-                const matchSearch = !search || 
-                    user.username.toLowerCase().includes(search) || 
-                    (user.email && user.email.toLowerCase().includes(search));
-                
+                const matchSearch = !search || user.username.toLowerCase().includes(search) || (user.email && user.email.toLowerCase().includes(search));
                 return matchBranch && matchRole && matchStatus && matchSearch;
             });
-
             renderUsers(filtered);
         }
 
         async function editUser(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editPhone').value = user.phoneNumber || '';
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editBaseCurrency').value = user.baseCurrency || 'USD';
+            document.getElementById('editPassword').value = '';
+
+            // Reload branches to ensure dropdown is populated, then set value
+            await loadBranches();
+            document.getElementById('editBranch').value = user.branch ? user.branch.id : '';
+
+            document.getElementById('editUserModal').style.display = 'block';
+        }
+
+        /** Deactivate (soft-delete) a user — calls POST /users/delete */
+        async function deactivateUser(id, username) {
+            if (!confirm(`Deactivate "${username}"?\nTheir account will be disabled but all records will be preserved.`)) return;
+            const formData = new FormData();
+            formData.append('id', id);
+            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
             try {
-                // Fetch user details
-                const user = allUsers.find(u => u.id === id);
-                if (!user) return;
-
-                // Populate form
-                document.getElementById('editUserId').value = user.id;
-                document.getElementById('editUsername').value = user.username;
-                document.getElementById('editEmail').value = user.email || '';
-                document.getElementById('editPhone').value = user.phoneNumber || '';
-                document.getElementById('editRole').value = user.role;
-                
-                // Set branch if assigned
-                if (user.branch) {
-                    document.getElementById('editBranch').value = user.branch.id;
+                const response = await fetch('/users/delete', { 
+                    method: 'POST', 
+                    body: formData,
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                // The endpoint redirects on success; fetch follows the redirect transparently
+                if (response.ok || response.redirected) {
+                    showToast(`User "${username}" deactivated successfully.`, 'success');
+                    await loadUsers();
+                    updateStats();
+                } else {
+                    throw new Error('Server returned ' + response.status);
                 }
-                
-                // Set base currency
-                document.getElementById('editBaseCurrency').value = user.baseCurrency || 'USD';
-
-                document.getElementById('editUserModal').style.display = 'block';
             } catch (error) {
-                console.error('Error loading user:', error);
-                alert('Failed to load user details');
+                console.error('Error deactivating user:', error);
+                showToast('Failed to deactivate: ' + error.message, 'error');
             }
         }
 
-        // Form submission
+        /** Restore (re-activate) a user — calls POST /users/restore */
+        async function restoreUser(id, username) {
+            if (!confirm(`Restore "${username}"?\nTheir account will be re-activated.`)) return;
+            const formData = new FormData();
+            formData.append('id', id);
+            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+            try {
+                const response = await fetch('/users/restore', { 
+                    method: 'POST', 
+                    body: formData,
+                    headers: { [csrfHeader]: csrfToken }
+                });
+                if (response.ok || response.redirected) {
+                    showToast(`User "${username}" restored successfully.`, 'success');
+                    await loadUsers();
+                    updateStats();
+                } else {
+                    throw new Error('Server returned ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error restoring user:', error);
+                showToast('Failed to restore: ' + error.message, 'error');
+            }
+        }
+
+        // Save user (edit + assign branch) — PUT /admin/users/{id}
         document.getElementById('editUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const userId = document.getElementById('editUserId').value;
+            const branchValue = document.getElementById('editBranch').value;
             const userData = {
-                username: document.getElementById('editUsername').value,
                 email: document.getElementById('editEmail').value,
                 phoneNumber: document.getElementById('editPhone').value,
                 role: document.getElementById('editRole').value,
                 baseCurrency: document.getElementById('editBaseCurrency').value,
-                branch: {
-                    id: parseInt(document.getElementById('editBranch').value)
-                }
+                branch: branchValue ? { id: parseInt(branchValue) } : null
             };
-
             const password = document.getElementById('editPassword').value;
-            if (password) {
-                userData.password = password;
-            }
+            if (password) userData.password = password;
+
+            const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
             try {
                 const response = await fetch(`/admin/users/${userId}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
                     },
                     body: JSON.stringify(userData)
                 });
-
                 if (response.ok) {
                     closeModal('editUserModal');
-                    loadData();
-                    alert('User updated successfully!');
+                    showToast('User updated and branch assigned successfully!', 'success');
+                    await loadData();
                 } else {
-                    const error = await response.text();
-                    throw new Error(error);
+                    const err = await response.text();
+                    throw new Error(err || 'Unknown error');
                 }
             } catch (error) {
                 console.error('Error updating user:', error);
-                alert('Failed to update user: ' + error.message);
+                showToast('Failed to update: ' + error.message, 'error');
             }
         });
 
@@ -672,39 +788,28 @@
             document.getElementById('staffCount').textContent = allUsers.filter(u => u.role === 'STAFF').length;
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        function openAddUserModal() {
-            window.location.href = '/users/new';
-        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openAddUserModal() { window.location.href = '/users/new'; }
 
         function escapeHtml(text) {
-            if (!text) return '';
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            if (text == null) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.className = `toast ${type}`; }, 4500);
+        }
+
+        window.onclick = function (event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
-        }
-
-        // Server-side rendering fallback (for Thymeleaf)
-        function renderUsersFromServer() {
-            // This would be populated by Thymeleaf on initial page load
-            // The JavaScript enhances it with dynamic filtering
-            console.log('Using server-side rendered data');
-        }
+        };
     </script>
 </body>
+
 </html>
