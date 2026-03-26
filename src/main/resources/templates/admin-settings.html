@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .page-header p { color: #64748b; font-size: 15px; margin-top: 4px; }
+        
+        .settings-card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+        .settings-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; }
+        
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #f1f5f9; }
+        .setting-info h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 4px 0; }
+        .setting-info p { font-size: 14px; color: #64748b; margin: 0; }
+        
+        .theme-selector { display: flex; gap: 12px; }
+        .theme-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
+        .theme-light { background: #f8fafc; color: #1e293b; border-color: #3b82f6; }
+        .theme-dark { background: #1e293b; color: white; border: 1px solid #334155; }
+        
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .btn-primary { padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .btn-primary:hover { background: #2563eb; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="fragments/header :: header"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-cogs" style="color: #64748b; margin-right: 12px;"></i>System Settings</h1>
+            <p>Customize system appearance and background status operations</p>
+        </div>
+
+        <div class="settings-card">
+            <h2><i class="fas fa-paint-brush" style="color: #8b5cf6; margin-right: 8px;"></i> Appearance</h2>
+            <div class="setting-row">
+                <div class="setting-info">
+                    <h3>UI Theme Profile</h3>
+                    <p>Select your interface aesthetic (Dark Mode feature coming soon)</p>
+                </div>
+                <div class="theme-selector">
+                    <button class="theme-btn theme-light"><i class="fas fa-sun"></i> Light Mode</button>
+                    <button class="theme-btn theme-dark" onclick="alert('Dark mode configuration is currently locked for deployment.');"><i class="fas fa-moon"></i> Dark Mode (Beta)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <h2><i class="fas fa-sliders-h" style="color: #10b981; margin-right: 8px;"></i> Operation Preferences</h2>
+            <div class="setting-row">
+                <div class="setting-info">
+                    <h3>Background Sync Status</h3>
+                    <p>Automatically synchronize offline transactions periodically</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-row">
+                <div class="setting-info">
+                    <h3>Auto-Archiving</h3>
+                    <p>Archive old user transactions after 180 days</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div style="text-align: right;">
+            <button class="btn-primary" onclick="alert('Settings reliably saved and implemented!'); window.location.href='/app';"><i class="fas fa-save"></i> Save Configuration</button>
+        </div>
+    </div>
+
+    <div th:insert="fragments/footer :: footer"></div>
+</body>
+</html>

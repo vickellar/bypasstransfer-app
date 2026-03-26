@@ -67,6 +67,18 @@ public class AnalyticsController {
         
         List<StaffPerformanceDTO> staffPerformance = analyticsService.getStaffPerformanceDetailed();
         model.addAttribute("staffPerformance", staffPerformance);
+        
+        // Calculate totals for summary cards
+        int totalTransactions = staffPerformance.stream().mapToInt(StaffPerformanceDTO::getTotalTransactions).sum();
+        double totalAmount = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getTotalAmount).sum();
+        double totalFees = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getTotalFees).sum();
+        double totalWalletBalance = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getWalletBalance).sum();
+        
+        model.addAttribute("sumTransactions", totalTransactions);
+        model.addAttribute("sumAmount", totalAmount);
+        model.addAttribute("sumFees", totalFees);
+        model.addAttribute("sumWalletBalance", totalWalletBalance);
+        
         model.addAttribute("user", currentUser);
         
         return "staff-performance-detail";
@@ -78,6 +90,16 @@ public class AnalyticsController {
         
         List<AccountPerformanceDTO> accountPerformance = analyticsService.getAccountPerformanceDetailed();
         model.addAttribute("accountPerformance", accountPerformance);
+        
+        // Calculate totals for summary cards
+        int totalTransactions = accountPerformance.stream().mapToInt(AccountPerformanceDTO::getTotalTransactions).sum();
+        double totalAmount = accountPerformance.stream().mapToDouble(AccountPerformanceDTO::getTotalAmount).sum();
+        int totalActiveUsers = accountPerformance.stream().mapToInt(AccountPerformanceDTO::getActiveUsers).sum();
+        
+        model.addAttribute("sumTransactions", totalTransactions);
+        model.addAttribute("sumAmount", totalAmount);
+        model.addAttribute("sumActiveUsers", totalActiveUsers);
+        
         model.addAttribute("user", currentUser);
         
         return "account-performance-detail";

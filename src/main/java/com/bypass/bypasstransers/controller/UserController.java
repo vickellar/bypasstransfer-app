@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import com.bypass.bypasstransers.model.Branch;
 import com.bypass.bypasstransers.repository.BranchRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -230,6 +229,68 @@ public class UserController {
             ra.addFlashAttribute("error", "Failed to create default accounts: " + ex.getMessage());
         }
         return "redirect:/users/" + id + "/accounts";
+    }
+
+    @PostMapping("/users/{id}/accounts/add")
+    public String addCustomAccount(@PathVariable Long id, 
+                                   @RequestParam String newAccountType, 
+                                   @RequestParam String newAccountCurrency, 
+                                   @RequestParam(required = false, defaultValue = "0.0") Double newAccountBalance, 
+                                   RedirectAttributes ra) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isEmpty()) {
+                ra.addFlashAttribute("error", "User not found");
+                return "redirect:/users";
+            }
+            User user = userOpt.get();
+            
+            Wallet wallet = new Wallet();
+            wallet.setOwner(user);
+            wallet.setAccountType(newAccountType);
+            wallet.setCurrency(Currency.valueOf(newAccountCurrency));
+            wallet.setBalance(newAccountBalance);
+            wallet.setLocked(false);
+            wallet.setCreatedAt(java.time.LocalDateTime.now());
+            walletRepository.save(wallet);
+            
+            auditService.logEntity("admin", "accounts", id, "ADD_CUSTOM_ACCOUNT", null, "Added " + newAccountType + " for " + user.getUsername());
+            ra.addFlashAttribute("success", "Custom account '" + newAccountType + "' added successfully");
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Failed to add custom account: " + ex.getMessage());
+        }
+        return "redirect:/users/" + id + "/accounts";
+    }
+
+    @PostMapping("/users/{userId}/accounts/{accountId}/toggle-status")
+    public String toggleAccountStatus(@PathVariable Long userId, @PathVariable Long accountId, RedirectAttributes ra) {
+        Optional<Wallet> walletOpt = walletRepository.findById(accountId);
+        if (walletOpt.isPresent()) {
+            Wallet wallet = walletOpt.get();
+            wallet.setLocked(!wallet.isLocked());
+            walletRepository.save(wallet);
+            auditService.logEntity("admin", "accounts", userId, "TOGGLE_ACCOUNT_STATUS", String.valueOf(accountId), "Account status set to " + (wallet.isLocked() ? "LOCKED" : "ACTIVE"));
+            ra.addFlashAttribute("success", "Account " + wallet.getAccountType() + " status updated successfully.");
+        } else {
+            ra.addFlashAttribute("error", "Account not found.");
+        }
+        return "redirect:/users/" + userId + "/accounts";
+    }
+
+    @PostMapping("/users/{userId}/accounts/{accountId}/delete")
+    public String deleteAccount(@PathVariable Long userId, @PathVariable Long accountId, RedirectAttributes ra) {
+        try {
+            Optional<Wallet> walletOpt = walletRepository.findById(accountId);
+            if(walletOpt.isPresent()) {
+                 String type = walletOpt.get().getAccountType();
+                 walletRepository.deleteById(accountId);
+                 auditService.logEntity("admin", "accounts", userId, "DELETE_ACCOUNT", String.valueOf(accountId), "Deleted account " + type);
+                 ra.addFlashAttribute("success", "Account " + type + " deleted successfully.");
+            }
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Could not delete account. It may have associated transactions.");
+        }
+        return "redirect:/users/" + userId + "/accounts";
     }
 
     @PostMapping("/users/save")

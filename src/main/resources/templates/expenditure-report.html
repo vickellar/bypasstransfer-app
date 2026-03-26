@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenditure Report - ByPass Transfers</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+        .page-header { text-align: center; margin-bottom: 48px; }
+        .page-header h1 { font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .page-header p { color: #64748b; }
+        
+        .report-header {
+            background: white; padding: 24px; border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 32px;
+        }
+        .report-info h2 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
+        .report-info p { margin: 4px 0 0 0; color: #64748b; font-size: 14px; }
+        
+        .total-card {
+            background: #f8fafc; padding: 16px 24px; border-radius: 8px;
+            border-left: 4px solid #ef4444; text-align: right;
+        }
+        .total-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .total-value { font-size: 24px; font-weight: 700; color: #ef4444; }
+        
+        .card {
+            background: white; border-radius: 12px; padding: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th { text-align: left; padding: 16px; background: #f8fafc; font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        .report-table td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+        .report-table tr:hover { background: #f8fafc; }
+        
+        .category-badge {
+            padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+        }
+        .cat-rent { background: #fee2e2; color: #991b1b; }
+        .cat-utilities { background: #dbeafe; color: #1e40af; }
+        .cat-salaries { background: #dcfce7; color: #166534; }
+        .cat-supplies { background: #fef9c3; color: #854d0e; }
+        .cat-other { background: #f1f5f9; color: #475569; }
+        
+        .date-picker-form {
+            background: white; padding: 20px; border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            margin-bottom: 32px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+        }
+        .form-group { flex: 1; min-width: 200px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; color: #64748b; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+        .btn-filter { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; height: 42px; transition: background 0.2s; }
+        .btn-filter:hover { background: #2563eb; }
+        
+        .empty-state { text-align: center; padding: 64px; color: #94a3b8; }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; }
+        
+        .btn-back { display: inline-flex; align-items: center; gap: 8px; color: #64748b; text-decoration: none; font-size: 14px; margin-bottom: 24px; transition: color 0.2s; }
+        .btn-back:hover { color: #1e293b; }
+        
+        @media print {
+            .btn-back, .date-picker-form, th:insert { display: none !important; }
+            .dashboard-container { padding: 0; }
+            .card { box-shadow: none; border: 1px solid #eee; }
+        }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+    <div th:insert="~{fragments/header :: header}"></div>
+
+    <div class="dashboard-container">
+        <a th:href="@{/admin/analytics}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Analytics
+        </a>
+
+        <div class="page-header">
+            <h1>Expenditure Report</h1>
+            <p>Summary of system expenditures for the selected period</p>
+        </div>
+
+        <form th:action="@{/admin/analytics/reports/expenditure}" method="get" class="date-picker-form">
+            <div class="form-group">
+                <label for="startDate">From</label>
+                <input type="date" id="startDate" name="startDate" th:value="${startDate}">
+            </div>
+            <div class="form-group">
+                <label for="endDate">To</label>
+                <input type="date" id="endDate" name="endDate" th:value="${endDate}">
+            </div>
+            <button type="submit" class="btn-filter">Generate Report</button>
+            <button type="button" class="btn-filter" style="background: #64748b;" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </form>
+
+        <div class="report-header">
+            <div class="report-info">
+                <h2>Period Summary</h2>
+                <p>From <span th:text="${startDate}">Start</span> to <span th:text="${endDate}">End</span></p>
+            </div>
+            <div class="total-card">
+                <div class="total-label">Total Expenditure</div>
+                <div class="total-value" th:text="'$' + ${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 2, 'POINT')}">$0.00</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div th:if="${#lists.isEmpty(expenditureReport)}" class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <p>No expenditure records found for this period.</p>
+            </div>
+            
+            <table th:if="${!#lists.isEmpty(expenditureReport)}" class="report-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${expenditureReport}">
+                        <td th:text="${item.date}">2023-01-01</td>
+                        <td>
+                            <span class="category-badge" 
+                                  th:classappend="${'cat-' + #strings.toLowerCase(item.category)}"
+                                  th:text="${item.category}">Category</span>
+                        </td>
+                        <td th:text="${item.description}">Description</td>
+                        <td style="text-align: right; font-weight: 600;" th:text="'$' + ${#numbers.formatDecimal(item.amount, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                        <td th:text="${item.recordedBy != null ? item.recordedBy.username : 'System'}">Admin</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div th:insert="~{fragments/footer :: footer}"></div>
+</body>
+</html>

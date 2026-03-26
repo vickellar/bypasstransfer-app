@@ -117,7 +117,31 @@ public class AdminController {
         model.addAttribute("totalFees", totalFees);
         model.addAttribute("totalNet", totalNet);
         
+        List<User> staffMembers = userRepository.findAll().stream()
+                .filter(u -> u.getIsActive() && (u.getRole() == Role.STAFF || u.getRole() == Role.SUPERVISOR))
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("staffMembers", staffMembers);
+        
         return "reports";
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String adminUsersPage() {
+        return "admin-users";
+    }
+
+    @GetMapping("/accounts")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String adminAccountsPage(Model model) {
+        model.addAttribute("allWallets", walletRepository.findAll());
+        return "admin-accounts";
+    }
+
+    @GetMapping("/settings")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public String adminSettingsPage() {
+        return "admin-settings";
     }
 
     /**

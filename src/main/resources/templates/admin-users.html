@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="_csrf" th:content="${_csrf?.token}" />
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}" />
     <style>
         * {
             margin: 0;
@@ -694,8 +694,8 @@
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
             try {
-                const response = await fetch('/users/delete', { 
-                    method: 'POST', 
+                const response = await fetch('/users/delete', {
+                    method: 'POST',
                     body: formData,
                     headers: { [csrfHeader]: csrfToken }
                 });
@@ -722,8 +722,8 @@
             const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 
             try {
-                const response = await fetch('/users/restore', { 
-                    method: 'POST', 
+                const response = await fetch('/users/restore', {
+                    method: 'POST',
                     body: formData,
                     headers: { [csrfHeader]: csrfToken }
                 });
@@ -761,7 +761,7 @@
             try {
                 const response = await fetch(`/admin/users/${userId}`, {
                     method: 'PUT',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         [csrfHeader]: csrfToken
                     },

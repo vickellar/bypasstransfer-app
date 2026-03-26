@@ -74,6 +74,7 @@ public class TransactionService {
         tx.setFee(0);
         tx.setToAccount(accountName);
         tx.setDate(LocalDateTime.now());
+        tx.setSyncStatus("SYNCED");
 
         accountRepo.save(acc);
         txRepo.save(tx);
@@ -107,6 +108,7 @@ public class TransactionService {
         tx.setFee(fee);
         tx.setFromAccount(accountName);
         tx.setDate(LocalDateTime.now());
+        tx.setSyncStatus("SYNCED");
 
         accountRepo.save(acc);
         txRepo.save(tx);
@@ -297,6 +299,7 @@ public class TransactionService {
         tx.setFromAccount(fromName);
         tx.setToAccount(toName);
         tx.setDate(LocalDateTime.now());
+        tx.setSyncStatus("SYNCED");
 
         accountRepo.save(from);
         accountRepo.save(to);

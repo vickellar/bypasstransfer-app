@@ -146,6 +146,29 @@
                     </button>
                 </form>
             </div>
+
+            <!-- Independent Staff Report -->
+            <div class="report-card">
+                <h2><i class="fas fa-user-tie"></i> Independent Staff Report</h2>
+                <p>Export full transaction history for a specific staff member.</p>
+                
+                <form id="staffReportForm">
+                    <div class="form-group">
+                        <label for="staffSelect">Select Staff</label>
+                        <select id="staffSelect" name="staffId" style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin-bottom: 24px;">
+                            <option value="">-- Select a Staff Member --</option>
+                            <option th:each="staff : ${staffMembers}" th:value="${staff.id}" th:text="|${staff.username} (${staff.role})|"></option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn-export btn-excel" onclick="exportStaff('excel')">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button type="button" class="btn-export btn-pdf" onclick="exportStaff('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                </form>
+            </div>
         </div>
 
         <div style="text-align: center; margin-top: 32px;">
@@ -174,8 +197,20 @@
             const startDate = document.getElementById('auditStartDate').value;
             const endDate = document.getElementById('auditEndDate').value;
             
-            // For now, use the same endpoint - you can create a separate audit export endpoint later
-            alert('Audit log export coming soon!');
+            let url = '/api/export/audit/' + format;
+            if (startDate && endDate) {
+                url += '?startDate=' + startDate + '&endDate=' + endDate;
+            }
+            window.location.href = url;
+        }
+
+        function exportStaff(format) {
+            const staffId = document.getElementById('staffSelect').value;
+            if (!staffId) {
+                alert('Please select a staff member first.');
+                return;
+            }
+            window.location.href = '/users/' + staffId + '/export/' + format;
         }
 
         // Set default date range to current month

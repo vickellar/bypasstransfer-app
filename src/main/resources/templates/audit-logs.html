@@ -30,7 +30,7 @@
         <td th:text="${log.oldValue}"></td>
         <td th:text="${log.newValue}"></td>
         <td th:text="${log.performedBy}"></td>
-        <td th:text="${#dates.format(log.performedAt, 'yyyy-MM-dd HH:mm:ss')}"></td>
+        <td th:text="${#temporals.format(log.performedAt, 'yyyy-MM-dd HH:mm:ss')}"></td>
     </tr>
     </tbody>
 </table>

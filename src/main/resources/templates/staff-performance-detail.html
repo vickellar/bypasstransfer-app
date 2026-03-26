@@ -103,28 +103,28 @@
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fas fa-exchange-alt"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="${@staffPerformance.?[totalTransactions].![#this].sum()}">0</h3>
+                    <h3 th:text="${sumTransactions}">0</h3>
                     <p>Total Transactions</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon purple"><i class="fas fa-dollar-sign"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(@staffPerformance.?[totalAmount].![#this].sum(), 0, 2)}">$0.00</h3>
+                    <h3 th:text="'$' + ${#numbers.formatDecimal(sumAmount, 0, 2)}">$0.00</h3>
                     <p>Total Amount</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(@staffPerformance.?[totalFees].![#this].sum(), 0, 2)}">$0.00</h3>
+                    <h3 th:text="'$' + ${#numbers.formatDecimal(sumFees, 0, 2)}">$0.00</h3>
                     <p>Total Fees</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(@staffPerformance.?[walletBalance].![#this].sum(), 0, 2)}">$0.00</h3>
+                    <h3 th:text="'$' + ${#numbers.formatDecimal(sumWalletBalance, 0, 2)}">$0.00</h3>
                     <p>Total Wallet Balance</p>
                 </div>
             </div>

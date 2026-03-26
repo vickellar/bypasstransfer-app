@@ -181,9 +181,29 @@
                                     </option>
                                 </select>
                             </div>
+                            
+                            <hr style="margin: 16px 0; border: none; border-top: 1px solid #e2e8f0;">
+                            
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn btn-sm" th:classappend="${account.locked ? 'btn-success' : 'btn-warning'}" style="flex: 1; justify-content: center;"
+                                        th:onclick="|document.getElementById('toggle-form-${account.id}').submit();|">
+                                    <i class="fas" th:classappend="${account.locked ? 'fa-unlock' : 'fa-lock'}"></i>
+                                    <span th:text="${account.locked ? 'Activate' : 'Deactivate'}"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" style="flex: 1; justify-content: center;"
+                                        th:onclick="|if(confirm('Are you absolutely sure you want to permanently delete this wallet?')) document.getElementById('delete-form-${account.id}').submit();|">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- Hidden forms for account actions -->
+                    <div th:each="account : ${accounts}">
+                        <form th:id="|toggle-form-${account.id}|" th:action="@{|/users/${user.id}/accounts/${account.id}/toggle-status|}" method="post" style="display: none;"></form>
+                        <form th:id="|delete-form-${account.id}|" th:action="@{|/users/${user.id}/accounts/${account.id}/delete|}" method="post" style="display: none;"></form>
+                    </div>
+
                     <div class="actions">
                         <div class="actions-left">
                             <button type="submit" class="btn btn-primary" onclick="return confirm('Save changes to account balances?');">
@@ -203,6 +223,35 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-plus-circle" style="margin-right: 10px; color: #3b82f6;"></i>Add Custom Account</h2>
+                <p>Create a specialized wallet manually (e.g. for users outside Zimbabwe)</p>
+            </div>
+            <form th:action="@{|/users/${user.id}/accounts/add|}" method="post">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+                    <div class="form-group">
+                        <label for="newAccountType">Wallet Name <span style="color:red">*</span></label>
+                        <input type="text" id="newAccountType" name="newAccountType" placeholder="e.g. M-Pesa, MTN Mobile Money" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAccountCurrency">Currency <span style="color:red">*</span></label>
+                        <select id="newAccountCurrency" name="newAccountCurrency" style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; margin: 0; display: block;" required>
+                            <option value="">-- Select Currency --</option>
+                            <option th:each="cur : ${T(com.bypass.bypasstransers.enums.Currency).values()}" th:value="${cur}" th:text="${cur}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAccountBalance">Initial Balance</label>
+                        <input type="number" id="newAccountBalance" name="newAccountBalance" value="0.00" step="0.01" min="0">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-plus"></i> Add Account</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 

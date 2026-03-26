@@ -50,6 +50,9 @@ public class ExportController {
     @Autowired
     private AuditService auditService;
 
+    @Autowired
+    private com.bypass.bypasstransers.repository.AuditLogRepository auditLogRepo;
+
     /**
      * Export transactions to Excel with optional date range filter.
      * Only ADMIN, SUPERVISOR, and SUPER_ADMIN can access this.
@@ -217,5 +220,63 @@ public class ExportController {
     public void export(HttpServletResponse response) throws IOException {
         response.setHeader("Content-Disposition", "attachment; filename=transactions.xlsx");
         exportService.exportTransactions(response);
+    }
+
+    @GetMapping("/audit/excel")
+    public void exportAuditExcel(HttpServletResponse response) throws Exception {
+        List<com.bypass.bypasstransers.model.AuditLog> logs = auditLogRepo.findAll();
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Audit Logs");
+            Row header = sheet.createRow(0);
+            String[] cols = {"ID", "User", "Entity", "Entity ID", "Action", "Date", "Details"};
+            for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
+
+            int rowIdx = 1;
+            for (com.bypass.bypasstransers.model.AuditLog log : logs) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(log.getId() != null ? log.getId() : 0L);
+                row.createCell(1).setCellValue(log.getPerformedBy() != null ? log.getPerformedBy().toString() : "");
+                row.createCell(2).setCellValue(log.getEntityName() != null ? log.getEntityName() : "");
+                row.createCell(3).setCellValue(log.getEntityId() != null ? log.getEntityId() : 0L);
+                row.createCell(4).setCellValue(log.getAction() != null ? log.getAction() : "");
+                row.createCell(5).setCellValue(log.getPerformedAt() != null ? log.getPerformedAt().toString() : "");
+                row.createCell(6).setCellValue(log.getNewValue() != null ? log.getNewValue() : "");
+            }
+            for (int i = 0; i < cols.length; i++) sheet.autoSizeColumn(i);
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=audit_logs.xlsx");
+            workbook.write(response.getOutputStream());
+        }
+    }
+
+    @GetMapping("/audit/pdf")
+    public void exportAuditPdf(HttpServletResponse response) throws Exception {
+        List<com.bypass.bypasstransers.model.AuditLog> logs = auditLogRepo.findAll();
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=audit_logs.pdf");
+
+        PdfWriter writer = new PdfWriter(response.getOutputStream());
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        Document document = new Document(pdfDoc, PageSize.A4.rotate());
+
+        document.add(new Paragraph("System Audit Logs").setFontSize(18).setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph("\n"));
+
+        float[] columnWidths = {50, 100, 100, 80, 100, 120, 200};
+        Table table = new Table(columnWidths);
+        String[] headers = {"ID", "User ID", "Entity", "Entity ID", "Action", "Date", "Details"};
+        for (String h : headers) table.addHeaderCell(new Cell().add(new Paragraph(h)).setTextAlignment(TextAlignment.CENTER));
+
+        for (com.bypass.bypasstransers.model.AuditLog log : logs) {
+            table.addCell(new Cell().add(new Paragraph(log.getId() != null ? log.getId().toString() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getPerformedBy() != null ? log.getPerformedBy().toString() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getEntityName() != null ? log.getEntityName() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getEntityId() != null ? log.getEntityId().toString() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getAction() != null ? log.getAction() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getPerformedAt() != null ? log.getPerformedAt().toString() : "")));
+            table.addCell(new Cell().add(new Paragraph(log.getNewValue() != null ? log.getNewValue() : "")));
+        }
+        document.add(table);
+        document.close();
     }
 }

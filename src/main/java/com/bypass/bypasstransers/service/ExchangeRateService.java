@@ -5,7 +5,6 @@ import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.enums.TransactionType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -25,11 +24,11 @@ public class ExchangeRateService {
     public ExchangeRateService() {
         // Initialize with realistic exchange rates (based on USD as base)
         // These are rates where 1 USD = X units of other currency
-        exchangeRates.put("USD", BigDecimal.ONE);           // US Dollar (base)
-        exchangeRates.put("ZWL", new BigDecimal("3.75"));  // Zimbabwean Dollar (1 USD = 3.75 ZWL)
+        exchangeRates.put("USD", BigDecimal.ONE); // US Dollar (base)
+        exchangeRates.put("ZWL", new BigDecimal("3750.00")); // Zimbabwean Dollar (1 USD = 3750 ZWL)
         exchangeRates.put("ZAR", new BigDecimal("18.45")); // South African Rand (1 USD = 18.45 ZAR)
-        exchangeRates.put("GBP", new BigDecimal("0.79"));  // British Pound (1 USD = 0.79 GBP)
-        exchangeRates.put("EUR", new BigDecimal("0.92"));  // Euro (1 USD = 0.92 EUR)
+        exchangeRates.put("GBP", new BigDecimal("0.79")); // British Pound (1 USD = 0.79 GBP)
+        exchangeRates.put("EUR", new BigDecimal("0.92")); // Euro (1 USD = 0.92 EUR)
         exchangeRates.put("RUB", new BigDecimal("92.50")); // Russian Ruble (1 USD = 92.50 RUB)
         exchangeRates.put("KES", new BigDecimal("150.00")); // Kenyan Shilling (1 USD = 150 KES)
         exchangeRates.put("UGX", new BigDecimal("3700.00")); // Ugandan Shilling (1 USD = 3700 UGX)
@@ -41,7 +40,8 @@ public class ExchangeRateService {
 
     /**
      * Get exchange rate from one currency to another
-     * This calculates how many units of 'toCurrency' you get for 1 unit of 'fromCurrency'
+     * This calculates how many units of 'toCurrency' you get for 1 unit of
+     * 'fromCurrency'
      */
     public BigDecimal getExchangeRate(String fromCurrency, String toCurrency) {
         if (fromCurrency.equals(toCurrency)) {
@@ -96,7 +96,7 @@ public class ExchangeRateService {
         BigDecimal feeDecimal = feePercentage.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
         return grossAmount.multiply(feeDecimal).setScale(2, RoundingMode.HALF_UP);
     }
-    
+
     /**
      * Get the USD equivalent rate for a given currency
      * Returns how many units of the currency equal 1 USD
@@ -104,10 +104,11 @@ public class ExchangeRateService {
     public BigDecimal getUsdRate(String currency) {
         return exchangeRates.getOrDefault(currency, BigDecimal.ZERO);
     }
-    
+
     /**
      * Get rate to convert FROM a currency TO USD
-     * This is the inverse of getUsdRate - it returns how many USD you get for 1 unit of the currency
+     * This is the inverse of getUsdRate - it returns how many USD you get for 1
+     * unit of the currency
      */
     public BigDecimal getRateToUsd(String currency) {
         BigDecimal usdRate = exchangeRates.get(currency);
@@ -121,14 +122,14 @@ public class ExchangeRateService {
         // Return the inverse: 1 / usdRate
         return BigDecimal.ONE.divide(usdRate, 6, RoundingMode.HALF_UP);
     }
-    
+
     /**
      * Calculate total profit for the business (sum of all fees collected)
      */
     public BigDecimal calculateTotalProfit() {
         List<Transaction> allTransactions = transactionRepository.findAll();
         BigDecimal totalProfit = BigDecimal.ZERO;
-        
+
         for (Transaction transaction : allTransactions) {
             if (transaction.getType() != null && transaction.getType() != TransactionType.INCOME) {
                 BigDecimal profit = new BigDecimal(transaction.getAmount()).multiply(
@@ -136,17 +137,17 @@ public class ExchangeRateService {
                 totalProfit = totalProfit.add(profit);
             }
         }
-        
+
         return totalProfit.setScale(2, RoundingMode.HALF_UP);
     }
-    
+
     /**
      * Calculate profit for a specific period
      */
     public BigDecimal calculateProfitForPeriod(java.time.LocalDate startDate, java.time.LocalDate endDate) {
         List<Transaction> allTransactions = transactionRepository.findAll();
         BigDecimal totalProfit = BigDecimal.ZERO;
-        
+
         for (Transaction transaction : allTransactions) {
             java.time.LocalDate transactionDate = transaction.getDate().toLocalDate();
             if (!transactionDate.isBefore(startDate) && !transactionDate.isAfter(endDate)) {
@@ -157,7 +158,7 @@ public class ExchangeRateService {
                 }
             }
         }
-        
+
         return totalProfit.setScale(2, RoundingMode.HALF_UP);
     }
 }
