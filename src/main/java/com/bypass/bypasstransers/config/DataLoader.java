@@ -5,6 +5,7 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.AccountRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.enums.Role;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import org.springframework.boot.CommandLineRunner;
@@ -17,6 +18,9 @@ public class DataLoader implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.initial.password:${ADMIN_PASSWORD:admin123}}")
+    private String adminInitialPassword;
 
     public DataLoader(AccountRepository accountRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
@@ -40,22 +44,21 @@ public class DataLoader implements CommandLineRunner {
             if (adminUsers.isEmpty()) {
                 User newAdmin = new User();
                 newAdmin.setUsername("admin");
-                // Default admin password - should be changed on first login
-                newAdmin.setPassword(passwordEncoder.encode("admin123"));
+                // Password set from env var ADMIN_PASSWORD - change after first login
+                newAdmin.setPassword(passwordEncoder.encode(adminInitialPassword));
                 newAdmin.setRole(Role.SUPER_ADMIN);
                 newAdmin.setPhoneNumber("+263000000000");
                 newAdmin.setEmail("admin@bypasstransfers.com");
                 userRepository.save(newAdmin);
                 admin = newAdmin;
                 System.out.println("=================================================");
-                System.out.println("DEFAULT ADMIN CREATED:");
+                System.out.println("DEFAULT ADMIN CREATED - CHANGE PASSWORD IMMEDIATELY");
                 System.out.println("Username: admin");
-                System.out.println("Password: admin123");
                 System.out.println("Role: SUPER_ADMIN");
                 System.out.println("=================================================");
             } else {
                 admin = adminUsers.get(0); // Use the first admin found
-                
+
                 // DELETE duplicate admin users (keep only the first one)
                 if (adminUsers.size() > 1) {
                     System.out.println("WARNING: Multiple admin users found. Deleting duplicates...");
@@ -66,18 +69,9 @@ public class DataLoader implements CommandLineRunner {
                     }
                     System.out.println("Duplicate admins deleted. Only one admin remains.");
                 }
-                
-                // Reset password to ensure admin can always log in
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setRole(Role.SUPER_ADMIN); // Ensure role is SUPER_ADMIN
-                userRepository.save(admin);
-                
-                System.out.println("=================================================");
-                System.out.println("ADMIN USER EXISTS - PASSWORD RESET:");
-                System.out.println("Username: " + admin.getUsername());
-                System.out.println("Password: admin123");
-                System.out.println("Role: " + admin.getRole());
-                System.out.println("=================================================");
+
+                // Do NOT reset password on startup - preserves admin-set passwords
+                System.out.println("Admin user already exists. Startup check complete.");
             }
 
             // Seed accounts for admin if not present
