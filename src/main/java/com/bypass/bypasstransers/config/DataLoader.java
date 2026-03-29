@@ -29,7 +29,7 @@ public class DataLoader implements CommandLineRunner {
         } else {
             user = new User();
             user.setUsername("vickellar");
-            user.setPassword("NjisweVic~2030");
+            user.setPassword("*******");
             user.setPhoneNumber("+263778411140");
             userRepository.save(user);
         }
