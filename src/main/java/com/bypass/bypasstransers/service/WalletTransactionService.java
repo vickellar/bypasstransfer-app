@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers.service;
 
+import com.bypass.bypasstransers.enums.TransactionStatus;
 import com.bypass.bypasstransers.enums.TransactionType;
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.User;
@@ -77,6 +78,8 @@ public class WalletTransactionService {
         tx.setDate(LocalDateTime.now());
         tx.setWallet(dbWallet);
         tx.setCurrency(dbWallet.getCurrency());
+        tx.setSyncStatus("SYNCED"); // Online transactions are already synced
+        tx.setStatus(TransactionStatus.APPROVED);
 
         walletRepository.save(dbWallet);
         transactionRepository.save(tx);
@@ -126,6 +129,8 @@ public class WalletTransactionService {
         tx.setDate(LocalDateTime.now());
         tx.setWallet(wallet);
         tx.setCurrency(wallet.getCurrency());
+        tx.setSyncStatus("SYNCED"); // Online transactions are already synced
+        tx.setStatus(TransactionStatus.APPROVED);
 
         walletRepository.save(wallet);
         transactionRepository.save(tx);
@@ -187,6 +192,8 @@ public class WalletTransactionService {
         tx.setDate(LocalDateTime.now());
         tx.setWallet(fromWallet);
         tx.setCurrency(fromWallet.getCurrency());
+        tx.setSyncStatus("SYNCED"); // Online transactions are already synced
+        tx.setStatus(TransactionStatus.APPROVED);
 
         walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
