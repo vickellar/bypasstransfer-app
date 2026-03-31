@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
@@ -107,6 +107,15 @@
         </div>
 
         <div class="actions-grid">
+            <!-- Transaction Matching -->
+            <a th:href="@{/admin/transaction-matching}" class="action-card">
+                <div class="action-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-link"></i></div>
+                <div class="action-content">
+                    <h3>Transaction Matching</h3>
+                    <p>Pair incoming (RUB received) with outgoing (USD sent) transactions for end-of-day reconciliation</p>
+                </div>
+            </a>
+
             <!-- Branch Management - NEW -->
             <a th:href="@{/admin/branches}" class="action-card">
                 <div class="action-icon branch"><i class="fas fa-building"></i></div>

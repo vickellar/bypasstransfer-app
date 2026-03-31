@@ -142,8 +142,13 @@ public class DebugController {
         List<User> users = userRepository.findByUsername(username);
         if (users.isEmpty()) return "user-not-found";
         User u = users.get(0);
-        String link = passwordResetService.createTokenForUser(u);
-        return link != null ? link : "Token created (email sent - check console for link)";
+        var out = passwordResetService.createTokenForUser(u);
+        if (out.getDisplayLinkOptional() != null) {
+            return out.getDisplayLinkOptional();
+        }
+        return out.isSmtpSent()
+                ? "Token created (reset email sent via SMTP)"
+                : "Token created but SMTP did not accept the message — check logs and MAIL_* / spring.mail.*";
     }
 
     @GetMapping("/debug/send-sms")

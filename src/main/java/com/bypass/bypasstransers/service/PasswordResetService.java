@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers.service;
 
+import com.bypass.bypasstransers.model.EmailSendOutcome;
 import com.bypass.bypasstransers.model.PasswordResetToken;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
@@ -32,16 +33,18 @@ public class PasswordResetService {
     private AuditService auditService;
 
     /** Convenience overload for callers that don't need the reset link. */
-    public String createTokenForUser(User user) {
+    public EmailSendOutcome createTokenForUser(User user) {
         return createTokenForUser(user, null);
     }
 
     /**
-     * Creates a password reset token. If user has no email, returns the reset link
-     * so the controller can display it on the page; otherwise returns null.
+     * Creates a password reset token and attempts to email the user.
+     * When the account has no email, the link is returned for display (admin/debug flows).
      */
-    public String createTokenForUser(User user, Object ignored) {
-        if (user == null) return null;
+    public EmailSendOutcome createTokenForUser(User user, Object ignored) {
+        if (user == null) {
+            return EmailSendOutcome.smtpFailed();
+        }
         try { tokenRepository.deleteByUser(user); } catch (Exception e) { }
 
         String token = UUID.randomUUID().toString();
@@ -58,24 +61,18 @@ public class PasswordResetService {
                 "Use the following link to reset your password (expires in 6 hours):\n" +
                 resetLink + "\n\nIf you didn't request this, please ignore.\n";
 
-        try {
-            if (user.getEmail() != null && !user.getEmail().isBlank()) {
-                Map<String, Object> model = new HashMap<>();
-                model.put("username", user.getUsername());
-                model.put("link", resetLink);
-                emailService.sendTemplateEmail(user.getEmail(), "Password reset", "password-reset.html", model);
-            } else {
-                // fallback to console if no email
-                emailService.sendSimpleEmail("no-reply@localhost", "Password reset (no email)", body);
-            }
-        } catch (Exception ex) {
-            // fallback to simple email
-            try { emailService.sendSimpleEmail(user.getEmail() == null ? "no-reply@localhost" : user.getEmail(), "Password reset", body); } catch (Exception e) { }
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            Map<String, Object> model = new HashMap<>();
+            model.put("username", user.getUsername());
+            model.put("link", resetLink);
+            boolean sent = emailService.sendTemplateEmail(user.getEmail(), "Password reset", "password-reset.html", model);
+            try { auditService.logEntity(user.getUsername(), "users", user.getId(), "REQUEST_PASSWORD_RESET", null, null); } catch (Exception e) { }
+            return sent ? EmailSendOutcome.deliveredToMailbox() : EmailSendOutcome.smtpFailed();
         }
 
+        emailService.sendSimpleEmail("no-reply@localhost", "Password reset (no email)", body);
         try { auditService.logEntity(user.getUsername(), "users", user.getId(), "REQUEST_PASSWORD_RESET", null, null); } catch (Exception e) { }
-        // Return link when user has no email so it can be displayed on the page
-        return (user.getEmail() == null || user.getEmail().isBlank()) ? resetLink : null;
+        return EmailSendOutcome.noRecipientEmail(resetLink);
     }
 
     public User validateTokenAndFetchUser(String token) {

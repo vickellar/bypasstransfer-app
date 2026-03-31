@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers.service;
 
+import com.bypass.bypasstransers.model.EmailSendOutcome;
 import com.bypass.bypasstransers.model.EmailVerificationToken;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.EmailVerificationTokenRepository;
@@ -27,8 +28,10 @@ public class EmailVerificationService {
     @Autowired
     private AuditService auditService;
 
-    public String createTokenForUser(User user) {
-        if (user == null) return null;
+    public EmailSendOutcome createTokenForUser(User user) {
+        if (user == null) {
+            return EmailSendOutcome.smtpFailed();
+        }
         try { tokenRepository.deleteByUser(user); } catch (Exception e) { }
 
         String token = UUID.randomUUID().toString();
@@ -41,33 +44,22 @@ public class EmailVerificationService {
                 .queryParam("token", token)
                 .toUriString();
 
-        try {
-            if (user.getEmail() != null && !user.getEmail().isBlank()) {
-                Map<String, Object> model = new HashMap<>();
-                model.put("username", user.getUsername());
-                model.put("link", verifyLink);
-                emailService.sendTemplateEmail(user.getEmail(), "Verify your email", "verify-email.html", model);
-            } else {
-                // fallback to console
-                String body = "Hello " + user.getUsername() + ",\n\n" +
-                        "Please verify your email by visiting the following link (expires in 48 hours):\n" +
-                        verifyLink + "\n\n" +
-                        "If you didn't create an account, please ignore this message.\n";
-                emailService.sendSimpleEmail("no-reply@localhost", "Verify your email", body);
-            }
-        } catch (Exception ex) {
-            // fallback to plain email
-            try {
-                String body = "Hello " + user.getUsername() + ",\n\n" +
-                        "Please verify your email by visiting the following link (expires in 48 hours):\n" +
-                        verifyLink + "\n\n" +
-                        "If you didn't create an account, please ignore this message.\n";
-                emailService.sendSimpleEmail(user.getEmail() == null ? "no-reply@localhost" : user.getEmail(), "Verify your email", body);
-            } catch (Exception e) { }
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            Map<String, Object> model = new HashMap<>();
+            model.put("username", user.getUsername());
+            model.put("link", verifyLink);
+            boolean sent = emailService.sendTemplateEmail(user.getEmail(), "Verify your email", "verify-email.html", model);
+            try { auditService.logEntity(user.getUsername(), "users", user.getId(), "EMAIL_VERIFICATION_SENT", null, null); } catch (Exception e) { }
+            return sent ? EmailSendOutcome.deliveredToMailbox() : EmailSendOutcome.smtpFailed();
         }
 
+        String body = "Hello " + user.getUsername() + ",\n\n" +
+                "Please verify your email by visiting the following link (expires in 48 hours):\n" +
+                verifyLink + "\n\n" +
+                "If you didn't create an account, please ignore this message.\n";
+        emailService.sendSimpleEmail("no-reply@localhost", "Verify your email", body);
         try { auditService.logEntity(user.getUsername(), "users", user.getId(), "EMAIL_VERIFICATION_SENT", null, null); } catch (Exception e) { }
-        return (user.getEmail() == null || user.getEmail().isBlank()) ? verifyLink : null;
+        return EmailSendOutcome.noRecipientEmail(verifyLink);
     }
 
     public boolean validateTokenAndVerifyUser(String token) {

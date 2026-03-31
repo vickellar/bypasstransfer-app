@@ -356,11 +356,14 @@ public class UserController {
                 }
                 
                 // Send password reset link if email exists
-                if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                if (savedUser.getEmail() != null && !savedUser.getEmail().isBlank()) {
                     try {
-                        passwordResetService.createTokenForUser(savedUser);
+                        var outcome = passwordResetService.createTokenForUser(savedUser);
+                        if (!outcome.isSmtpSent()) {
+                            System.err.println("[USER CREATION] Password reset email was not accepted by SMTP for user: "
+                                    + savedUser.getUsername() + " — configure MAIL_* and check server logs.");
+                        }
                     } catch (Exception ex) {
-                        // ignore send failures but log audit
                         System.err.println("[USER CREATION] Failed to create password reset token for user: " + savedUser.getUsername());
                     }
                 }

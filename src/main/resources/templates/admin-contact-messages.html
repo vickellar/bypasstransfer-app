@@ -2,45 +2,90 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contact Messages - Admin</title>
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
     <link rel="stylesheet" th:href="@{/css/site.css}" />
+    <style>
+        .messages-card {
+            padding: 0;
+            overflow: hidden;
+        }
+        .messages-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .messages-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .message-cell {
+            max-width: 420px;
+            white-space: normal;
+            line-height: 1.45;
+            color: #334155;
+        }
+        .empty-state {
+            padding: 24px;
+            text-align: center;
+            color: #64748b;
+        }
+    </style>
 </head>
 <body>
 <div th:insert="fragments/header :: header"></div>
 <main class="container">
-    <h1>Contact Messages</h1>
+    <div class="page-header">
+        <h1>Contact Messages</h1>
+    </div>
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-    <table class="table" border="1" style="width:100%; border-collapse:collapse;">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Message</th>
-            <th>Created At</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="m : ${messages}">
-            <td th:text="${m.id}"></td>
-            <td th:text="${m.name}"></td>
-            <td th:text="${m.email}"></td>
-            <td th:text="${m.message}"></td>
-            <td th:text="${m.createdAt}"></td>
-            <td>
-                <form th:action="@{/admin/contact-messages/delete}" method="post" style="display:inline">
-                    <input type="hidden" name="id" th:value="${m.id}" />
-                    <button type="submit" onclick="return confirm('Delete message?')">Delete</button>
-                </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+    <section class="card messages-card">
+        <div class="messages-header">
+            <h2>Inbox</h2>
+            <a th:href="@{/admin}" class="btn btn-secondary">Back to Admin</a>
+        </div>
 
-    <p><a th:href="@{/admin}">Back to Admin</a></p>
+        <div th:if="${messages == null or #lists.isEmpty(messages)}" class="empty-state">
+            No contact messages yet.
+        </div>
+
+        <table th:if="${messages != null and !#lists.isEmpty(messages)}" class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Message</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${messages}">
+                <td th:text="${m.id}"></td>
+                <td th:text="${m.name}"></td>
+                <td>
+                    <a th:href="'mailto:' + ${m.email}" th:text="${m.email}"></a>
+                </td>
+                <td class="message-cell" th:text="${m.message}"></td>
+                <td th:text="${m.createdAt}"></td>
+                <td>
+                    <form th:action="@{/admin/contact-messages/delete}" method="post" style="display:inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <input type="hidden" name="id" th:value="${m.id}" />
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete message?')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
 </main>
 <div th:insert="fragments/footer :: footer"></div>
 </body>

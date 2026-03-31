@@ -1,23 +1,132 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <title>Reset Password</title>
-    </head>
-    <body>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Reset Password</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            background: #e0e7ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .back:hover {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="icon">
+            <svg width="24" height="24" fill="none" stroke="#3b82f6" stroke-width="2">
+                <path
+                    d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+        </div>
         <h1>Reset Password</h1>
-        
-        
+        <p>Enter your new password below</p>
         <form action="/reset" method="post">
             <input type="hidden" name="token" value="b02506bb-095a-4734-ae6c-60df7b4a36fb" />
-            <div>
-                <label>New password</label>
-                <input type="password" name="password" required />
-            </div>
-            <div>
-                <button type="submit">Reset Password</button>
-            </div>
+            <label>New password</label>
+            <input type="password" name="password" required placeholder="Enter new password" />
+            <button type="submit">Reset Password</button>
         </form>
-        <p><a href="/login">Back to login</a></p>
-    </body>
+        <a href="/login" class="back">Back to login</a>
+    </div>
+</body>
+
 </html>

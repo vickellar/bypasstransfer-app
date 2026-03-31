@@ -126,10 +126,8 @@ public class PublicController {
             userRepository.save(u);
             
             try {
-                String link = passwordResetService.createTokenForUser(u);
-                // if no email on user, createTokenForUser returns link so we can show it
-                sentResetLink = (link != null);
-                // otherwise emailService will have sent the link to user's email
+                var prOut = passwordResetService.createTokenForUser(u);
+                sentResetLink = (prOut.getDisplayLinkOptional() != null);
             } catch (Exception ex) {
                 // ignore but continue
             }
@@ -137,11 +135,7 @@ public class PublicController {
 
         // Send email verification token (if email present) so users can verify their address
         try {
-            String verifyLink = emailVerificationService.createTokenForUser(u);
-            if (verifyLink != null) {
-                // no email available — the service returned the link which we can show in logs
-                // we won't display it in UI for security; it will be printed to logs by EmailService fallback
-            }
+            emailVerificationService.createTokenForUser(u);
         } catch (Exception e) {
             // ignore verification send failures
         }

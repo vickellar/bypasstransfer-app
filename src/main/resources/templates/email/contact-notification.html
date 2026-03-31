@@ -1,13 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8" />
-  <title>New Contact Message</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Contact Message - ByPass Transfers</title>
 </head>
-<body>
-  <p>Hi <span th:text="${adminName}">Admin</span>,</p>
-  <p>You have a new contact message from <strong th:text="${name}">Name</strong> (<span th:text="${email}">email</span>):</p>
-  <blockquote th:text="${message}">Message text</blockquote>
-  <p>Visit the admin console to manage messages.</p>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);padding:28px 40px;text-align:center;">
+              <p style="margin:0;font-size:20px;font-weight:800;color:#ffffff;">ByPass Transfers</p>
+              <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Admin Notification</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px 28px;">
+
+              <div style="text-align:center;margin-bottom:20px;">
+                <div style="display:inline-block;width:56px;height:56px;background:#eff6ff;border-radius:50%;line-height:56px;text-align:center;">
+                  <span style="font-size:24px;">✉️</span>
+                </div>
+              </div>
+
+              <h1 style="margin:0 0 6px;font-size:20px;font-weight:700;color:#1e293b;text-align:center;">
+                New Contact Message
+              </h1>
+              <p style="margin:0 0 24px;font-size:14px;color:#64748b;text-align:center;">
+                Hi <strong th:text="${adminName}">Admin</strong>, you have a new message waiting.
+              </p>
+
+              <!-- Sender info box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:20px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 8px;font-size:13px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">From</p>
+                    <p style="margin:0;font-size:15px;color:#1e293b;font-weight:600;" th:text="${name}">Name</p>
+                    <p style="margin:4px 0 0;font-size:14px;color:#3b82f6;" th:text="${email}">email@example.com</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Message box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="background:#fafafa;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 8px;font-size:13px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Message</p>
+                    <p style="margin:0;font-size:15px;color:#374151;line-height:1.7;" th:text="${message}">Message text here.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <div style="text-align:center;">
+                <a href="/admin/contact-messages"
+                   style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;">
+                  View in Admin Console
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:16px 40px 28px;border-top:1px solid #f1f5f9;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;">
+                © 2025 ByPass Transfers · Automated admin notification.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
-</html>
+</html>

@@ -52,7 +52,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/about", "/register", "/contact", "/login",
-                    "/forgot-password", "/reset", "/css/**", "/js/**",
+                    "/forgot-password", "/reset", "/reset-password", "/css/**", "/js/**",
                     "/images/**", "/img/**", "/videos/**", "/error").permitAll()
                 // Actuator health endpoint public, others require auth
                 .requestMatchers("/actuator/health").permitAll()

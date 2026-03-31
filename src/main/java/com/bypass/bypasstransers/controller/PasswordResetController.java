@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers.controller;
 
+import com.bypass.bypasstransers.model.EmailSendOutcome;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.service.PasswordResetService;
@@ -59,12 +60,15 @@ public class PasswordResetController {
             return "redirect:/forgot-password";
         }
 
-        String resetLink = passwordResetService.createTokenForUser(user, null);
-        ra.addFlashAttribute("success", resetLink != null
-                ? "Reset link created (no email on file - use the link below)."
-                : "If an account with that email exists, a reset link was sent.");
-        if (resetLink != null) {
-            ra.addFlashAttribute("resetLink", resetLink);
+        EmailSendOutcome outcome = passwordResetService.createTokenForUser(user, null);
+        if (outcome.getDisplayLinkOptional() != null) {
+            ra.addFlashAttribute("success", "Reset link created (no email on file - use the link below).");
+            ra.addFlashAttribute("resetLink", outcome.getDisplayLinkOptional());
+        } else if (outcome.isSmtpSent()) {
+            ra.addFlashAttribute("success", "Check your email for a password reset link (also check spam).");
+        } else {
+            ra.addFlashAttribute("error",
+                    "We could not send the reset email. Set MAIL_HOST, MAIL_PORT, MAIL_USERNAME, and MAIL_PASSWORD for your SMTP provider, then try again.");
         }
         return "redirect:/forgot-password";
     }
