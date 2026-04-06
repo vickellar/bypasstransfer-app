@@ -40,6 +40,9 @@
                     <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}" class="nav-btn nav-btn-amber">
                         <i class="fas fa-cog"></i> Admin
                     </a>
+                    <a sec:authorize="hasAnyRole('STAFF', 'ADMIN', 'SUPER_ADMIN', 'SUPERVISOR')" th:href="@{/staff/reconciliation}" class="nav-btn nav-btn-green">
+                        <i class="fas fa-balance-scale"></i> Reconciliation
+                    </a>
                     <a sec:authorize="hasAnyRole('STAFF', 'ADMIN', 'SUPER_ADMIN')" th:href="@{/offline/sync-management}" class="nav-btn nav-btn-info">
                         <i class="fas fa-sync-alt"></i> Sync
                     </a>
@@ -50,6 +53,12 @@
                             <i class="fas fa-chart-line"></i> Analytics <i class="fas fa-caret-down"></i>
                         </button>
                         <div class="dropdown-menu">
+                            <a th:href="@{/admin/transaction-matching}" class="dropdown-item">
+                                <i class="fas fa-link" style="color:#7c3aed;"></i> Transaction Matching
+                            </a>
+                            <a th:href="@{/reconciliations}" class="dropdown-item">
+                                <i class="fas fa-clipboard-check" style="color:#0ea5e9;"></i> Review Reconciliations
+                            </a>
                             <a th:href="@{/admin/analytics}" class="dropdown-item">
                                 <i class="fas fa-chart-bar" style="color:#22c55e;"></i> Analytics Dashboard
                             </a>

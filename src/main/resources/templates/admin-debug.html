@@ -6,7 +6,7 @@
     <link rel="stylesheet" th:href="@{/css/site.css}" />
 </head>
 <body>
-<div th:insert="fragments/header :: header"></div>
+<div th:insert="~{fragments/header :: header}"></div>
 <main class="container">
     <h1>Debug Console</h1>
     <h2>Password Reset Tokens</h2>
@@ -51,6 +51,6 @@
 
     <p><a th:href="@{/admin}">Back to Admin</a></p>
 </main>
-<div th:insert="fragments/footer :: footer"></div>
+<div th:insert="~{fragments/footer :: footer}"></div>
 </body>
 </html>

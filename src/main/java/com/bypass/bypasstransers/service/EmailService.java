@@ -117,7 +117,8 @@ public class EmailService {
             log.info("Template: {}", templateName);
         }
         if (rendered != null) {
-            log.info("{}", rendered);
+            String plainText = rendered.replaceAll("(?s)<[^>]*>(\\s*<[^>]*>)*", " ").replaceAll("\\s+", " ").trim();
+            log.info("{}", plainText);
         } else if (body != null) {
             log.info("{}", body);
         } else if (model != null && model.containsKey("body")) {

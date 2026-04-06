@@ -62,7 +62,7 @@
     </style>
 </head>
 <body style="background: #f8fafc;">
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <div class="admin-container">
         <div class="page-header">
@@ -183,7 +183,7 @@
         </div>
     </div>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 
     <script th:inline="javascript">
         // Initialize charts when page loads

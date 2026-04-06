@@ -170,7 +170,7 @@
 </head>
 
 <body>
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <div class="container">
         <div class="page-header">
@@ -284,7 +284,7 @@
         </div>
     </div>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 
     <script>
         // Auto-calculate net amount

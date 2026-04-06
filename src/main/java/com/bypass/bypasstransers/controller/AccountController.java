@@ -60,6 +60,7 @@ public class AccountController {
     @Autowired
     private ExchangeRateService exchangeRateService;
 
+
     /**
      * Main dashboard - routes to appropriate view based on user role
      * @param model
@@ -144,6 +145,10 @@ public class AccountController {
         
         // Add exchange rates to the model
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
+
+        // Add pending reconciliation count for notification badge
+        long pendingReconCount = reconService.countPendingAndFlagged();
+        model.addAttribute("pendingReconCount", pendingReconCount);
 
         return "supervisor-dashboard";
     }

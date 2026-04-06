@@ -130,7 +130,7 @@
     </style>
 </head>
 <body>
-<div th:insert="fragments/header :: header"></div>
+<div th:insert="~{fragments/header :: header}"></div>
 
 <div class="page-wrapper">
 
@@ -346,7 +346,7 @@
 
 </div><!-- end page-wrapper -->
 
-<div th:insert="fragments/footer :: footer"></div>
+<div th:insert="~{fragments/footer :: footer}"></div>
 
 <script>
 function filterUnmatched(q) {

@@ -137,6 +137,9 @@ public class StaffExpenseController {
     // RECONCILIATION
     // ============================================================
 
+    @Autowired
+    private com.bypass.bypasstransers.service.ReconsiliationService reconService;
+
     /** Staff reconciliation page — compare expected vs actual balances
      * @param model
      * @return  */
@@ -163,12 +166,32 @@ public class StaffExpenseController {
                 .filter(t -> t.getType() != null && t.getType().name().equals("SEND"))
                 .mapToDouble(Transaction::getAmount).sum();
 
+        // Check which wallets are already reconciled this week
+        java.util.Map<Long, Boolean> walletReconciledThisWeek = new java.util.HashMap<>();
+        java.util.Map<Long, com.bypass.bypasstransers.model.DailyReconciliation> walletReconResults = new java.util.HashMap<>();
+        for (Wallet w : wallets) {
+            boolean reconciled = reconService.isAlreadyReconciledThisWeek(w.getId());
+            walletReconciledThisWeek.put(w.getId(), reconciled);
+            if (reconciled) {
+                reconService.getThisWeeksReconciliation(w.getId()).ifPresent(r -> 
+                    walletReconResults.put(w.getId(), r)
+                );
+            }
+        }
+
+        // Get this staff's reconciliation history
+        List<com.bypass.bypasstransers.model.DailyReconciliation> myHistory = 
+            reconService.getHistoryByStaff(currentUser.getUsername());
+
         model.addAttribute("user", currentUser);
         model.addAttribute("wallets", wallets);
         model.addAttribute("transactions", transactions);
         model.addAttribute("expectedBalance", expectedBalance);
         model.addAttribute("totalIn", totalIn);
         model.addAttribute("totalOut", totalOut);
+        model.addAttribute("walletReconciledThisWeek", walletReconciledThisWeek);
+        model.addAttribute("walletReconResults", walletReconResults);
+        model.addAttribute("myHistory", myHistory);
         return "staff-reconciliation";
     }
 

@@ -25,7 +25,32 @@ public class BypasstransersApplication {
             LoggerFactory.getLogger(BypasstransersApplication.class);
 
     public static void main(String[] args) {
+        loadDotEnv();
         SpringApplication.run(BypasstransersApplication.class, args);
+    }
+
+    private static void loadDotEnv() {
+        java.io.File envFile = new java.io.File(".env");
+        if (envFile.exists()) {
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(envFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) continue;
+                    int eqPos = line.indexOf('=');
+                    if (eqPos > 0) {
+                        String key = line.substring(0, eqPos).trim();
+                        String value = line.substring(eqPos + 1).trim();
+                        if (System.getProperty(key) == null && System.getenv(key) == null) {
+                            System.setProperty(key, value);
+                        }
+                    }
+                }
+                log.info("Loaded variables from .env file");
+            } catch (java.io.IOException e) {
+                log.warn("Failed to load .env file: {}", e.getMessage());
+            }
+        }
     }
 
     /**

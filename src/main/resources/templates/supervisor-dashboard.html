@@ -96,7 +96,7 @@
     </style>
 </head>
 <body style="background: #f8fafc;">
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <div class="dashboard-container">
         <div class="page-header">
@@ -134,6 +134,28 @@
                     <p>Active Users</p>
                 </div>
             </div>
+        </div>
+
+        <!-- Reconciliation Notification -->
+        <div th:if="${pendingReconCount != null && pendingReconCount > 0}" 
+             style="background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08)); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fcd34d;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div style="font-weight:600;color:#fcd34d;font-size:15px;">
+                        <span th:text="${pendingReconCount}">0</span> Reconciliation(s) Pending Review
+                    </div>
+                    <div style="color:#94a3b8;font-size:13px;margin-top:2px;">
+                        Staff reconciliations with discrepancies need your attention
+                    </div>
+                </div>
+            </div>
+            <a th:href="@{/reconciliations(status='FLAGGED')}" 
+               style="padding:10px 20px;border-radius:8px;background:#f59e0b;color:#1e293b;font-weight:600;font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+                <i class="fas fa-clipboard-check"></i> Review Now
+            </a>
         </div>
 
         <div class="content-grid">
@@ -240,6 +262,20 @@
                 <h3>Offline Transactions</h3>
                 <p>Manage offline transaction records</p>
             </a>
+            <a th:href="@{/reconciliations}" class="action-card" th:if="${isSupervisor}" 
+               style="position:relative;">
+                <i class="fas fa-clipboard-check"></i>
+                <h3>Review Reconciliations</h3>
+                <p>Approve or flag staff reconciliations</p>
+                <span th:if="${pendingReconCount != null && pendingReconCount > 0}" 
+                      style="position:absolute;top:12px;right:12px;background:#f59e0b;color:#1e293b;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;"
+                      th:text="${pendingReconCount}">0</span>
+            </a>
+            <a th:href="@{/staff/reconciliation}" class="action-card">
+                <i class="fas fa-balance-scale"></i>
+                <h3>My Reconciliation</h3>
+                <p>Reconcile your weekly balances</p>
+            </a>
         </div>
         
         <!-- Exchange Rates Card
@@ -301,6 +337,6 @@
         </div>
     </div>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 </body>
 </html>

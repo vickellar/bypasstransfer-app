@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
+
 @SpringBootTest
 public class RegistrationIntegrationTest {
 
@@ -25,20 +27,15 @@ public class RegistrationIntegrationTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    public void setup() {
+    public void setUp() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     }
 
     @Test
     public void testRegisterCreatesUser() throws Exception {
-        String username = "testuser1";
-        String email = "testuser1@example.com";
-
-        // Ensure user doesn't exist
-        User existingByName = userRepository.findByUsernameIgnoreCase(username).stream().findFirst().orElse(null);
-        if (existingByName != null) userRepository.delete(existingByName);
-        User existingByEmail = userRepository.findByEmailIgnoreCase(email).stream().findFirst().orElse(null);
-        if (existingByEmail != null) userRepository.delete(existingByEmail);
+        // Use unique username to avoid conflicts
+        String username = "testuser_" + System.currentTimeMillis();
+        String email = username + "@example.com";
 
         mockMvc.perform(MockMvcRequestBuilders.post("/register")
                 .param("username", username)
@@ -47,7 +44,9 @@ public class RegistrationIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().is3xxRedirection())
                 .andExpect(MockMvcResultMatchers.redirectedUrl("/login"));
 
-        User u = userRepository.findByUsernameIgnoreCase(username).get(0);
+        List<User> users = userRepository.findByUsername(username);
+        Assertions.assertFalse(users.isEmpty(), "User should be created");
+        User u = users.get(0);
         Assertions.assertNotNull(u, "User should be created");
         Assertions.assertEquals(email, u.getEmail());
     }

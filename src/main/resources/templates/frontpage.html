@@ -525,7 +525,7 @@
     <video class="hero-video-bg" autoplay loop muted playsinline>
         <source th:src="@{/videos/hero-video.mp4}" type="video/mp4">
     </video>
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
     
     <!-- Alert for deactivated users -->
     <div th:if="${#authentication.name != null}" class="deactivation-alert" style="display:none;">
@@ -952,7 +952,7 @@
         </a>
     </section>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 
     <script>
         // Exchange rates (simulated) - USD is the fixed receiving currency

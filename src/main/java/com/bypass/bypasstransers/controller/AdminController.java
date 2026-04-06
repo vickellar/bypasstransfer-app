@@ -106,16 +106,35 @@ public class AdminController {
     @GetMapping("/reports")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR','SUPER_ADMIN')")
     public String reportsPage(Model model) {
-        // Calculate transaction statistics
+        // Calculate transaction statistics grouped by currency
         List<Transaction> allTransactions = transactionRepository.findAll();
-        double totalAmount = allTransactions.stream().mapToDouble(Transaction::getAmount).sum();
-        double totalFees = allTransactions.stream().mapToDouble(Transaction::getFee).sum();
-        double totalNet = allTransactions.stream().mapToDouble(Transaction::getNetAmount).sum();
         
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> amountByCurrency = allTransactions.stream()
+            .filter(t -> t.getCurrency() != null)
+            .collect(java.util.stream.Collectors.groupingBy(
+                Transaction::getCurrency,
+                java.util.stream.Collectors.summingDouble(Transaction::getAmount)
+            ));
+            
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> feesByCurrency = allTransactions.stream()
+            .filter(t -> t.getCurrency() != null)
+            .collect(java.util.stream.Collectors.groupingBy(
+                Transaction::getCurrency,
+                java.util.stream.Collectors.summingDouble(Transaction::getFee)
+            ));
+            
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> netByCurrency = allTransactions.stream()
+            .filter(t -> t.getCurrency() != null)
+            .collect(java.util.stream.Collectors.groupingBy(
+                Transaction::getCurrency,
+                java.util.stream.Collectors.summingDouble(Transaction::getNetAmount)
+            ));
+            
         model.addAttribute("totalTransactions", allTransactions.size());
-        model.addAttribute("totalAmount", totalAmount);
-        model.addAttribute("totalFees", totalFees);
-        model.addAttribute("totalNet", totalNet);
+        model.addAttribute("amountByCurrency", amountByCurrency);
+        model.addAttribute("feesByCurrency", feesByCurrency);
+        model.addAttribute("netByCurrency", netByCurrency);
+        
         
         List<User> staffMembers = userRepository.findAll().stream()
                 .filter(u -> u.getIsActive() && (u.getRole() == Role.STAFF || u.getRole() == Role.SUPERVISOR))

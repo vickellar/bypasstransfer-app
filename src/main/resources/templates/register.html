@@ -72,7 +72,7 @@
     </style>
 </head>
 <body>
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
 
     <main class="register-wrapper">
         <section class="register-card container">
@@ -114,7 +114,7 @@
         </section>
     </main>
 
-    <div th:insert="fragments/footer :: footer"></div>
+    <div th:insert="~{fragments/footer :: footer}"></div>
 
     
 </body>

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="_csrf" th:content="${_csrf?.token}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" />
-    <title>Daily Reconciliation - ByPass Transfers</title>
+    <title>Weekly Reconciliation - ByPass Transfers</title>
     <link rel="stylesheet" th:href="@{/css/site.css}" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,7 +19,8 @@
         }
 
         body {
-            background: #f8fafc;
+            background: #0f172a;
+            min-height: 100vh;
         }
 
         .container {
@@ -40,11 +41,11 @@
         .page-header h1 {
             font-size: 26px;
             font-weight: 700;
-            color: #1e293b;
+            color: #f1f5f9;
         }
 
         .page-header p {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 14px;
             margin-top: 4px;
         }
@@ -73,12 +74,13 @@
         }
 
         .btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn-secondary:hover {
-            background: #e2e8f0;
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .btn-success {
@@ -90,6 +92,11 @@
             background: #16a34a;
         }
 
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+        }
+
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -98,15 +105,20 @@
         }
 
         .summary-card {
-            background: white;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            border-radius: 14px;
             padding: 22px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.2s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
         }
 
         .summary-card .label {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 8px;
@@ -115,45 +127,27 @@
         .summary-card .value {
             font-size: 28px;
             font-weight: 700;
-            color: #1e293b;
+            color: #f1f5f9;
         }
 
         .summary-card .sub {
-            color: #94a3b8;
+            color: #64748b;
             font-size: 12px;
             margin-top: 4px;
         }
 
-        .summary-card.balanced {
-            border-color: #86efac;
-            background: #f0fdf4;
-        }
-
-        .summary-card.balanced .value {
-            color: #16a34a;
-        }
-
-        .summary-card.mismatch {
-            border-color: #fca5a5;
-            background: #fef2f2;
-        }
-
-        .summary-card.mismatch .value {
-            color: #dc2626;
-        }
-
         .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
-            border: 1px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             overflow: hidden;
             margin-bottom: 24px;
         }
 
         .card-header {
             padding: 18px 22px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -162,7 +156,7 @@
         .card-header h2 {
             font-size: 17px;
             font-weight: 600;
-            color: #1e293b;
+            color: #f1f5f9;
         }
 
         .card-body {
@@ -175,7 +169,7 @@
         }
 
         thead {
-            background: #f8fafc;
+            background: rgba(255, 255, 255, 0.04);
         }
 
         th {
@@ -183,16 +177,16 @@
             text-align: left;
             font-weight: 600;
             font-size: 12px;
-            color: #64748b;
+            color: #94a3b8;
             text-transform: uppercase;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         td {
             padding: 13px 16px;
             font-size: 14px;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #cbd5e1;
         }
 
         tbody tr:last-child td {
@@ -200,38 +194,18 @@
         }
 
         tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        /* Manual reconciliation form */
-        .recon-form {
-            background: #f8fafc;
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 14px;
-            align-items: end;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #475569;
-            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .form-control {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
             font-size: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #f1f5f9;
+            transition: border-color 0.2s;
         }
 
         .form-control:focus {
@@ -239,51 +213,226 @@
             border-color: #3b82f6;
         }
 
+        .form-control::placeholder {
+            color: #64748b;
+        }
+
+        .form-control[readonly] {
+            background: rgba(255, 255, 255, 0.03);
+            color: #94a3b8;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 60px;
+        }
+
         .alert {
             padding: 14px 18px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .alert-success {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #bbf7d0;
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.2);
         }
 
         .alert-error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        .diff-positive {
-            color: #16a34a;
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .diff-negative {
-            color: #dc2626;
+        .badge-approved {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+        }
+
+        .badge-flagged {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fcd34d;
+        }
+
+        .badge-pending {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+        }
+
+        .badge-locked {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+        }
+
+        /* Wallet reconciliation card */
+        .wallet-recon-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .wallet-recon-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .wallet-recon-card.locked {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        .wallet-recon-card .wallet-title {
+            font-size: 15px;
             font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .diff-zero {
+        .recon-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 14px;
+            align-items: end;
+        }
+
+        .recon-fields label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .notes-row {
+            margin-top: 12px;
+        }
+
+        .notes-row label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        /* Results row for already reconciled wallets */
+        .recon-result {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .recon-result .result-item {
+            text-align: center;
+        }
+
+        .recon-result .result-item .label {
+            font-size: 11px;
             color: #64748b;
-            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .recon-result .result-item .val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-top: 4px;
+        }
+
+        .recon-result .result-item .val.positive {
+            color: #86efac;
+        }
+
+        .recon-result .result-item .val.negative {
+            color: #fca5a5;
+        }
+
+        .recon-result .result-item .val.zero {
+            color: #64748b;
+        }
+
+        /* History section */
+        .history-empty {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .history-empty i {
+            font-size: 48px;
+            margin-bottom: 14px;
+            display: block;
+            color: #475569;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .recon-fields {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .recon-result {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .recon-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .recon-result {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div th:insert="fragments/header :: header"></div>
+    <div th:insert="~{fragments/header :: header}"></div>
     <div class="container">
         <div class="page-header">
             <div>
-                <h1><i class="fas fa-balance-scale" style="margin-right:10px;color:#3b82f6;"></i>Daily Reconciliation
+                <h1><i class="fas fa-balance-scale" style="margin-right:10px;color:#3b82f6;"></i>Weekly Reconciliation
                 </h1>
-                <p>Compare your expected wallet balances with actual cash on hand</p>
+                <p>Compare your expected wallet balances with actual cash on hand — once per week</p>
             </div>
-            <div style="display:flex;gap:10px;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <a th:href="@{/staff/transactions}" class="btn btn-secondary">
                     <i class="fas fa-history"></i> Transaction History
                 </a>
@@ -293,10 +442,10 @@
             </div>
         </div>
 
-        <div th:if="${success}" class="alert alert-success"><i class="fas fa-check-circle"
-                style="margin-right:8px;"></i><span th:text="${success}"></span></div>
-        <div th:if="${error}" class="alert alert-error"> <i class="fas fa-exclamation-circle"
-                style="margin-right:8px;"></i><span th:text="${error}"></span></div>
+        <div th:if="${success}" class="alert alert-success"><i class="fas fa-check-circle"></i><span
+                th:text="${success}"></span></div>
+        <div th:if="${error}" class="alert alert-error"><i class="fas fa-exclamation-circle"></i><span
+                th:text="${error}"></span></div>
 
         <!-- Summary Cards -->
         <div class="summary-grid">
@@ -304,19 +453,21 @@
                 <div class="label"><i class="fas fa-wallet" style="margin-right:6px;color:#3b82f6;"></i>System Balance
                 </div>
                 <div class="value" th:text="'$' + ${#numbers.formatDecimal(expectedBalance, 0, 2)}">$0.00</div>
-                <div class="sub">Sum of all wallet balances in the system</div>
+                <div class="sub">Sum of all wallet balances</div>
             </div>
             <div class="summary-card">
                 <div class="label"><i class="fas fa-arrow-down" style="margin-right:6px;color:#22c55e;"></i>Total Cash
                     In</div>
-                <div class="value" style="color:#16a34a;" th:text="'$' + ${#numbers.formatDecimal(totalIn, 0, 2)}">$0.00
+                <div class="value" style="color:#86efac;"
+                    th:text="'$' + ${#numbers.formatDecimal(totalIn, 0, 2)}">$0.00
                 </div>
                 <div class="sub">Received across all accounts</div>
             </div>
             <div class="summary-card">
                 <div class="label"><i class="fas fa-arrow-up" style="margin-right:6px;color:#ef4444;"></i>Total Cash Out
                 </div>
-                <div class="value" style="color:#dc2626;" th:text="'$' + ${#numbers.formatDecimal(totalOut, 0, 2)}">
+                <div class="value" style="color:#fca5a5;"
+                    th:text="'$' + ${#numbers.formatDecimal(totalOut, 0, 2)}">
                     $0.00</div>
                 <div class="sub">Sent across all accounts</div>
             </div>
@@ -327,113 +478,166 @@
             </div>
         </div>
 
-        <!-- Per-Wallet Breakdown -->
+        <!-- Per-Wallet Reconciliation -->
         <div class="card">
             <div class="card-header">
-                <h2><i class="fas fa-credit-card" style="margin-right:8px;color:#3b82f6;"></i>Per-Account Balances</h2>
-            </div>
-            <div th:if="${#lists.isEmpty(wallets)}" style="padding:40px;text-align:center;color:#94a3b8;">
-                <i class="fas fa-wallet" style="font-size:36px;display:block;margin-bottom:12px;"></i>
-                No wallets found. Contact your administrator.
-            </div>
-            <table th:unless="${#lists.isEmpty(wallets)}">
-                <thead>
-                    <tr>
-                        <th>Account</th>
-                        <th>Currency</th>
-                        <th>System Balance</th>
-                        <th>View Transactions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="wallet : ${wallets}">
-                        <td>
-                            <strong th:text="${wallet.accountType}">Account</strong>
-                        </td>
-                        <td th:text="${wallet.currency}">USD</td>
-                        <td>
-                            <strong th:text="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}">$0.00</strong>
-                        </td>
-                        <td>
-                            <a th:href="@{/staff/transactions/wallet/{id}(id=${wallet.id})}" class="btn btn-secondary"
-                                style="padding:6px 14px;font-size:12px;">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                        </td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr style="background:#f8fafc;">
-                        <td colspan="2"><strong>TOTAL</strong></td>
-                        <td><strong th:text="'$' + ${#numbers.formatDecimal(expectedBalance, 0, 2)}">$0.00</strong></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-
-        <!-- Manual Reconciliation Check -->
-        <div class="card">
-            <div class="card-header">
-                <h2><i class="fas fa-calculator" style="margin-right:8px;color:#f59e0b;"></i>Manual Balance Check</h2>
+                <h2><i class="fas fa-calculator" style="margin-right:8px;color:#f59e0b;"></i>Reconcile Wallets</h2>
+                <span class="badge badge-pending" style="font-size:12px;">Weekly Cycle</span>
             </div>
             <div class="card-body">
-                <p style="color:#64748b;font-size:14px;margin-bottom:16px;">
-                    Enter the actual cash on hand for each account. The system will calculate the difference.
+                <p style="color:#94a3b8;font-size:14px;margin-bottom:20px;">
+                    Enter the actual cash on hand for each account. The system will compare it with the expected balance.
+                    <strong style="color:#fcd34d;">Any difference will be flagged for supervisor review.</strong>
                 </p>
-                <form id="reconForm" onsubmit="doReconciliation(event)">
-                    <div th:each="wallet : ${wallets}"
-                        style="margin-bottom:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
-                        <strong th:text="${wallet.accountType + ' (' + wallet.currency + ')'}">Account</strong>
-                        <div
-                            style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;margin-top:10px;align-items:end;">
+
+                <div th:if="${#lists.isEmpty(wallets)}" style="padding:40px;text-align:center;color:#64748b;">
+                    <i class="fas fa-wallet" style="font-size:36px;display:block;margin-bottom:12px;color:#475569;"></i>
+                    No wallets found. Contact your administrator.
+                </div>
+
+                <div th:each="wallet : ${wallets}">
+                    <!-- Already reconciled this week -->
+                    <div th:if="${walletReconciledThisWeek[wallet.id]}" class="wallet-recon-card"
+                        style="border-color: rgba(34,197,94,0.2); opacity:0.85;">
+                        <div class="wallet-title">
+                            <span>
+                                <i class="fas fa-check-circle" style="color:#22c55e;margin-right:8px;"></i>
+                                <span th:text="${wallet.accountType + ' (' + wallet.currency + ')'}">Account</span>
+                            </span>
+                            <span class="badge badge-locked"><i class="fas fa-lock" style="margin-right:4px;"></i> Reconciled This Week</span>
+                        </div>
+                        <div th:with="result=${walletReconResults[wallet.id]}" th:if="${result != null}" class="recon-result">
+                            <div class="result-item">
+                                <div class="label">System Balance</div>
+                                <div class="val" th:text="'$' + ${#numbers.formatDecimal(result.systemBalance, 0, 2)}">$0.00</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">Actual Cash</div>
+                                <div class="val" th:text="'$' + ${#numbers.formatDecimal(result.actualBalance, 0, 2)}">$0.00</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">Difference</div>
+                                <div class="val"
+                                    th:classappend="${result.difference > 0} ? 'positive' : (${result.difference < 0} ? 'negative' : 'zero')"
+                                    th:text="${(result.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(T(java.lang.Math).abs(result.difference), 0, 2)}">
+                                    $0.00</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="label">Status</div>
+                                <div class="val">
+                                    <span class="badge"
+                                        th:classappend="${result.status == 'APPROVED'} ? 'badge-approved' : (${result.status == 'FLAGGED'} ? 'badge-flagged' : 'badge-pending')"
+                                        th:text="${result.status}">PENDING</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Not yet reconciled - show form -->
+                    <div th:unless="${walletReconciledThisWeek[wallet.id]}" class="wallet-recon-card">
+                        <div class="wallet-title">
+                            <span th:text="${wallet.accountType + ' (' + wallet.currency + ')'}">Account</span>
+                            <span class="badge badge-pending"><i class="fas fa-clock" style="margin-right:4px;"></i> Not Reconciled</span>
+                        </div>
+                        <div class="recon-fields">
                             <div>
-                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">System
-                                    Balance</label>
+                                <label>System Balance</label>
                                 <input type="text" class="form-control" readonly
-                                    th:value="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}"
-                                    style="background:#fff;">
+                                    th:value="'$' + ${#numbers.formatDecimal(wallet.balance, 0, 2)}">
                             </div>
                             <div>
-                                <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">Actual Cash
-                                    on Hand</label>
+                                <label>Actual Cash on Hand</label>
                                 <input type="number" step="0.01" min="0" class="form-control actual-input"
                                     th:id="'actual_' + ${wallet.id}" th:data-expected="${wallet.balance}"
                                     th:data-wallet="${wallet.accountType}" placeholder="0.00" oninput="calcDiff(this)">
                             </div>
                             <div>
-                                <label
-                                    style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">Difference</label>
+                                <label>Difference</label>
                                 <input type="text" class="form-control" th:id="'diff_' + ${wallet.id}" readonly
-                                    placeholder="—" style="background:#fff;">
+                                    placeholder="—">
                             </div>
                             <div>
-                                <label
-                                    style="font-size:13px;color:#64748b;display:block;margin-bottom:4px;">&nbsp;</label>
-                                <button type="button" class="btn btn-success" style="height:38px;padding:0 15px;"
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-success" style="height:40px;padding:0 16px;"
                                     th:onclick="'submitRecon(' + ${wallet.id} + ')'">
-                                    <i class="fas fa-check"></i>
+                                    <i class="fas fa-check"></i> Submit
                                 </button>
                             </div>
                         </div>
+                        <div class="notes-row">
+                            <label>Notes <span style="color:#64748b;">(explain any discrepancy)</span></label>
+                            <textarea class="form-control" th:id="'notes_' + ${wallet.id}"
+                                placeholder="Enter notes if actual differs from expected..."></textarea>
+                        </div>
                     </div>
-                    <div id="totalDiffRow"
-                        style="margin-top:12px;padding:16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;display:none;">
-                        <strong>Total Difference: </strong><span id="totalDiffValue"
-                            style="font-weight:700;">$0.00</span>
-                    </div>
-                </form>
+                </div>
+
+                <div id="totalDiffRow"
+                    style="margin-top:16px;padding:16px;background:rgba(59,130,246,0.1);border-radius:10px;border:1px solid rgba(59,130,246,0.2);display:none;">
+                    <strong style="color:#93c5fd;">Total Difference: </strong><span id="totalDiffValue"
+                        style="font-weight:700;color:#f1f5f9;">$0.00</span>
+                </div>
             </div>
         </div>
+
+        <!-- Reconciliation History -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-history" style="margin-right:8px;color:#a855f7;"></i>My Reconciliation History</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(myHistory)}" class="history-empty">
+                <i class="fas fa-folder-open"></i>
+                <p>No reconciliation records yet. Submit your first one above.</p>
+            </div>
+            <table th:unless="${#lists.isEmpty(myHistory)}">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Account</th>
+                        <th>System</th>
+                        <th>Actual</th>
+                        <th>Difference</th>
+                        <th>Status</th>
+                        <th>Week</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="rec : ${myHistory}">
+                        <td th:text="${rec.date}">2026-04-06</td>
+                        <td>
+                            <strong th:text="${rec.accountName}">Account</strong>
+                        </td>
+                        <td th:text="'$' + ${#numbers.formatDecimal(rec.systemBalance, 0, 2)}">$0.00</td>
+                        <td th:text="'$' + ${#numbers.formatDecimal(rec.actualBalance, 0, 2)}">$0.00</td>
+                        <td>
+                            <span style="font-weight:600;"
+                                th:style="${rec.difference > 0} ? 'color:#86efac;' : (${rec.difference < 0} ? 'color:#fca5a5;' : 'color:#64748b;')"
+                                th:text="${(rec.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(T(java.lang.Math).abs(rec.difference), 0, 2)}">
+                                $0.00</span>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                th:classappend="${rec.status == 'APPROVED'} ? 'badge-approved' : (${rec.status == 'FLAGGED'} ? 'badge-flagged' : 'badge-pending')"
+                                th:text="${rec.status}">PENDING</span>
+                        </td>
+                        <td style="color:#94a3b8;"
+                            th:text="${rec.weekNumber != null ? ('W' + rec.weekNumber + '/' + rec.year) : '—'}">W14/2026
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
     <div th:insert="~{fragments/footer :: footer}"></div>
     <script>
         async function submitRecon(walletId) {
             const actualInput = document.getElementById('actual_' + walletId);
+            const notesInput = document.getElementById('notes_' + walletId);
             const actualValue = parseFloat(actualInput.value);
 
             if (isNaN(actualValue)) {
-                alert("Please enter a valid actual balance.");
+                showAlert("Please enter a valid actual balance.", "error");
                 return;
             }
 
@@ -449,18 +653,47 @@
                     },
                     body: JSON.stringify({
                         walletId: walletId,
-                        actualBalance: actualValue
+                        actualBalance: actualValue,
+                        notes: notesInput ? notesInput.value : ''
                     })
                 });
 
                 if (response.ok) {
                     const result = await response.json();
-                    alert("Reconciliation saved! Difference: $" + result.difference.toFixed(2));
+                    const diff = result.difference.toFixed(2);
+                    const status = result.status;
+
+                    if (status === 'APPROVED') {
+                        showAlert("✅ Reconciliation saved — Balance matches! No discrepancy.", "success");
+                    } else {
+                        showAlert("⚠️ Reconciliation saved — Difference: $" + diff + " — Flagged for supervisor review.", "warning");
+                    }
+
+                    // Reload after a brief delay to show updated state
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
-                    alert("Failed to save reconciliation.");
+                    const errData = await response.json().catch(() => ({}));
+                    showAlert(errData.error || "Failed to save reconciliation.", "error");
                 }
             } catch (e) {
-                alert("Error: " + e.message);
+                showAlert("Error: " + e.message, "error");
+            }
+        }
+
+        function showAlert(message, type) {
+            // Remove existing alerts
+            document.querySelectorAll('.dynamic-alert').forEach(el => el.remove());
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'dynamic-alert alert ' + (type === 'error' ? 'alert-error' : 'alert-success');
+            alertDiv.innerHTML = '<i class="fas ' + (type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle') + '"></i> ' + message;
+
+            const container = document.querySelector('.container');
+            const header = container.querySelector('.page-header');
+            header.insertAdjacentElement('afterend', alertDiv);
+
+            if (type !== 'error') {
+                setTimeout(() => alertDiv.remove(), 5000);
             }
         }
 
@@ -471,7 +704,7 @@
             const diffInput = document.getElementById(input.id.replace('actual_', 'diff_'));
             if (diffInput) {
                 diffInput.value = (diff >= 0 ? '+' : '') + '$' + diff.toFixed(2);
-                diffInput.style.color = diff > 0 ? '#16a34a' : diff < 0 ? '#dc2626' : '#64748b';
+                diffInput.style.color = diff > 0 ? '#86efac' : diff < 0 ? '#fca5a5' : '#64748b';
             }
             updateTotal();
         }
@@ -479,15 +712,20 @@
         function updateTotal() {
             const inputs = document.querySelectorAll('.actual-input');
             let totalDiff = 0;
+            let hasInput = false;
             inputs.forEach(inp => {
-                const expected = parseFloat(inp.dataset.expected) || 0;
-                const actual = parseFloat(inp.value) || 0;
-                totalDiff += (actual - expected);
+                if (inp.value) {
+                    hasInput = true;
+                    const expected = parseFloat(inp.dataset.expected) || 0;
+                    const actual = parseFloat(inp.value) || 0;
+                    totalDiff += (actual - expected);
+                }
             });
+            if (!hasInput) return;
             const el = document.getElementById('totalDiffValue');
             if (el) {
                 el.textContent = (totalDiff >= 0 ? '+' : '') + '$' + totalDiff.toFixed(2);
-                el.style.color = totalDiff > 0 ? '#16a34a' : totalDiff < 0 ? '#dc2626' : '#64748b';
+                el.style.color = totalDiff > 0 ? '#86efac' : totalDiff < 0 ? '#fca5a5' : '#64748b';
             }
             document.getElementById('totalDiffRow').style.display = 'block';
         }

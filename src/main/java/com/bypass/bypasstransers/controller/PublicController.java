@@ -14,13 +14,13 @@ import com.bypass.bypasstransers.service.UserProvisioningService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,14 +38,14 @@ public class PublicController {
     private final UserProvisioningService userProvisioningService;
 
     public PublicController(UserRepository userRepository,
-                            PasswordEncoder passwordEncoder,
-                            PasswordResetService passwordResetService,
-                            ContactMessageRepository contactMessageRepository,
-                            EmailVerificationService emailVerificationService,
-                            EmailService emailService,
-                            SmsService smsService,
-                            ExchangeRateService exchangeRateService,
-                            UserProvisioningService userProvisioningService) {
+            PasswordEncoder passwordEncoder,
+            PasswordResetService passwordResetService,
+            ContactMessageRepository contactMessageRepository,
+            EmailVerificationService emailVerificationService,
+            EmailService emailService,
+            SmsService smsService,
+            ExchangeRateService exchangeRateService,
+            UserProvisioningService userProvisioningService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetService = passwordResetService;
@@ -60,19 +60,19 @@ public class PublicController {
     @GetMapping("/")
     public String home(Model model) {
         // Check if user is authenticated using SecurityContextHolder
-        org.springframework.security.core.context.SecurityContext context = 
-            org.springframework.security.core.context.SecurityContextHolder.getContext();
+        org.springframework.security.core.context.SecurityContext context = org.springframework.security.core.context.SecurityContextHolder
+                .getContext();
         org.springframework.security.core.Authentication authentication = context.getAuthentication();
-        
+
         // If user is logged in (not anonymous), redirect to their dashboard
-        if (authentication != null && authentication.isAuthenticated() && 
-            authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+        if (authentication != null && authentication.isAuthenticated() &&
+                authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
             return "redirect:/app";
         }
-        
+
         // Add exchange rates to the model for the frontpage
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
-        
+
         // Otherwise show the landing page
         return "frontpage";
     }
@@ -89,10 +89,10 @@ public class PublicController {
 
     @PostMapping("/register")
     public String registerPost(@RequestParam String username,
-                               @RequestParam String email,
-                               @RequestParam(required = false) String phoneNumber,
-                               @RequestParam(required = false) String password,
-                               RedirectAttributes ra) {
+            @RequestParam String email,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String password,
+            RedirectAttributes ra) {
         // basic duplicate checks
         if (username == null || username.isBlank() || email == null || email.isBlank()) {
             ra.addFlashAttribute("error", "Username and email are required");
@@ -120,11 +120,12 @@ public class PublicController {
             u.setPassword(passwordEncoder.encode(password));
             userRepository.save(u);
         } else {
-            // generate a temporary password, save encoded, then create a reset token and email it
+            // generate a temporary password, save encoded, then create a reset token and
+            // email it
             String temp = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 12);
             u.setPassword(passwordEncoder.encode(temp));
             userRepository.save(u);
-            
+
             try {
                 var prOut = passwordResetService.createTokenForUser(u);
                 sentResetLink = (prOut.getDisplayLinkOptional() != null);
@@ -133,7 +134,8 @@ public class PublicController {
             }
         }
 
-        // Send email verification token (if email present) so users can verify their address
+        // Send email verification token (if email present) so users can verify their
+        // address
         try {
             emailVerificationService.createTokenForUser(u);
         } catch (Exception e) {
@@ -141,66 +143,73 @@ public class PublicController {
         }
 
         if (sentResetLink) {
-            ra.addFlashAttribute("success", "Registration successful. Use the reset link shown in logs to set your password.");
+            ra.addFlashAttribute("success",
+                    "Registration successful. Use the reset link shown in logs to set your password.");
         } else {
-            ra.addFlashAttribute("success", "Registration successful. Please check your email to set your password if you didn't provide one.");
+            ra.addFlashAttribute("success",
+                    "Registration successful. Please check your email to set your password if you didn't provide one.");
         }
         return "redirect:/login";
     }
 
     @GetMapping("/contact")
     public String contact(Model model) {
-        model.addAttribute("contactMessage", new ContactMessage());
+        if (!model.containsAttribute("contactMessage")) {
+            model.addAttribute("contactMessage", new ContactMessage());
+        }
         return "contact";
     }
 
     @PostMapping("/contact")
-    public String contactPost(@RequestParam String name,
-                              @RequestParam String email,
-                              @RequestParam(required = false) String subject,
-                              @RequestParam String message,
-                              RedirectAttributes ra) {
-        // For now, persist the message and acknowledge.
-        if (name == null || name.isBlank() || email == null || email.isBlank() || message == null || message.isBlank()) {
+    public String contactPost(@ModelAttribute("contactMessage") ContactMessage contactMessage,
+            @RequestParam(required = false) Boolean newsletter,
+            RedirectAttributes ra) {
+
+        if (contactMessage.getName() == null || contactMessage.getName().isBlank() ||
+                contactMessage.getEmail() == null || contactMessage.getEmail().isBlank() ||
+                contactMessage.getMessage() == null || contactMessage.getMessage().isBlank()) {
             ra.addFlashAttribute("error", "Please provide name, email and message");
+            ra.addFlashAttribute("contactMessage", contactMessage);
             return "redirect:/contact";
         }
 
-        ContactMessage cm = new ContactMessage(name, email, message);
-        if (subject != null && !subject.isBlank()) {
-            cm.setSubject(subject);
-        }
         try {
-            contactMessageRepository.save(cm);
+            contactMessageRepository.save(contactMessage);
 
-            // Notify admins by email and SMS
-            List<User> admins = userRepository.findAll();
-            for (User u : admins) {
-                if (u.getRole() == Role.ADMIN || u.getRole() == Role.SUPER_ADMIN || u.getRole() == Role.SUPERVISOR) {
-                    // send email if admin has email
-                    if (u.getEmail() != null && !u.getEmail().isBlank()) {
-                        Map<String, Object> model = new HashMap<>();
-                        model.put("name", name);
-                        model.put("email", email);
-                        model.put("subject", subject != null ? subject : "General Inquiry");
-                        model.put("message", message);
-                        model.put("adminName", u.getUsername());
-                        emailService.sendTemplateEmail(u.getEmail(), "New contact message", "contact-notification.html", model);
-                    }
-                    // send SMS if admin has phone
-                    if (u.getPhoneNumber() != null && !u.getPhoneNumber().isBlank()) {
-                        try {
-                            smsService.sendAlert(u, "New contact message from " + name + ": " + (message.length() > 120 ? message.substring(0, 120) + "..." : message));
-                        } catch (Exception ex) {
-                            // ignore sms failures
+            // Notify admins - basic logic
+            userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == Role.ADMIN || u.getRole() == Role.SUPER_ADMIN
+                            || u.getRole() == Role.SUPERVISOR)
+                    .forEach(u -> {
+                        // Send Email
+                        if (u.getEmail() != null && !u.getEmail().isBlank()) {
+                            try {
+                                Map<String, Object> emailModel = new HashMap<>();
+                                emailModel.put("name", contactMessage.getName());
+                                emailModel.put("email", contactMessage.getEmail());
+                                emailModel.put("subject",
+                                        contactMessage.getSubject() != null ? contactMessage.getSubject()
+                                                : "General Inquiry");
+                                emailModel.put("message", contactMessage.getMessage());
+                                emailModel.put("adminName", u.getUsername());
+                                emailService.sendTemplateEmail(u.getEmail(), "New contact message",
+                                        "contact-notification.html", emailModel);
+                            } catch (Exception e) {
+                            }
                         }
-                    }
-                }
-            }
+                        // Send SMS
+                        if (u.getPhoneNumber() != null && !u.getPhoneNumber().isBlank()) {
+                            try {
+                                smsService.sendAlert(u, "New msg from " + contactMessage.getName());
+                            } catch (Exception e) {
+                            }
+                        }
+                    });
 
             ra.addFlashAttribute("success", "Thank you for contacting us. We'll get back to you shortly.");
         } catch (Exception ex) {
             ra.addFlashAttribute("error", "Failed to submit message: " + ex.getMessage());
+            ra.addFlashAttribute("contactMessage", contactMessage);
         }
         return "redirect:/contact";
     }

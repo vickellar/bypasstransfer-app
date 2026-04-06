@@ -4,7 +4,10 @@ import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.enums.TransactionType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -15,27 +18,49 @@ import com.bypass.bypasstransers.util.ChargeCalculator;
 @Service
 public class ExchangeRateService {
 
-    // Simulated exchange rates with USD as base currency
     private final Map<String, BigDecimal> exchangeRates = new HashMap<>();
 
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Value("${EXCHANGE_RATE_API_URL:}")
+    private String apiUrl;
+
     public ExchangeRateService() {
-        // Initialize with realistic exchange rates (based on USD as base)
-        // These are rates where 1 USD = X units of other currency
-        exchangeRates.put("USD", BigDecimal.ONE); // US Dollar (base)
-        exchangeRates.put("ZWL", new BigDecimal("3750.00")); // Zimbabwean Dollar (1 USD = 3750 ZWL)
-        exchangeRates.put("ZAR", new BigDecimal("18.45")); // South African Rand (1 USD = 18.45 ZAR)
-        exchangeRates.put("GBP", new BigDecimal("0.79")); // British Pound (1 USD = 0.79 GBP)
-        exchangeRates.put("EUR", new BigDecimal("0.92")); // Euro (1 USD = 0.92 EUR)
-        exchangeRates.put("RUB", new BigDecimal("92.50")); // Russian Ruble (1 USD = 92.50 RUB)
-        exchangeRates.put("KES", new BigDecimal("150.00")); // Kenyan Shilling (1 USD = 150 KES)
-        exchangeRates.put("UGX", new BigDecimal("3700.00")); // Ugandan Shilling (1 USD = 3700 UGX)
-        exchangeRates.put("TZS", new BigDecimal("2300.00")); // Tanzanian Shilling (1 USD = 2300 TZS)
-        exchangeRates.put("MWK", new BigDecimal("1700.00")); // Malawian Kwacha (1 USD = 1700 MWK)
-        exchangeRates.put("ZMW", new BigDecimal("25.00")); // Zambian Kwacha (1 USD = 25 ZMW)
-        exchangeRates.put("BWP", new BigDecimal("12.50")); // Botswana Pula (1 USD = 12.50 BWP)
+        // Will initialize in @PostConstruct
+    }
+
+    @PostConstruct
+    public void initRates() {
+        // Fallback or base initialization
+        exchangeRates.put("USD", BigDecimal.ONE); 
+        exchangeRates.put("ZWL", new BigDecimal("3750.00")); 
+        exchangeRates.put("ZAR", new BigDecimal("18.45")); 
+        exchangeRates.put("GBP", new BigDecimal("0.79")); 
+        exchangeRates.put("EUR", new BigDecimal("0.92")); 
+        exchangeRates.put("RUB", new BigDecimal("92.50")); 
+        exchangeRates.put("KES", new BigDecimal("150.00")); 
+        exchangeRates.put("UGX", new BigDecimal("3700.00")); 
+        exchangeRates.put("TZS", new BigDecimal("2300.00")); 
+        exchangeRates.put("MWK", new BigDecimal("1700.00")); 
+        exchangeRates.put("ZMW", new BigDecimal("25.00")); 
+        exchangeRates.put("BWP", new BigDecimal("12.50"));
+
+        if (apiUrl != null && !apiUrl.isBlank()) {
+            RestTemplate restTemplate = new RestTemplate();
+            try {
+                Map<String, Object> response = restTemplate.getForObject(apiUrl, Map.class);
+                if (response != null && response.containsKey("conversion_rates")) {
+                    Map<String, Number> rates = (Map<String, Number>) response.get("conversion_rates");
+                    for (Map.Entry<String, Number> entry : rates.entrySet()) {
+                        exchangeRates.put(entry.getKey(), new BigDecimal(entry.getValue().toString()));
+                    }
+                    System.out.println("[ExchangeRateService] Live rates fetched successfully from API.");
+                }
+            } catch (Exception e) {
+                System.err.println("[ExchangeRateService] Failed to fetch live exchange rates, using fallback. Error: " + e.getMessage());
+            }
+        }
     }
 
     /**

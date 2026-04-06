@@ -37,7 +37,7 @@
     </style>
 </head>
 <body>
-<div th:insert="fragments/header :: header"></div>
+<div th:insert="~{fragments/header :: header}"></div>
 <main class="container">
     <div class="page-header">
         <h1>Contact Messages</h1>
@@ -87,6 +87,6 @@
         </table>
     </section>
 </main>
-<div th:insert="fragments/footer :: footer"></div>
+<div th:insert="~{fragments/footer :: footer}"></div>
 </body>
 </html>

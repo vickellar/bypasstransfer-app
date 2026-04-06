@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/admin/branches")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class BranchAdminController {
 
     @Autowired
