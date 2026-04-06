@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Backup Restore - ByPass Transfers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f8fafc; color: #1e293b; line-height: 1.5; }
+        .container { max-width: 600px; margin: 80px auto; padding: 24px; }
+        .card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .icon-warning { width: 64px; height: 64px; background: #fff7ed; color: #f97316; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .header h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .header p { color: #64748b; font-size: 15px; }
+        .details { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
+        .detail-row:last-child { margin-bottom: 0; }
+        .detail-label { color: #64748b; }
+        .detail-value { font-weight: 600; color: #1e293b; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; border: none; }
+        .btn-confirm { background: #f97316; color: white; }
+        .btn-confirm:hover { background: #ea580c; transform: translateY(-1px); }
+        .btn-cancel { background: #f1f5f9; color: #64748b; }
+        .btn-cancel:hover { background: #e2e8f0; }
+        .alert { background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; display: flex; gap: 12px; }
+    </style>
+</head>
+<body>
+    <div th:insert="~{fragments/header :: header}"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="icon-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="header">
+                <h1>Confirm System Restore</h1>
+                <p>You are about to restore the system from a backup. This action will overwrite existing data.</p>
+            </div>
+
+            <div class="alert">
+                <i class="fas fa-radiation" style="margin-top: 3px;"></i>
+                <p><strong>Warning:</strong> This process cannot be undone. All current transactions, users, and settings will be replaced by the contents of the backup file.</p>
+            </div>
+
+            <div class="details" th:if="${backupInfo}">
+                <div class="detail-row">
+                    <span class="detail-label">Backup Date:</span>
+                    <span class="detail-value" th:text="${backupInfo.backupTimestamp}">-</span>
+                </div>
+                <div class="detail-row" th:if="${backupInfo.userCount}">
+                    <span class="detail-label">Users Record:</span>
+                    <span class="detail-value" th:text="${backupInfo.userCount} + ' users'">0 users</span>
+                </div>
+                <div class="detail-row" th:if="${backupInfo.accountCount}">
+                    <span class="detail-label">Wallets Record:</span>
+                    <span class="detail-value" th:text="${backupInfo.accountCount} + ' wallets'">0 wallets</span>
+                </div>
+            </div>
+
+            <form th:action="@{/admin/backup/restore/confirm}" method="post">
+                <div class="actions">
+                    <a th:href="@{/admin/backup}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-confirm">Start Restore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:insert="~{fragments/footer :: footer}"></div>
+</body>
+</html>

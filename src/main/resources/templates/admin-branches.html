@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Branch Management - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -383,6 +385,8 @@
 
     <script>
         const API_BASE = '/admin/branches';
+        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
         // Load branches on page load
         document.addEventListener('DOMContentLoaded', loadBranches);
@@ -524,7 +528,8 @@
                 const response = await fetch(url, {
                     method: method,
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
                     },
                     body: JSON.stringify(branchData)
                 });
@@ -548,7 +553,10 @@
 
             try {
                 const response = await fetch(`${API_BASE}/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
                 });
 
                 if (response.ok) {
@@ -566,7 +574,10 @@
         async function activateBranch(id) {
             try {
                 const response = await fetch(`${API_BASE}/${id}/activate`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
                 });
 
                 if (response.ok) {

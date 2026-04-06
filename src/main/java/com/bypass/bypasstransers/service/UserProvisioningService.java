@@ -36,22 +36,35 @@ public class UserProvisioningService {
             throw new IllegalArgumentException("User must be saved before creating wallets");
         }
 
-        for (DefaultAccount defAcc : DEFAULT_ACCOUNTS) {
+        // Determine the default currency for this user's wallets
+        Currency targetCurrency = user.getBaseCurrency();
+        
+        // Fallback to branch currency if user's base currency is not set
+        if (targetCurrency == null && user.getBranch() != null) {
+            targetCurrency = user.getBranch().getCurrency();
+        }
+        
+        // Final fallback to USD
+        if (targetCurrency == null) {
+            targetCurrency = Currency.USD;
+        }
+
+        List<String> walletTypes = Arrays.asList("Mukuru", "Econet", "Innbucks");
+
+        for (String type : walletTypes) {
             // Check if wallet already exists for this user by account type
-            List<Wallet> existingWallets = walletRepository.findByOwnerIdAndAccountType(user.getId(), defAcc.name);
-            boolean exists = !existingWallets.isEmpty();
-            
-            if (!exists) {
+            List<Wallet> existingWallets = walletRepository.findByOwnerIdAndAccountType(user.getId(), type);
+            if (existingWallets.isEmpty()) {
                 Wallet wallet = new Wallet();
                 wallet.setOwner(user);
-                wallet.setAccountType(defAcc.name);
-                wallet.setCurrency(Currency.valueOf(defAcc.currency));
+                wallet.setAccountType(type);
+                wallet.setCurrency(targetCurrency);
                 wallet.setBalance(0.0);
                 wallet.setLocked(false);
                 walletRepository.save(wallet);
-                System.out.println("[WALLET CREATION] Created wallet " + defAcc.name + " for user " + user.getUsername());
+                System.out.println("[WALLET CREATION] Created wallet " + type + " (" + targetCurrency + ") for user " + user.getUsername());
             } else {
-                System.out.println("[WALLET CREATION] Wallet " + defAcc.name + " already exists for user " + user.getUsername());
+                System.out.println("[WALLET CREATION] Wallet " + type + " already exists for user " + user.getUsername());
             }
         }
     }

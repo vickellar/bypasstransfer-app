@@ -86,29 +86,16 @@
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
                 <div class="stat-info">
-                    <h3 th:text="'$' + ${#numbers.formatDecimal(totalProfit, 0, 2)}">$0.00</h3>
-                    <p>Total Business Profit</p>
+                    <h3 th:text="'USD ' + ${#numbers.formatDecimal(totalProfitInUsd, 0, 'COMMA', 2, 'POINT')}">USD 0.00</h3>
+                    <p>Total Profit (Est. USD)</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-percentage"></i></div>
+            <!-- Individual Currency Profits -->
+            <div th:each="entry : ${profitByCurrency}" class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-coins"></i></div>
                 <div class="stat-info">
-                    <h3>5%</h3>
-                    <p>Standard Fee Rate</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="fas fa-globe-americas"></i></div>
-                <div class="stat-info">
-                    <h3>Russia-Zimbabwe</h3>
-                    <p>Operational Route</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange"><i class="fas fa-exchange-alt"></i></div>
-                <div class="stat-info">
-                    <h3>Active</h3>
-                    <p>Transaction Mode</p>
+                    <h3 th:text="${entry.key} + ' ' + ${#numbers.formatDecimal(entry.value, 0, 'COMMA', 2, 'POINT')}">RUB 0.00</h3>
+                    <p th:text="${entry.key} + ' Collected Profit'">Profit</p>
                 </div>
             </div>
         </div>

@@ -38,12 +38,16 @@ public class AdminController {
     private final UserProvisioningService userProvisioningService;
     private final PasswordEncoder passwordEncoder;
     private final BackupService backupService;
+    private final com.bypass.bypasstransers.service.ExchangeRateService exchangeRateService;
 
-    public AdminController(UserRepository userRepository, WalletRepository walletRepository, 
-                          TransactionRepository transactionRepository, SecurityService securityService,
+    public AdminController(UserRepository userRepository, 
+                          WalletRepository walletRepository, 
+                          TransactionRepository transactionRepository, 
+                          SecurityService securityService,
                           UserProvisioningService userProvisioningService,
                           PasswordEncoder passwordEncoder,
-                          BackupService backupService) {
+                          BackupService backupService,
+                          com.bypass.bypasstransers.service.ExchangeRateService exchangeRateService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
@@ -51,6 +55,7 @@ public class AdminController {
         this.userProvisioningService = userProvisioningService;
         this.passwordEncoder = passwordEncoder;
         this.backupService = backupService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     @GetMapping({"/", ""})
@@ -63,9 +68,28 @@ public class AdminController {
         long supervisorCount = userRepository.findAll().stream().filter(u -> u.getRole() == Role.SUPERVISOR).count();
         long adminCount = userRepository.findAll().stream().filter(u -> u.getRole() == Role.ADMIN || u.getRole() == Role.SUPER_ADMIN).count();
         
-        // Get all wallets
+        // Get all wallets and group by currency
         List<Wallet> allWallets = walletRepository.findAll();
-        double totalBalance = allWallets.stream().mapToDouble(Wallet::getBalance).sum();
+        
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> balanceByCurrency = allWallets.stream()
+            .filter(w -> w.getCurrency() != null)
+            .collect(java.util.stream.Collectors.groupingBy(
+                Wallet::getCurrency,
+                java.util.stream.Collectors.summingDouble(Wallet::getBalance)
+            ));
+            
+        // Calculate estimated total in USD
+        double totalBalanceInUsd = allWallets.stream()
+            .filter(w -> w.getCurrency() != null)
+            .mapToDouble(w -> {
+                try {
+                    java.math.BigDecimal amount = java.math.BigDecimal.valueOf(w.getBalance());
+                    return exchangeRateService.convert(amount, w.getCurrency().name(), "USD").doubleValue();
+                } catch (Exception e) {
+                    return 0.0;
+                }
+            })
+            .sum();
         
         model.addAttribute("user", currentUser);
         model.addAttribute("totalUsers", totalUsers);
@@ -73,7 +97,8 @@ public class AdminController {
         model.addAttribute("supervisorCount", supervisorCount);
         model.addAttribute("adminCount", adminCount);
         model.addAttribute("totalWallets", allWallets.size());
-        model.addAttribute("totalBalance", totalBalance);
+        model.addAttribute("totalBalanceInUsd", totalBalanceInUsd);
+        model.addAttribute("balanceByCurrency", balanceByCurrency);
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
         
         return "admin";
@@ -87,17 +112,33 @@ public class AdminController {
             return "redirect:/admin";
         }
         
-        // Calculate total profit
-        double totalProfit = transactionRepository.findAll()
-            .stream()
-            .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
-            .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
+        // Calculate total profit grouped by currency
+        List<Transaction> allTransactions = transactionRepository.findAll();
+        
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> profitByCurrency = allTransactions.stream()
+            .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME && t.getCurrency() != null)
+            .collect(java.util.stream.Collectors.groupingBy(
+                Transaction::getCurrency,
+                java.util.stream.Collectors.summingDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
+            ));
+            
+        // Calculate estimated total profit in USD
+        double totalProfitInUsd = profitByCurrency.entrySet().stream()
+            .mapToDouble(entry -> {
+                try {
+                    java.math.BigDecimal amount = java.math.BigDecimal.valueOf(entry.getValue());
+                    return exchangeRateService.convert(amount, entry.getKey().name(), "USD").doubleValue();
+                } catch (Exception e) {
+                    return 0.0;
+                }
+            })
             .sum();
             
-        long totalTransactions = transactionRepository.count();
+        long totalTransactionsCount = allTransactions.size();
             
-        model.addAttribute("totalProfit", totalProfit);
-        model.addAttribute("totalTransactions", totalTransactions);
+        model.addAttribute("profitByCurrency", profitByCurrency);
+        model.addAttribute("totalProfitInUsd", totalProfitInUsd);
+        model.addAttribute("totalTransactions", totalTransactionsCount);
         model.addAttribute("user", currentUser);
         
         return "admin-profit";
