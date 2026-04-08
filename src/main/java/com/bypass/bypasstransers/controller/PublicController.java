@@ -83,7 +83,9 @@ public class PublicController {
     }
 
     @GetMapping("/register")
-    public String register() {
+    public String register(jakarta.servlet.http.HttpServletRequest request) {
+        // Ensure session exists early to prevent "Session committed" errors during CSRF processing
+        request.getSession(true);
         return "register";
     }
 

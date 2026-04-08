@@ -1,116 +1,66 @@
 <!DOCTYPE html>
-
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <title>Login - ByPass Transfers</title>
-      <meta charset="UTF-8">
+    <title>Login | ByPass Transfers</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
-    <link rel="stylesheet" th:href="@{/css/site.css}" />
-    <style>
-        body {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        }
-        .login-wrapper {
-            display:flex;
-            justify-content:center;
-            padding:40px 16px;
-            min-height: calc(100vh - 220px);
-            align-items: center;
-        }
-        .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
-            width: 100%;
-            max-width: 380px;
-            animation: fadeIn 0.45s ease-in;
-        }
-        .login-title {
-            text-align: center;
-            margin-bottom: 1.25rem;
-        }
-        .login-logo {
-            display: block;
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            margin: 0 auto 10px;
-            border-radius: 12px;
-        }
-        .message {
-            margin-bottom: 1em;
-            text-align: center;
-            font-size: 14px;
-        }
-        .message.error { color:#b00020; }
-        .message.success { color:#15803d; }
-        .login-form input {
-            width: 100%;
-            padding: 11px 12px;
-            margin-bottom: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .login-form input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-        }
-        .login-form button {
-            width: 100%;
-            margin-top: 6px;
-        }
-        .forgot-link {
-            margin-top: 14px;
-            text-align: center;
-        }
-        .forgot-link a {
-            color: #2563eb;
-            font-weight: 500;
-            text-decoration: none;
-        }
-        .forgot-link a:hover {
-            text-decoration: underline;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
 </head>
+
 <body>
+    <div class="ambient-bg"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
     <div th:insert="~{fragments/header :: header}"></div>
 
-    <div class="login-wrapper">
-    <div class="login-container">
-        <img th:src="@{/images/app-logo.png}" alt="ByPass Transfers Logo" class="login-logo" />
-        <h2 class="login-title">Login to ByPass</h2>
-        <!-- Show authentication error or logout confirmation when Spring Security sets the URL params -->
-        <div th:if="${param.error}" class="message error">
-            Invalid username or password.
-        </div>
-        <div th:if="${param.logout}" class="message success">
-            You have been logged out successfully.
-        </div>
-        <div th:if="${param.reset} == 'success'" class="message success">
-            Password reset successful. Please login with your new password.
-        </div>
-        <div th:if="${param.reset} == 'error'" class="message error">
-            Password reset failed or token expired.
-        </div>
-        <!-- Show flash messages set via RedirectAttributes (e.g. password reset errors/success) -->
-        <div th:if="${error}" class="message error" th:text="${error}"></div>
-        <div th:if="${success}" class="message success" th:text="${success}"></div>
-        <form th:action="@{/login}" method="post" class="login-form">
-            <input type="text" name="username" placeholder="Username or email" autocomplete="username" required />
-            <input type="password" name="password" placeholder="Password" required />
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p class="forgot-link"><a th:href="@{/forgot-password}">Forgot password?</a></p>
-    </div>
-    </div>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img th:src="@{/images/app-logo.png}" alt="Logo" class="auth-logo" />
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Secure access to your transfers</p>
+            </div>
 
-    <div th:insert="~{fragments/footer :: footer}"></div>
+            <!-- Messages -->
+            <div th:if="${param.error}" class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> Invalid credentials.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Logged out successfully.
+            </div>
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+            <form th:action="@{/login}" method="post" class="auth-form">
+                <div class="input-group">
+                    <label>Username or Email</label>
+                    <input type="text" name="username" placeholder="Enter your username" class="auth-input"
+                        autocomplete="username" required />
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" class="auth-input" required />
+                </div>
+
+                <button type="submit" class="auth-btn">
+                    Sign In <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <a th:href="@{/forgot-password}" class="auth-link">Forgot password?</a>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>
