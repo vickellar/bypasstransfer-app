@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-
 @Controller
 public class AccountController {
 
@@ -60,11 +59,11 @@ public class AccountController {
     @Autowired
     private ExchangeRateService exchangeRateService;
 
-
     /**
      * Main dashboard - routes to appropriate view based on user role
+     * 
      * @param model
-     * @return 
+     * @return
      */
     @GetMapping("/app")
     public String dashboard(Model model) {
@@ -86,8 +85,9 @@ public class AccountController {
 
     /**
      * Staff dashboard - shows only their own data
+     * 
      * @param model
-     * @return 
+     * @return
      */
     @GetMapping("/app/staff")
     public String staffDashboard(Model model) {
@@ -107,7 +107,7 @@ public class AccountController {
         model.addAttribute("totalBalance", totalBalance);
         model.addAttribute("walletCount", walletCount);
         model.addAttribute("txSummary", txSummary);
-        
+
         // Add exchange rates to the model
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
 
@@ -116,8 +116,9 @@ public class AccountController {
 
     /**
      * Supervisor/Admin dashboard - shows company overview
+     * 
      * @param model
-     * @return 
+     * @return
      */
     @GetMapping("/app/supervisor")
     public String supervisorDashboard(Model model) {
@@ -142,7 +143,7 @@ public class AccountController {
         model.addAttribute("userSummaries", userSummaries);
         model.addAttribute("isSupervisor", securityService.isSupervisorOrAbove());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
-        
+
         // Add exchange rates to the model
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
 
@@ -185,7 +186,8 @@ public class AccountController {
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/transfer")
-    public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam double amount, RedirectAttributes ra) {
+    public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam double amount,
+            RedirectAttributes ra) {
         try {
             walletTransactionService.transfer(from, to, amount);
             ra.addFlashAttribute("success", "Transferred $" + amount + " from " + from + " to " + to);

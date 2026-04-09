@@ -30,6 +30,31 @@ public class BypasstransersApplication {
     }
 
     private static void loadDotEnv() {
+        // 1. Detect Render DATABASE_URL and convert to Spring properties
+        String renderDbUrl = System.getenv("DATABASE_URL");
+        if (renderDbUrl != null && !renderDbUrl.isEmpty() && renderDbUrl.startsWith("postgres://")) {
+            try {
+                log.info("Detected Render DATABASE_URL, configuring DataSource...");
+                java.net.URI dbUri = new java.net.URI(renderDbUrl);
+                String userInfo = dbUri.getUserInfo();
+                if (userInfo != null && userInfo.contains(":")) {
+                    String user = userInfo.split(":")[0];
+                    String password = userInfo.split(":")[1];
+                    String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + dbUri.getPort() + dbUri.getPath();
+                    
+                    if (System.getProperty("spring.datasource.url") == null)
+                        System.setProperty("spring.datasource.url", jdbcUrl);
+                    if (System.getProperty("spring.datasource.username") == null)
+                        System.setProperty("spring.datasource.username", user);
+                    if (System.getProperty("spring.datasource.password") == null)
+                        System.setProperty("spring.datasource.password", password);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to parse Render DATABASE_URL: {}", e.getMessage());
+            }
+        }
+
+        // 2. Load from .env file for local development
         java.io.File envFile = new java.io.File(".env");
         if (envFile.exists()) {
             try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(envFile))) {
@@ -41,6 +66,7 @@ public class BypasstransersApplication {
                     if (eqPos > 0) {
                         String key = line.substring(0, eqPos).trim();
                         String value = line.substring(eqPos + 1).trim();
+                        // Priority: Environment Variable > System Property > .env file
                         if (System.getProperty(key) == null && System.getenv(key) == null) {
                             System.setProperty(key, value);
                         }
@@ -76,7 +102,7 @@ public class BypasstransersApplication {
                     User superAdmin = new User();
                     superAdmin.setUsername("superadmin");
                     superAdmin.setPassword(passwordEncoder.encode("superpass"));
-                    superAdmin.setPhoneNumber("+1000000000");
+                    superAdmin.setPhoneNumber("+26377801140");
                     superAdmin.setRole(Role.SUPER_ADMIN);
                     userRepo.save(superAdmin);
 
@@ -84,7 +110,7 @@ public class BypasstransersApplication {
                     User admin = new User();
                     admin.setUsername("admin");
                     admin.setPassword(passwordEncoder.encode("adminpass"));
-                    admin.setPhoneNumber("+1000000001");
+                    admin.setPhoneNumber("+263717847646");
                     admin.setRole(Role.ADMIN);
                     userRepo.save(admin);
 
