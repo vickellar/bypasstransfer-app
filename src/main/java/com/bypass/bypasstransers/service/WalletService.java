@@ -125,6 +125,7 @@ public class WalletService {
 
         return walletRepository.findAll().stream()
                 .map(Wallet::getBalance)
+                .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 

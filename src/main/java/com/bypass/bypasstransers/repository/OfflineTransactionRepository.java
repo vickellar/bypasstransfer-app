@@ -26,6 +26,9 @@ public interface OfflineTransactionRepository extends JpaRepository<OfflineTrans
     @Query("SELECT o FROM OfflineTransaction o WHERE o.syncStatus = 'PENDING' ORDER BY o.offlineRecordedAt ASC")
     List<OfflineTransaction> findPendingTransactionsOrdered();
     
+    @Query("SELECT o FROM OfflineTransaction o WHERE o.username = :username AND o.syncStatus = 'PENDING' ORDER BY o.offlineRecordedAt ASC")
+    List<OfflineTransaction> findPendingTransactionsByUsernameOrdered(@Param("username") String username);
+    
     @Query("SELECT o FROM OfflineTransaction o WHERE o.userId = :userId ORDER BY o.offlineRecordedAt DESC")
     List<OfflineTransaction> findByUserIdOrderByOfflineRecordedAtDesc(@Param("userId") Long userId);
     

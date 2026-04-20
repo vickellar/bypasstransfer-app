@@ -519,7 +519,7 @@
                                 <div class="label">Difference</div>
                                 <div class="val"
                                     th:classappend="${result.difference > 0} ? 'positive' : (${result.difference < 0} ? 'negative' : 'zero')"
-                                    th:text="${(result.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(T(java.lang.Math).abs(result.difference), 0, 2)}">
+                                    th:text="${result != null && result.difference != null ? (result.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(result.difference.abs(), 0, 2) : '—'}">
                                     $0.00</div>
                             </div>
                             <div class="result-item">
@@ -612,7 +612,7 @@
                         <td>
                             <span style="font-weight:600;"
                                 th:style="${rec.difference > 0} ? 'color:#86efac;' : (${rec.difference < 0} ? 'color:#fca5a5;' : 'color:#64748b;')"
-                                th:text="${(rec.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(T(java.lang.Math).abs(rec.difference), 0, 2)}">
+                                th:text="${rec.difference != null ? (rec.difference >= 0 ? '+$' : '-$') + #numbers.formatDecimal(rec.difference.abs(), 0, 2) : '—'}">
                                 $0.00</span>
                         </td>
                         <td>

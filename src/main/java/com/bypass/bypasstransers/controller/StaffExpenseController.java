@@ -68,6 +68,8 @@ public class StaffExpenseController {
     @GetMapping("/transactions")
     public String myTransactionHistory(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
+        
         Long branchId = (currentUser.getBranch() != null) ? currentUser.getBranch().getId() : null;
         
         List<Transaction> transactions;
@@ -105,6 +107,7 @@ public class StaffExpenseController {
     public String walletTransactionHistory(@PathVariable Long walletId, Model model,
                                            RedirectAttributes ra) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
 
         Objects.requireNonNull(walletId, "Wallet ID must not be null");
         Wallet wallet = walletService.getWalletById(walletId).orElse(null);
@@ -143,6 +146,8 @@ public class StaffExpenseController {
     @GetMapping("/reconciliation")
     public String reconciliationPage(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
+        
         List<Wallet> wallets = walletService.getCurrentUserWallets();
         
         Long branchId = (currentUser.getBranch() != null) ? currentUser.getBranch().getId() : null;
@@ -158,13 +163,13 @@ public class StaffExpenseController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal totalIn = transactions.stream()
-                .filter(t -> t.getType() != null && t.getType().name().equals("RECEIVE"))
-                .map(Transaction::getNetAmount)
+                .filter(t -> t.getType() != null && t.getType() == com.bypass.bypasstransers.enums.TransactionType.INCOME)
+                .map(t -> t.getNetAmount() != null ? t.getNetAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         BigDecimal totalOut = transactions.stream()
-                .filter(t -> t.getType() != null && t.getType().name().equals("SEND"))
-                .map(Transaction::getAmount)
+                .filter(t -> t.getType() != null && (t.getType() == com.bypass.bypasstransers.enums.TransactionType.EXPENSE || t.getType() == com.bypass.bypasstransers.enums.TransactionType.OUTCOME))
+                .map(t -> t.getAmount() != null ? t.getAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         java.util.Map<Long, Boolean> walletReconciledThisWeek = new java.util.HashMap<>();
@@ -197,6 +202,8 @@ public class StaffExpenseController {
     @GetMapping("/expenses")
     public String listExpenses(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
+        
         List<Expenditure> expenses = expenditureRepository.findByRecordedBy(currentUser);
         
         BigDecimal totalAmount = expenses.stream()

@@ -13,6 +13,8 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.bypass.bypasstransers.model.ExchangeRate;
+import com.bypass.bypasstransers.repository.ExchangeRateRepository;
 import com.bypass.bypasstransers.util.ChargeCalculator;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -29,8 +31,13 @@ public class ExchangeRateService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    @Value("${EXCHANGE_RATE_API_URL:}")
+    @Autowired
+    private ExchangeRateRepository exchangeRateRepository;
+
+    @Value("${exchange.rate.api.url:}")
     private String apiUrl;
+
+    private boolean initialFetchDone = false;
 
     public ExchangeRateService() {
         // Will initialize in @PostConstruct
@@ -38,7 +45,7 @@ public class ExchangeRateService {
 
     @PostConstruct
     public void initRates() {
-        // Fallback or base initialization
+        // 1. Initialize hardcoded defaults as a base fallback
         exchangeRates.put("USD", BigDecimal.ONE); 
         exchangeRates.put("ZWL", new BigDecimal("3750.00")); 
         exchangeRates.put("ZAR", new BigDecimal("18.45")); 
@@ -52,35 +59,92 @@ public class ExchangeRateService {
         exchangeRates.put("ZMW", new BigDecimal("25.00")); 
         exchangeRates.put("BWP", new BigDecimal("12.50"));
 
-        if (apiUrl != null && !apiUrl.isBlank()) {
-            RestTemplate restTemplate = new RestTemplate();
-            try {
-                ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
-                    apiUrl, 
-                    HttpMethod.GET, 
-                    null, 
-                    new ParameterizedTypeReference<Map<String, Object>>() {}
-                );
-                
-                Map<String, Object> response = responseEntity.getBody();
-                if (response != null && response.containsKey("conversion_rates")) {
-                    Object ratesObj = response.get("conversion_rates");
-                    if (ratesObj instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> ratesMap = (Map<String, Object>) ratesObj;
-                        for (Map.Entry<String, Object> entry : ratesMap.entrySet()) {
-                            Object val = entry.getValue();
-                            if (val instanceof Number) {
-                                exchangeRates.put(entry.getKey(), new BigDecimal(val.toString()));
-                            }
-                        }
-                        System.out.println("[ExchangeRateService] Live rates fetched successfully from API.");
-                    }
+        // 2. Override with values from database if present
+        try {
+            List<ExchangeRate> dbRates = exchangeRateRepository.findAll();
+            for (ExchangeRate rate : dbRates) {
+                if ("USD".equals(rate.getFromCurrency())) {
+                    exchangeRates.put(rate.getToCurrency(), rate.getRate());
                 }
-            } catch (Exception e) {
-                System.err.println("[ExchangeRateService] Failed to fetch live exchange rates, using fallback. Error: " + e.getMessage());
             }
+            if (!dbRates.isEmpty()) {
+                System.out.println("[ExchangeRateService] Loaded " + dbRates.size() + " rates from database.");
+            }
+        } catch (Exception e) {
+            System.err.println("[ExchangeRateService] Failed to load from database: " + e.getMessage());
         }
+
+        // 3. Trigger live fetch if API URL is available
+        fetchLiveRates();
+    }
+
+    public synchronized void fetchLiveRates() {
+        if (apiUrl == null || apiUrl.isBlank()) return;
+
+        // Ensure URL ends with 'USD' for the v6 API as per convention in .env note 
+        String fetchUrl = apiUrl;
+        if (fetchUrl.endsWith("/latest/")) {
+            fetchUrl += "USD";
+        }
+
+        RestTemplate restTemplate = new RestTemplate();
+        try {
+            ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
+                fetchUrl, 
+                HttpMethod.GET, 
+                null, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            
+            Map<String, Object> response = responseEntity.getBody();
+            if (response != null && response.containsKey("conversion_rates")) {
+                Object ratesObj = response.get("conversion_rates");
+                if (ratesObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> ratesMap = (Map<String, Object>) ratesObj;
+                    for (Map.Entry<String, Object> entry : ratesMap.entrySet()) {
+                        Object val = entry.getValue();
+                        if (val instanceof Number) {
+                            BigDecimal rateVal = new BigDecimal(val.toString());
+                            String currency = entry.getKey();
+                            exchangeRates.put(currency, rateVal);
+                            
+                            // Persist to database
+                            updateDbRate("USD", currency, rateVal, "API");
+                        }
+                    }
+                    System.out.println("[ExchangeRateService] Live rates updated from API.");
+                    initialFetchDone = true;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[ExchangeRateService] API fetch failed: " + e.getMessage());
+        }
+    }
+
+    private void updateDbRate(String from, String to, BigDecimal rate, String source) {
+        try {
+            java.util.Optional<ExchangeRate> existing = exchangeRateRepository.findByFromCurrencyAndToCurrency(from, to);
+            ExchangeRate entity;
+            if (existing.isPresent()) {
+                entity = existing.get();
+            } else {
+                entity = new ExchangeRate();
+                entity.setFromCurrency(from);
+                entity.setToCurrency(to);
+            }
+            entity.setRate(rate);
+            entity.setSource(source);
+            entity.setLastUpdated(java.time.LocalDateTime.now());
+            exchangeRateRepository.save(entity);
+        } catch (Exception e) {
+            // Log quietly to avoid spamming
+        }
+    }
+
+    public void setManualRate(String toCurrency, BigDecimal rate) {
+        exchangeRates.put(toCurrency, rate);
+        updateDbRate("USD", toCurrency, rate, "MANUAL");
     }
 
     /**

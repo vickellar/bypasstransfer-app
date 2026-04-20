@@ -99,7 +99,7 @@ public class AdminController {
         model.addAttribute("supervisorCount", supervisorCount);
         model.addAttribute("adminCount", adminCount);
         model.addAttribute("totalWallets", allWallets.size());
-        model.addAttribute("totalBalanceInUsd", totalBalanceInUsd.doubleValue());
+        model.addAttribute("totalBalanceInUsd", totalBalanceInUsd != null ? totalBalanceInUsd.doubleValue() : 0.0);
         model.addAttribute("balanceByCurrency", balanceByCurrency);
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
         
@@ -137,7 +137,7 @@ public class AdminController {
         long totalTransactionsCount = allTransactions.size();
             
         model.addAttribute("profitByCurrency", profitByCurrency);
-        model.addAttribute("totalProfitInUsd", totalProfitInUsd.doubleValue());
+        model.addAttribute("totalProfitInUsd", totalProfitInUsd != null ? totalProfitInUsd.doubleValue() : 0.0);
         model.addAttribute("totalTransactions", totalTransactionsCount);
         model.addAttribute("user", currentUser);
         

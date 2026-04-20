@@ -19,7 +19,7 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/offline")
-@PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
 public class OfflineTransactionController {
 
     private final OfflineSyncService offlineSyncService;
@@ -37,6 +37,8 @@ public class OfflineTransactionController {
     @GetMapping("/transactions")
     public String listOfflineTransactions(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
+        
         List<OfflineTransaction> transactions = offlineSyncService
                 .getUserOfflineTransactions(currentUser.getUsername());
 
@@ -50,6 +52,7 @@ public class OfflineTransactionController {
     @GetMapping("/transactions/new")
     public String newOfflineTransactionForm(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
         model.addAttribute("transaction", new OfflineTransaction());
         model.addAttribute("user", currentUser);
         model.addAttribute("accounts", accountRepository.findByOwnerId(currentUser.getId()));
@@ -62,6 +65,10 @@ public class OfflineTransactionController {
             RedirectAttributes ra) {
         try {
             User currentUser = securityService.getCurrentUser();
+            if (currentUser == null) {
+                ra.addFlashAttribute("error", "Session expired. Please log in again.");
+                return "redirect:/login";
+            }
 
             // Set user information
             transaction.setUserId(currentUser.getId());
@@ -93,17 +100,25 @@ public class OfflineTransactionController {
     }
 
     @PostMapping("/sync")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
     public String syncAllTransactions(RedirectAttributes ra) {
         try {
-            Map<String, Object> result = offlineSyncService.syncAllPendingTransactions();
+            User currentUser = securityService.getCurrentUser();
+            if (currentUser == null) {
+                ra.addFlashAttribute("error", "Session expired. Please log in again.");
+                return "redirect:/login";
+            }
+            
+            Map<String, Object> result = offlineSyncService.syncUserPendingTransactions(currentUser.getUsername());
+
+            int total = (result.get("totalProcessed") instanceof Number) ? ((Number) result.get("totalProcessed")).intValue() : 0;
+            int success = (result.get("successCount") instanceof Number) ? ((Number) result.get("successCount")).intValue() : 0;
+            int failed = (result.get("failedCount") instanceof Number) ? ((Number) result.get("failedCount")).intValue() : 0;
 
             String message = String.format("Sync completed: %d processed, %d successful, %d failed",
-                    result.get("totalProcessed"),
-                    result.get("successCount"),
-                    result.get("failedCount"));
+                    total, success, failed);
 
-            if ((Integer) result.get("failedCount") > 0) {
+            if (failed > 0) {
                 ra.addFlashAttribute("warning", message);
             } else {
                 ra.addFlashAttribute("success", message);
@@ -118,9 +133,11 @@ public class OfflineTransactionController {
     }
 
     @GetMapping("/sync-management")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
     public String syncManagement(Model model) {
         User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) return "redirect:/login";
+        
         List<OfflineTransaction> transactions = offlineSyncService
                 .getUserOfflineTransactions(currentUser.getUsername());
 
@@ -132,7 +149,7 @@ public class OfflineTransactionController {
     }
 
     @PostMapping("/sync/retry")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
     public String retryFailedTransactions(RedirectAttributes ra) {
         try {
             int retryCount = offlineSyncService.retryFailedTransactions();
@@ -145,16 +162,24 @@ public class OfflineTransactionController {
     }
 
     @PostMapping("/api/sync")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
     public ResponseEntity<Map<String, Object>> apiSyncAllTransactions() {
         Map<String, Object> response = new HashMap<>();
         try {
-            Map<String, Object> result = offlineSyncService.syncAllPendingTransactions();
+            User currentUser = securityService.getCurrentUser();
+            if (currentUser == null) {
+                response.put("success", false);
+                response.put("message", "Session expired");
+                return ResponseEntity.status(401).body(response);
+            }
+            Map<String, Object> result = offlineSyncService.syncUserPendingTransactions(currentUser.getUsername());
+
+            int total = (result.get("totalProcessed") instanceof Number) ? ((Number) result.get("totalProcessed")).intValue() : 0;
+            int success = (result.get("successCount") instanceof Number) ? ((Number) result.get("successCount")).intValue() : 0;
+            int failed = (result.get("failedCount") instanceof Number) ? ((Number) result.get("failedCount")).intValue() : 0;
 
             String message = String.format("Sync completed: %d processed, %d successful, %d failed",
-                    (Integer) result.get("totalProcessed"),
-                    (Integer) result.get("successCount"),
-                    (Integer) result.get("failedCount"));
+                    total, success, failed);
 
             response.put("success", true);
             response.put("message", message);
@@ -168,7 +193,7 @@ public class OfflineTransactionController {
     }
 
     @PostMapping("/api/sync/retry")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
     public ResponseEntity<Map<String, Object>> apiRetryFailedTransactions() {
         Map<String, Object> response = new HashMap<>();
         try {

@@ -1,134 +1,67 @@
 package com.bypass.bypasstransers.controller;
 
-import com.bypass.bypasstransers.config.ExchangeRateScheduler;
 import com.bypass.bypasstransers.model.ExchangeRate;
 import com.bypass.bypasstransers.repository.ExchangeRateRepository;
-import com.bypass.bypasstransers.service.CurrencyConversionService;
+import com.bypass.bypasstransers.service.ExchangeRateService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-@RestController
+@Controller
 @RequestMapping("/admin/exchange-rates")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class ExchangeRateController {
+
+    @Autowired
+    private ExchangeRateService exchangeRateService;
 
     @Autowired
     private ExchangeRateRepository exchangeRateRepository;
 
-    @Autowired
-    private CurrencyConversionService currencyConversionService;
-
-    @Autowired
-    private ExchangeRateScheduler scheduler;
-
-    /**
-     * Get all exchange rates
-     */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> getAllRates() {
-        try {
-            List<ExchangeRate> rates = exchangeRateRepository.findAll();
-            return ResponseEntity.ok(rates);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching rates: " + e.getMessage());
-        }
+    public String viewRates(Model model) {
+        List<ExchangeRate> rates = exchangeRateRepository.findAll().stream()
+                .sorted(Comparator.comparing(ExchangeRate::getToCurrency))
+                .collect(Collectors.toList());
+        
+        model.addAttribute("rates", rates);
+        model.addAttribute("allRates", exchangeRateService.getAllRates());
+        return "admin-exchange-rates";
     }
 
-    /**
-     * Get rate for specific currency pair
-     */
-    @GetMapping("/{from}/{to}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> getRate(@PathVariable String from, @PathVariable String to) {
-        try {
-            BigDecimal rate = currencyConversionService.getExchangeRate(from, to);
-            Map<String, Object> response = new HashMap<>();
-            response.put("from", from);
-            response.put("to", to);
-            response.put("rate", rate);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Rate not found: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Trigger manual update of exchange rates from API
-     */
     @PostMapping("/update")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> updateRates() {
+    public String updateRate(@RequestParam String currency, 
+                             @RequestParam BigDecimal rate, 
+                             RedirectAttributes ra) {
         try {
-            scheduler.manualUpdate();
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Exchange rates updated successfully");
-            return ResponseEntity.ok(response);
+            exchangeRateService.setManualRate(currency, rate);
+            ra.addFlashAttribute("success", "Exchange rate for " + currency + " updated to " + rate);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error updating rates: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed to update rate: " + e.getMessage());
         }
+        return "redirect:/admin/exchange-rates";
     }
 
-    /**
-     * Manually override a specific rate
-     */
-    @PutMapping("/{from}/{to}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> updateRate(
-            @PathVariable String from,
-            @PathVariable String to,
-            @RequestBody Map<String, BigDecimal> rateData) {
+    @PostMapping("/fetch-live")
+    public String fetchLive(RedirectAttributes ra) {
         try {
-            BigDecimal rate = rateData.get("rate");
-            if (rate == null || rate.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.badRequest().body("Invalid rate value");
-            }
-
-            currencyConversionService.updateExchangeRate(from, to, rate, "MANUAL");
-            
-            // Also update reverse rate
-            BigDecimal reverseRate = BigDecimal.ONE.divide(rate, 10, RoundingMode.HALF_UP);
-            currencyConversionService.updateExchangeRate(to, from, reverseRate, "MANUAL_DERIVED");
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("from", from);
-            response.put("to", to);
-            response.put("rate", rate);
-            response.put("reverseRate", reverseRate);
-            response.put("message", "Rate updated successfully");
-            return ResponseEntity.ok(response);
+            exchangeRateService.fetchLiveRates();
+            ra.addFlashAttribute("success", "Live exchange rates fetched successfully.");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error updating rate: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed to fetch live rates: " + e.getMessage());
         }
-    }
-
-    /**
-     * Get last update timestamp
-     */
-    @GetMapping("/last-update")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> getLastUpdate() {
-        try {
-            List<ExchangeRate> rates = exchangeRateRepository.findAll();
-            LocalDateTime lastUpdate = rates.stream()
-                .map(ExchangeRate::getLastUpdated)
-                .filter(java.util.Objects::nonNull)
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("lastUpdate", lastUpdate);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching last update: " + e.getMessage());
-        }
+        return "redirect:/admin/exchange-rates";
     }
 }

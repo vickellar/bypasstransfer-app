@@ -116,7 +116,8 @@ public class ReconsiliationService {
         r.setDate(LocalDate.now());
         r.setSystemBalance(wallet.getBalance());
         r.setActualBalance(actualBalance);
-        r.setDifference(actualBalance.subtract(wallet.getBalance()));
+        BigDecimal currentBalance = wallet.getBalance() != null ? wallet.getBalance() : BigDecimal.ZERO;
+        r.setDifference(actualBalance.subtract(currentBalance));
         r.setWalletId(wallet.getId());
         r.setAccountName(wallet.getAccountType());
         r.setReconciledBy(username);

@@ -96,12 +96,13 @@ public class AccountController {
 
         model.addAttribute("user", currentUser);
         model.addAttribute("allWallets", allWallets);
-        model.addAttribute("companyBalance", companyBalance.doubleValue());
+        model.addAttribute("companyBalance", companyBalance != null ? companyBalance.doubleValue() : 0.0);
         model.addAttribute("userSummaries", userSummaries);
         model.addAttribute("isSupervisor", securityService.isSupervisorOrAbove());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
         model.addAttribute("pendingReconCount", reconService.countPendingAndFlagged());
+        model.addAttribute("reconciliations", reconService.getAllReconciliations());
         return "supervisor-dashboard";
     }
 

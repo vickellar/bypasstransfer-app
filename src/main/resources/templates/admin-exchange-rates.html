@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Rate Management - Admin</title>
+    <link rel="stylesheet" th:href="@{/css/site.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-glow: rgba(59, 130, 246, 0.5);
+        }
+
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .rates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .rates-table th {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: #94a3b8;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .rates-table td {
+            padding: 20px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-api { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-manual { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        .form-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-rate {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 120px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .last-updated {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div th:insert="~{fragments/header :: header}"></div>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Exchange Rates</h1>
+                <p style="color: #94a3b8; margin: 8px 0 0 0;">Manage real-time and manual currency rates</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <form th:action="@{/admin/exchange-rates/fetch-live}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="fas fa-sync"></i> Refresh Live Rates
+                    </button>
+                </form>
+                <a th:href="@{/admin}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Admin
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <div class="card">
+            <table class="rates-table">
+                <thead>
+                    <tr>
+                        <th>Currency (to USD)</th>
+                        <th>Current Rate</th>
+                        <th>Source</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="rate : ${rates}">
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="font-weight: 700; font-size: 18px;" th:text="${rate.toCurrency}">USD</div>
+                                <div style="color: #64748b; font-size: 12px;">1 USD = ...</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; font-size: 18px;" th:text="${rate.rate}">1.0000</div>
+                            <div class="last-updated">
+                                Updated: <span th:text="${#temporals.format(rate.lastUpdated, 'MMM dd, HH:mm')}">Oct 20, 14:00</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge" 
+                                  th:classappend="${rate.source == 'API' ? 'badge-api' : 'badge-manual'}"
+                                  th:text="${rate.source}">API</span>
+                        </td>
+                        <td>
+                            <form th:action="@{/admin/exchange-rates/update}" method="post" class="form-inline">
+                                <input type="hidden" name="currency" th:value="${rate.toCurrency}">
+                                <input type="number" step="0.000001" name="rate" th:value="${rate.rate}" class="input-rate">
+                                <button type="submit" class="btn btn-secondary btn-sm" style="padding: 8px 12px;">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
+            <h3 style="margin-top: 0; color: #60a5fa;"><i class="fas fa-info-circle"></i> Quick Tip</h3>
+            <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-bottom: 0;">
+                The system automatically fetches official exchange rates. However, for currencies with high volatility or multiple market rates (like ZWL/ZiG or RUB), you can manually override the rate here. 
+                <strong>1.00 USD = [Your Rate] [Currency]</strong>.
+            </p>
+        </div>
+    </div>
+
+    <div th:insert="~{fragments/footer :: footer}"></div>
+</body>
+</html>

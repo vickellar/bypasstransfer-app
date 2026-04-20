@@ -42,8 +42,19 @@ public class OfflineSyncService {
      */
     public Map<String, Object> syncAllPendingTransactions() {
         List<OfflineTransaction> pendingTransactions = offlineTransactionRepository.findPendingTransactionsOrdered();
+        return processSyncList(pendingTransactions);
+    }
+    
+    /**
+     * Sync pending offline transactions for a specific user
+     */
+    public Map<String, Object> syncUserPendingTransactions(String username) {
+        List<OfflineTransaction> pendingTransactions = offlineTransactionRepository.findPendingTransactionsByUsernameOrdered(username);
+        return processSyncList(pendingTransactions);
+    }
+
+    private Map<String, Object> processSyncList(List<OfflineTransaction> pendingTransactions) {
         Map<String, Object> result = new HashMap<>();
-        
         int successCount = 0;
         int failedCount = 0;
         
@@ -126,6 +137,13 @@ public class OfflineSyncService {
         mainTx.setCurrency(fromWallet != null ? fromWallet.getCurrency() : (toWallet != null ? toWallet.getCurrency() : Currency.USD));
         mainTx.setWallet(fromWallet != null ? fromWallet : toWallet);
 
+        if ((type == TransactionType.EXPENSE || type == TransactionType.OUTCOME || type == TransactionType.TRANSFER) && fromWallet == null) {
+             throw new IllegalStateException("Missing source wallet '" + offlineTx.getFromAccount() + "' for " + type);
+        }
+        if (type == TransactionType.INCOME && toWallet == null) {
+             throw new IllegalStateException("Missing destination wallet '" + offlineTx.getToAccount() + "' for INCOME");
+        }
+
         BigDecimal totalDeduction = BigDecimal.ZERO;
         if (type == TransactionType.EXPENSE || type == TransactionType.OUTCOME || type == TransactionType.TRANSFER) {
             totalDeduction = amount.add(fee);
@@ -158,7 +176,7 @@ public class OfflineSyncService {
                 walletRepository.save(fromWallet);
                 auditService.logEntity("system", "wallets", fromWallet.getId(),
                         "BALANCE_ADJUSTMENT", "OfflineSync",
-                        "Balance adjusted by -" + totalDeduction + " after syncing offline tx " + savedMainTx.getId());
+                        "Balance adjusted by -" + totalDeduction + " after syncing offline tx " + (savedMainTx != null ? savedMainTx.getId() : "NEW"));
             }
         } else if (type == TransactionType.TRANSFER) {
             if (fromWallet != null) {
@@ -166,14 +184,14 @@ public class OfflineSyncService {
                 walletRepository.save(fromWallet);
                 auditService.logEntity("system", "wallets", fromWallet.getId(),
                         "BALANCE_ADJUSTMENT", "OfflineSync",
-                        "Balance adjusted by -" + totalDeduction + " after syncing offline tx " + savedMainTx.getId());
+                        "Balance adjusted by -" + totalDeduction + " after syncing offline tx " + (savedMainTx != null ? savedMainTx.getId() : "NEW"));
             }
             if (toWallet != null) {
                 toWallet.setBalance(toWallet.getBalance().add(amount));
                 walletRepository.save(toWallet);
                 auditService.logEntity("system", "wallets", toWallet.getId(),
                         "BALANCE_ADJUSTMENT", "OfflineSync",
-                        "Balance adjusted by +" + amount + " after syncing offline tx " + savedMainTx.getId());
+                        "Balance adjusted by +" + amount + " after syncing offline tx " + (savedMainTx != null ? savedMainTx.getId() : "NEW"));
             }
         } else if (type == TransactionType.INCOME) {
             if (toWallet != null) {
@@ -181,7 +199,7 @@ public class OfflineSyncService {
                 walletRepository.save(toWallet);
                 auditService.logEntity("system", "wallets", toWallet.getId(),
                         "BALANCE_ADJUSTMENT", "OfflineSync",
-                        "Balance adjusted by +" + amount + " after syncing offline tx " + savedMainTx.getId());
+                        "Balance adjusted by +" + amount + " after syncing offline tx " + (savedMainTx != null ? savedMainTx.getId() : "NEW"));
             }
         }
 
@@ -189,7 +207,7 @@ public class OfflineSyncService {
         offlineTx.setNetAmount(netAmount);
         offlineTx.setSyncStatus("SYNCED");
         offlineTx.setSyncedAt(LocalDateTime.now());
-        offlineTx.setTransactionRef("SYNCED_" + savedMainTx.getId());
+        offlineTx.setTransactionRef("SYNCED_" + (savedMainTx != null ? savedMainTx.getId() : "NEW"));
         offlineTransactionRepository.save(offlineTx);
 
         auditService.logEntity("system", "offline_transactions", offlineTx.getId(),
