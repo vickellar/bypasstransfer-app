@@ -33,7 +33,8 @@ public class BypasstransersApplication {
     private static void loadDotEnv() {
         // 1. Detect Render DATABASE_URL and convert to Spring properties
         String renderDbUrl = System.getenv("DATABASE_URL");
-        if (renderDbUrl != null && !renderDbUrl.isEmpty() && renderDbUrl.startsWith("postgres://")) {
+        if (renderDbUrl != null && !renderDbUrl.isEmpty() && 
+            (renderDbUrl.startsWith("postgres://") || renderDbUrl.startsWith("postgresql://"))) {
             try {
                 log.info("Detected Render DATABASE_URL, configuring DataSource...");
                 java.net.URI dbUri = new java.net.URI(renderDbUrl);

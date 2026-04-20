@@ -23,5 +23,5 @@ COPY --from=build /app/target/bypasstransers-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 
 # Use the PORT environment variable if provided by Render, default to 8080
-ENTRYPOINT ["java", "-Xms128m", "-Xmx320m", "-Dserver.port=${PORT:8080}", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx320m", "-jar", "app.jar"]
 
