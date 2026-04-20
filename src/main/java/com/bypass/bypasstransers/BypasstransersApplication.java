@@ -31,34 +31,7 @@ public class BypasstransersApplication {
     }
 
     private static void loadDotEnv() {
-        // 1. Detect Render DATABASE_URL and convert to Spring properties
-        String renderDbUrl = System.getenv("DATABASE_URL");
-        if (renderDbUrl != null && !renderDbUrl.isEmpty() && 
-            (renderDbUrl.startsWith("postgres://") || renderDbUrl.startsWith("postgresql://"))) {
-            try {
-                log.info("Detected Render DATABASE_URL, configuring DataSource...");
-                java.net.URI dbUri = new java.net.URI(renderDbUrl);
-                String userInfo = dbUri.getUserInfo();
-                if (userInfo != null && userInfo.contains(":")) {
-                    String user = userInfo.split(":")[0];
-                    String password = userInfo.split(":")[1];
-                    int port = dbUri.getPort();
-                    if (port == -1) port = 5432;
-                    String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + dbUri.getPath() + "?sslmode=prefer";
-                    
-                    if (System.getProperty("DB_URL") == null && System.getenv("DB_URL") == null)
-                        System.setProperty("DB_URL", jdbcUrl);
-                    if (System.getProperty("DB_USERNAME") == null && System.getenv("DB_USERNAME") == null)
-                        System.setProperty("DB_USERNAME", user);
-                    if (System.getProperty("DB_PASSWORD") == null && System.getenv("DB_PASSWORD") == null)
-                        System.setProperty("DB_PASSWORD", password);
-                }
-            } catch (Exception e) {
-                log.warn("Failed to parse Render DATABASE_URL: {}", e.getMessage());
-            }
-        }
-
-        // 2. Load from .env file for local development
+        // Load from .env file for local development
         java.io.File envFile = new java.io.File(".env");
         if (envFile.exists()) {
             try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(envFile))) {
