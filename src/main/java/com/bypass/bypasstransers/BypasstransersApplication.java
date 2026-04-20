@@ -46,12 +46,12 @@ public class BypasstransersApplication {
                     if (port == -1) port = 5432;
                     String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + dbUri.getPath() + "?sslmode=prefer";
                     
-                    if (System.getProperty("spring.datasource.url") == null)
-                        System.setProperty("spring.datasource.url", jdbcUrl);
-                    if (System.getProperty("spring.datasource.username") == null)
-                        System.setProperty("spring.datasource.username", user);
-                    if (System.getProperty("spring.datasource.password") == null)
-                        System.setProperty("spring.datasource.password", password);
+                    if (System.getProperty("DB_URL") == null && System.getenv("DB_URL") == null)
+                        System.setProperty("DB_URL", jdbcUrl);
+                    if (System.getProperty("DB_USERNAME") == null && System.getenv("DB_USERNAME") == null)
+                        System.setProperty("DB_USERNAME", user);
+                    if (System.getProperty("DB_PASSWORD") == null && System.getenv("DB_PASSWORD") == null)
+                        System.setProperty("DB_PASSWORD", password);
                 }
             } catch (Exception e) {
                 log.warn("Failed to parse Render DATABASE_URL: {}", e.getMessage());
