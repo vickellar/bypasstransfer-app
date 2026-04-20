@@ -17,6 +17,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +48,8 @@ public class TransactionService {
     @Autowired
     private WalletRepository walletRepository;
 
-    private static void validateAmount(double amount) {
-        if (amount <= 0) {
+    private static void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
     }
@@ -62,16 +64,16 @@ public class TransactionService {
 
     /* 1️⃣ RECEIVE MONEY */
     @Transactional(rollbackFor = Exception.class)
-    public void receive(String accountName, double amount) {
+    public void receive(String accountName, BigDecimal amount) {
         validateAmount(amount);
         Account acc = requireAccount(accountName);
-        double prevBalance = acc.getBalance();
-        acc.setBalance(prevBalance + amount);
+        BigDecimal prevBalance = acc.getBalance();
+        acc.setBalance(prevBalance.add(amount));
 
         Transaction tx = new Transaction();
         tx.setType(TransactionType.INCOME);
         tx.setAmount(amount);
-        tx.setFee(0);
+        tx.setFee(BigDecimal.ZERO);
         tx.setToAccount(accountName);
         tx.setDate(LocalDateTime.now());
         tx.setSyncStatus("SYNCED");
@@ -80,7 +82,7 @@ public class TransactionService {
         txRepo.save(tx);
 
         auditService.logEntity(null, "transactions", tx.getId(), "RECEIVE",
-                String.valueOf(prevBalance), String.valueOf(acc.getBalance()));
+                prevBalance.toString(), acc.getBalance().toString());
         sendTransactionSms(acc, "Received " + amount + " into " + accountName + ". New balance: " + acc.getBalance());
 
         checkLowBalance(acc);
@@ -88,19 +90,19 @@ public class TransactionService {
 
     /* 2️⃣ SEND MONEY (EXPENSE) */
     @Transactional(rollbackFor = Exception.class)
-    public void send(String accountName, double amount) {
+    public void send(String accountName, BigDecimal amount) {
         validateAmount(amount);
         Account acc = requireAccount(accountName);
 
-        double fee = ChargeCalculator.calculateFee(acc, amount);
-        double total = amount + fee;
+        BigDecimal fee = ChargeCalculator.calculateFee(acc, amount);
+        BigDecimal total = amount.add(fee);
 
-        if (acc.getBalance() < total) {
+        if (acc.getBalance().compareTo(total) < 0) {
             throw new InsufficientBalanceException("Insufficient balance. Required: " + total + ", available: " + acc.getBalance());
         }
 
-        double prevBalance = acc.getBalance();
-        acc.setBalance(prevBalance - total);
+        BigDecimal prevBalance = acc.getBalance();
+        acc.setBalance(prevBalance.subtract(total));
 
         Transaction tx = new Transaction();
         tx.setType(TransactionType.EXPENSE);
@@ -114,7 +116,7 @@ public class TransactionService {
         txRepo.save(tx);
 
         auditService.logEntity(null, "transactions", tx.getId(), "SEND",
-                String.valueOf(prevBalance), String.valueOf(acc.getBalance()));
+                prevBalance.toString(), acc.getBalance().toString());
         sendTransactionSms(acc, "Sent " + amount + " (fee: " + fee + ") from " + accountName + ". New balance: " + acc.getBalance());
 
         checkLowBalance(acc);
@@ -122,8 +124,6 @@ public class TransactionService {
 
     /**
      * Get transactions for current user with role-based filtering
-     * - Staff: only their own transactions
-     * - Supervisor/Admin: all transactions
      */
     public List<Transaction> findAllForCurrentUser() {
         User currentUser = securityService.getCurrentUser();
@@ -131,7 +131,6 @@ public class TransactionService {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only see their own transactions OR branch transactions
         if (securityService.isStaffOnly()) {
             Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
             if (branchId != null) {
@@ -140,13 +139,9 @@ public class TransactionService {
             return txRepo.findByWalletOwnerId(currentUser.getId());
         }
 
-        // Supervisors and above can see all transactions
         return txRepo.findAll();
     }
 
-    /**
-     * Get all transactions - only for supervisors and above
-     */
     public List<Transaction> findAll() {
         if (!securityService.isSupervisorOrAbove()) {
             throw new AccessDeniedException("Insufficient privileges to view all transactions");
@@ -154,16 +149,12 @@ public class TransactionService {
         return txRepo.findAll();
     }
 
-    /**
-     * Get transaction by ID - enforces user isolation
-     */
     public Optional<Transaction> findById(Long id) {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only access their own transactions OR branch transactions
         if (securityService.isStaffOnly()) {
             Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
             if (branchId != null) {
@@ -172,32 +163,23 @@ public class TransactionService {
             return txRepo.findByIdAndWalletOwnerId(id, currentUser.getId());
         }
 
-        // Supervisors and above can access any transaction
         return txRepo.findById(id);
     }
 
-    /**
-     * Get transactions for a specific wallet - enforces user isolation
-     */
     public List<Transaction> findByWalletId(Long walletId) {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        // Staff can only access their own wallet transactions OR branch wallet transactions
         if (securityService.isStaffOnly()) {
             Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
             if (branchId != null) {
-                // If the wallet exists and they have access to it (checked by findByWalletIdAndWalletOwnerId logic internally if we wanted, 
-                // but simpler to just fetch and check if they have access to the WALLET first or use a robust query)
-                // Actually, let's just use the existing logic but branch-aware
-                return txRepo.findByWalletId(walletId); // We assume the controller/caller checked access
+                return txRepo.findByWalletId(walletId);
             }
             return txRepo.findByWalletIdAndWalletOwnerId(walletId, currentUser.getId());
         }
 
-        // Supervisors and above can access any wallet transactions
         return txRepo.findByWalletId(walletId);
     }
 
@@ -212,8 +194,8 @@ public class TransactionService {
 
         Long userId = currentUser.getId();
         long count;
-        Double totalAmount;
-        Double totalFees;
+        BigDecimal totalAmount;
+        BigDecimal totalFees;
 
         if (securityService.isStaffOnly()) {
             Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
@@ -234,8 +216,8 @@ public class TransactionService {
 
         TransactionSummary summary = new TransactionSummary();
         summary.setTransactionCount(count);
-        summary.setTotalAmount(totalAmount != null ? totalAmount : 0.0);
-        summary.setTotalFees(totalFees != null ? totalFees : 0.0);
+        summary.setTotalAmount(totalAmount != null ? totalAmount.doubleValue() : 0.0);
+        summary.setTotalFees(totalFees != null ? totalFees.doubleValue() : 0.0);
         return summary;
     }
 
@@ -256,10 +238,10 @@ public class TransactionService {
             summary.setUserId(ownerId);
             summary.setUsername((String) row[1]);
             summary.setTransactionCount((Long) row[2]);
-            summary.setTotalAmount(row[3] != null ? (Double) row[3] : 0.0);
-            summary.setTotalFees(row[4] != null ? (Double) row[4] : 0.0);
-            Double walletBalance = walletRepository.getTotalBalanceByOwnerId(ownerId);
-            summary.setWalletBalance(walletBalance != null ? walletBalance : 0.0);
+            summary.setTotalAmount(row[3] != null ? ((BigDecimal) row[3]).doubleValue() : 0.0);
+            summary.setTotalFees(row[4] != null ? ((BigDecimal) row[4]).doubleValue() : 0.0);
+            BigDecimal walletBalance = walletRepository.getTotalBalanceByOwnerId(ownerId);
+            summary.setWalletBalance(walletBalance != null ? walletBalance.doubleValue() : 0.0);
             summaries.add(summary);
         }
 
@@ -275,22 +257,22 @@ public class TransactionService {
 
     /* 3️⃣ TRANSFER BETWEEN ACCOUNTS */
     @Transactional(rollbackFor = Exception.class)
-    public void transfer(String fromName, String toName, double amount) {
+    public void transfer(String fromName, String toName, BigDecimal amount) {
         validateAmount(amount);
         Account from = requireAccount(fromName);
         Account to = requireAccount(toName);
 
-        double fee = ChargeCalculator.calculateFee(from, amount);
-        double total = amount + fee;
+        BigDecimal fee = ChargeCalculator.calculateFee(from, amount);
+        BigDecimal total = amount.add(fee);
 
-        if (from.getBalance() < total) {
+        if (from.getBalance().compareTo(total) < 0) {
             throw new InsufficientBalanceException("Insufficient balance. Required: " + total + ", available: " + from.getBalance());
         }
 
-        double fromPrev = from.getBalance();
-        double toPrev = to.getBalance();
-        from.setBalance(fromPrev - total);
-        to.setBalance(toPrev + amount);
+        BigDecimal fromPrev = from.getBalance();
+        BigDecimal toPrev = to.getBalance();
+        from.setBalance(fromPrev.subtract(total));
+        to.setBalance(toPrev.add(amount));
 
         Transaction tx = new Transaction();
         tx.setType(TransactionType.TRANSFER);
@@ -322,27 +304,24 @@ public class TransactionService {
                 smsService.sendAlert(owner, message);
             }
         } catch (Exception e) {
-            // Log but don't fail the transaction
             org.slf4j.LoggerFactory.getLogger(TransactionService.class).warn("SMS notification failed: {}", e.getMessage());
         }
     }
 
     /* 4️⃣ PROFIT & FEES */
-    public double totalFees() {
+    public BigDecimal totalFees() {
         return txRepo.findAll()
                 .stream()
-                .mapToDouble(Transaction::getFee)
-                .sum();
+                .map(Transaction::getFee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private void checkLowBalance(Account account) {
-        if (account.getBalance() < account.getLowBalanceThreshold()
+        if (account.getBalance().compareTo(account.getLowBalanceThreshold()) < 0
                 && !account.isLowBalanceAlertSent()) {
 
             alertService.notifyLowBalance(account);
-            // persist the flag change
             accountRepo.save(account);
         }
     }
-
 }

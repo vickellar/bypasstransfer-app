@@ -33,18 +33,22 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, UserDetailsService userDetailsService) throws Exception {
         http
             .userDetailsService(userDetailsService)
-            // CSRF enabled - Thymeleaf automatically injects CSRF tokens in forms
+            // CSRF enabled globally - Tightened for financial applications
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**") // Ignore for REST API endpoints only
+                .ignoringRequestMatchers("/actuator/health") // Allow simple health checks without CSRF
             )
-            // HTTP Security Headers
+            // HTTP Security Headers - Hardened
             .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin()) // Allow iframes from same origin only
-                .xssProtection(xss -> xss.disable()) // Disable XSS protection (handled by CSP)
-                .contentTypeOptions(cto -> {})
+                .frameOptions(frame -> frame.sameOrigin()) // Prevent Clickjacking
+                .contentTypeOptions(cto -> {}) // Prevent MIME sniffing
+                .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';")
+                )
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000) // 1 year
+                    .preload(true)
                 )
                 .referrerPolicy(referrer -> referrer
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
@@ -53,11 +57,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/about", "/register", "/contact", "/login",
                     "/forgot-password", "/reset", "/reset-password", "/css/**", "/js/**",
-                    "/images/**", "/img/**", "/videos/**", "/error").permitAll()
-                // Actuator health endpoint public, others require auth
+                    "/images/**", "/img/**", "/videos/**", "/error", "/favicon.ico").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/**").hasRole("SUPER_ADMIN")
-                // Debug endpoints disabled in production
                 .requestMatchers("/debug/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
                 .requestMatchers("/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -79,12 +81,11 @@ public class SecurityConfig {
                 .permitAll()
             )
             .sessionManagement(session -> session
-                .maximumSessions(1) // Prevent multiple concurrent sessions per user
-                .maxSessionsPreventsLogin(false) // Kick old session when new one starts
+                .maximumSessions(1) // Prevent multiple concurrent sessions
+                .maxSessionsPreventsLogin(false)
             );
 
         http.authenticationProvider(daoAuthenticationProvider(userDetailsService, passwordEncoder()));
         return http.build();
     }
-
 }

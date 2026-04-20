@@ -4,6 +4,7 @@ import com.bypass.bypasstransers.model.Wallet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.math.BigDecimal;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
      * Get total balance across all wallets for a user
      */
     @Query("SELECT SUM(w.balance) FROM Wallet w WHERE w.owner.id = :ownerId")
-    Double getTotalBalanceByOwnerId(@Param("ownerId") Long ownerId);
+    BigDecimal getTotalBalanceByOwnerId(@Param("ownerId") Long ownerId);
 
     /**
      * Find wallets by currency for a specific user
@@ -81,7 +82,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
      * Get total balance across all wallets for a user OR their branch
      */
     @Query("SELECT SUM(w.balance) FROM Wallet w WHERE w.owner.id = :ownerId OR (w.branch IS NOT NULL AND w.branch.id = :branchId)")
-    Double getTotalBalanceByOwnerIdOrBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+    BigDecimal getTotalBalanceByOwnerIdOrBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
 
     /**
      * Count wallets belonging to a user OR assigned to their branch

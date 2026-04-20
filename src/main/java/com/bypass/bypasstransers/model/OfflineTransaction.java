@@ -3,6 +3,7 @@ package com.bypass.bypasstransers.model;
 import com.bypass.bypasstransers.enums.TransactionType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "offline_transactions")
@@ -18,14 +19,14 @@ public class OfflineTransaction {
     @Column(name = "username", nullable = false)
     private String username;
 
-    @Column(name = "amount", nullable = false)
-    private Double amount;
+    @Column(name = "amount", nullable = false, precision = 19, scale = 4)
+    private BigDecimal amount = BigDecimal.ZERO;
 
-    @Column(name = "fee")
-    private Double fee = 0.0;
+    @Column(name = "fee", precision = 19, scale = 4)
+    private BigDecimal fee = BigDecimal.ZERO;
 
-    @Column(name = "net_amount")
-    private Double netAmount;
+    @Column(name = "net_amount", precision = 19, scale = 4)
+    private BigDecimal netAmount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
@@ -61,8 +62,8 @@ public class OfflineTransaction {
     @Column(name = "transaction_ref")
     private String transactionRef;
 
-    @Column(name = "reference_balance")
-    private Double referenceBalance;
+    @Column(name = "reference_balance", precision = 19, scale = 4)
+    private BigDecimal referenceBalance = BigDecimal.ZERO;
 
     // Constructors
     public OfflineTransaction() {
@@ -95,33 +96,33 @@ public class OfflineTransaction {
         this.username = username;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
         if (amount != null) {
             this.netAmount = amount;
         }
     }
 
-    public Double getFee() {
+    public BigDecimal getFee() {
         return fee;
     }
 
-    public void setFee(Double fee) {
-        this.fee = fee != null ? fee : 0.0;
+    public void setFee(BigDecimal fee) {
+        this.fee = fee != null ? fee : BigDecimal.ZERO;
         if (this.amount != null) {
             this.netAmount = this.amount;
         }
     }
 
-    public Double getNetAmount() {
+    public BigDecimal getNetAmount() {
         return netAmount;
     }
 
-    public void setNetAmount(Double netAmount) {
+    public void setNetAmount(BigDecimal netAmount) {
         this.netAmount = netAmount;
     }
 
@@ -213,11 +214,11 @@ public class OfflineTransaction {
         this.transactionRef = transactionRef;
     }
 
-    public Double getReferenceBalance() {
+    public BigDecimal getReferenceBalance() {
         return referenceBalance;
     }
 
-    public void setReferenceBalance(Double referenceBalance) {
+    public void setReferenceBalance(BigDecimal referenceBalance) {
         this.referenceBalance = referenceBalance;
     }
 }

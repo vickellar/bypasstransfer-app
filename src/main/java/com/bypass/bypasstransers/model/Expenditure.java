@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import com.bypass.bypasstransers.enums.Currency;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "expenditures")
@@ -20,7 +21,8 @@ public class Expenditure {
     private String category; // Rent, Utilities, Salaries, Supplies, Other
     
     @Column(nullable = false)
-    private double amount;
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal amount = BigDecimal.ZERO;
     
     @Column(nullable = false)
     private LocalDate date;
@@ -55,8 +57,8 @@ public class Expenditure {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     
-    public double getAmount() { return amount; }
-    public void setAmount(double amount) { this.amount = amount; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
     
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

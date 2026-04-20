@@ -5,6 +5,8 @@ import com.bypass.bypasstransers.repository.ExchangeRateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Optional;
 
 @Service
@@ -14,9 +16,10 @@ public class CurrencyConversionService {
     private ExchangeRateRepository exchangeRateRepository;
 
     /**
-     * Convert amount from one currency to another
+     * Convert amount from one currency to another using BigDecimal for precision.
      */
-    public Double convert(Double amount, String fromCurrency, String toCurrency) {
+    public BigDecimal convert(BigDecimal amount, String fromCurrency, String toCurrency) {
+        if (amount == null) return BigDecimal.ZERO;
         if (fromCurrency.equals(toCurrency)) {
             return amount;
         }
@@ -25,13 +28,13 @@ public class CurrencyConversionService {
         Optional<ExchangeRate> rateOpt = exchangeRateRepository.findByFromCurrencyAndToCurrency(fromCurrency, toCurrency);
         
         if (rateOpt.isPresent()) {
-            return amount * rateOpt.get().getRate();
+            return amount.multiply(rateOpt.get().getRate()).setScale(4, RoundingMode.HALF_UP);
         }
 
         // Try reverse conversion (if to->from exists)
         Optional<ExchangeRate> reverseRateOpt = exchangeRateRepository.findByFromCurrencyAndToCurrency(toCurrency, fromCurrency);
         if (reverseRateOpt.isPresent()) {
-            return amount / reverseRateOpt.get().getRate();
+            return amount.divide(reverseRateOpt.get().getRate(), 4, RoundingMode.HALF_UP);
         }
 
         // Try triangular arbitrage via USD
@@ -40,8 +43,8 @@ public class CurrencyConversionService {
             Optional<ExchangeRate> usdToTo = exchangeRateRepository.findByFromCurrencyAndToCurrency("USD", toCurrency);
             
             if (fromToUsd.isPresent() && usdToTo.isPresent()) {
-                Double amountInUsd = amount * fromToUsd.get().getRate();
-                return amountInUsd * usdToTo.get().getRate();
+                BigDecimal amountInUsd = amount.multiply(fromToUsd.get().getRate());
+                return amountInUsd.multiply(usdToTo.get().getRate()).setScale(4, RoundingMode.HALF_UP);
             }
         }
 
@@ -52,9 +55,9 @@ public class CurrencyConversionService {
     /**
      * Get exchange rate between two currencies
      */
-    public Double getExchangeRate(String fromCurrency, String toCurrency) {
+    public BigDecimal getExchangeRate(String fromCurrency, String toCurrency) {
         if (fromCurrency.equals(toCurrency)) {
-            return 1.0;
+            return BigDecimal.ONE;
         }
 
         Optional<ExchangeRate> rateOpt = exchangeRateRepository.findByFromCurrencyAndToCurrency(fromCurrency, toCurrency);
@@ -66,7 +69,7 @@ public class CurrencyConversionService {
         // Try reverse
         Optional<ExchangeRate> reverseRateOpt = exchangeRateRepository.findByFromCurrencyAndToCurrency(toCurrency, fromCurrency);
         if (reverseRateOpt.isPresent()) {
-            return 1.0 / reverseRateOpt.get().getRate();
+            return BigDecimal.ONE.divide(reverseRateOpt.get().getRate(), 10, RoundingMode.HALF_UP);
         }
 
         throw new RuntimeException(
@@ -77,7 +80,7 @@ public class CurrencyConversionService {
      * Update or create exchange rate
      */
     @Transactional
-    public void updateExchangeRate(String fromCurrency, String toCurrency, Double rate, String source) {
+    public void updateExchangeRate(String fromCurrency, String toCurrency, BigDecimal rate, String source) {
         Optional<ExchangeRate> existingOpt = exchangeRateRepository.findByFromCurrencyAndToCurrency(fromCurrency, toCurrency);
         
         if (existingOpt.isPresent()) {

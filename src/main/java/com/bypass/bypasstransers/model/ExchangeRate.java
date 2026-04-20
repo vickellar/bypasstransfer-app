@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "exchange_rate", uniqueConstraints = {
@@ -22,7 +24,8 @@ public class ExchangeRate {
     
     private String toCurrency;
     
-    private Double rate;
+    @Column(precision = 19, scale = 10) // Rates often need high precision
+    private BigDecimal rate;
     
     private String source; // API or MANUAL
     
@@ -52,11 +55,11 @@ public class ExchangeRate {
         this.toCurrency = toCurrency;
     }
 
-    public Double getRate() {
+    public BigDecimal getRate() {
         return rate;
     }
 
-    public void setRate(Double rate) {
+    public void setRate(BigDecimal rate) {
         this.rate = rate;
     }
 

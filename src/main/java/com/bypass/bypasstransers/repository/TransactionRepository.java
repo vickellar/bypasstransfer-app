@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.math.BigDecimal;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
@@ -74,19 +75,19 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     long countByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId)")
-    Double getTotalAmountByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+    BigDecimal getTotalAmountByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
 
     @Query("SELECT SUM(t.fee) FROM Transaction t WHERE t.wallet.owner.id = :ownerId OR (t.wallet.branch IS NOT NULL AND t.wallet.branch.id = :branchId)")
-    Double getTotalFeesByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
+    BigDecimal getTotalFeesByWalletOwnerIdOrWalletBranchId(@Param("ownerId") Long ownerId, @Param("branchId") Long branchId);
 
     @Query("SELECT COUNT(t) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
     long countByWalletOwnerId(@Param("ownerId") Long ownerId);
 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
-    Double getTotalAmountByWalletOwnerId(@Param("ownerId") Long ownerId);
+    BigDecimal getTotalAmountByWalletOwnerId(@Param("ownerId") Long ownerId);
 
     @Query("SELECT SUM(t.fee) FROM Transaction t WHERE t.wallet.owner.id = :ownerId")
-    Double getTotalFeesByWalletOwnerId(@Param("ownerId") Long ownerId);
+    BigDecimal getTotalFeesByWalletOwnerId(@Param("ownerId") Long ownerId);
 
     /**
      * Find transactions by wallet ID

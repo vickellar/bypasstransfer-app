@@ -6,6 +6,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Version;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 public class Account {
@@ -14,12 +17,12 @@ public class Account {
         this.lowBalanceAlertSent = false; // ensure default value
     }
 
-    public Account(Long id, String name, double balance, double transferFee) {
+    public Account(Long id, String name, BigDecimal balance, BigDecimal transferFee) {
         this.id = id;
         this.name = name;
-        this.balance = balance;
-        this.transferFee = transferFee;
-        this.lowBalanceThreshold = 50; // default
+        this.balance = (balance != null) ? balance : BigDecimal.ZERO;
+        this.transferFee = (transferFee != null) ? transferFee : BigDecimal.ZERO;
+        this.lowBalanceThreshold = new BigDecimal("50"); // default
         this.lowBalanceAlertSent = false; // default
     }
 
@@ -29,18 +32,22 @@ public class Account {
 
     @Column(name = "name")
     private String name;
-    @Column(name = "balance")
-    private double balance;
-    @Column(name = "transfer_fee")
-    private double transferFee;
+    @Column(name = "balance", precision = 19, scale = 4)
+    private BigDecimal balance = BigDecimal.ZERO;
+    @Column(name = "transfer_fee", precision = 19, scale = 4)
+    private BigDecimal transferFee = BigDecimal.ZERO;
 
     @ManyToOne
     private User owner;
-    @Column(name = "low_balance_threshold")
-    private double lowBalanceThreshold = 50; // default
+    
+    @Column(name = "low_balance_threshold", precision = 19, scale = 4)
+    private BigDecimal lowBalanceThreshold = new BigDecimal("50"); // default
     
     @Column(name = "low_balance_alert_sent", nullable = false, columnDefinition = "boolean default false")
     private boolean lowBalanceAlertSent = false; // default
+
+    @Version
+    private Long version;
 
     // getters & setters
 
@@ -60,19 +67,19 @@ public class Account {
         this.name = name;
     }
 
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 
-    public double getTransferFee() {
+    public BigDecimal getTransferFee() {
         return transferFee;
     }
 
-    public void setTransferFee(double transferFee) {
+    public void setTransferFee(BigDecimal transferFee) {
         this.transferFee = transferFee;
     }
 
@@ -84,11 +91,11 @@ public class Account {
         this.owner = owner;
     }
 
-    public double getLowBalanceThreshold() {
+    public BigDecimal getLowBalanceThreshold() {
         return lowBalanceThreshold;
     }
 
-    public void setLowBalanceThreshold(double lowBalanceThreshold) {
+    public void setLowBalanceThreshold(BigDecimal lowBalanceThreshold) {
         this.lowBalanceThreshold = lowBalanceThreshold;
     }
 
@@ -98,5 +105,13 @@ public class Account {
 
     public void setLowBalanceAlertSent(boolean lowBalanceAlertSent) {
         this.lowBalanceAlertSent = lowBalanceAlertSent;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 public class DailyReconciliation {
@@ -18,9 +19,9 @@ public class DailyReconciliation {
     private Long id;
 
     private LocalDate date;
-    private double systemBalance;
-    private double actualBalance;
-    private double difference;
+    private BigDecimal systemBalance = BigDecimal.ZERO;
+    private BigDecimal actualBalance = BigDecimal.ZERO;
+    private BigDecimal difference = BigDecimal.ZERO;
     private String accountName;
     private Long walletId;
 
@@ -80,27 +81,27 @@ public class DailyReconciliation {
         this.date = date;
     }
 
-    public double getSystemBalance() {
+    public BigDecimal getSystemBalance() {
         return systemBalance;
     }
 
-    public void setSystemBalance(double systemBalance) {
+    public void setSystemBalance(BigDecimal systemBalance) {
         this.systemBalance = systemBalance;
     }
 
-    public double getActualBalance() {
+    public BigDecimal getActualBalance() {
         return actualBalance;
     }
 
-    public void setActualBalance(double actualBalance) {
+    public void setActualBalance(BigDecimal actualBalance) {
         this.actualBalance = actualBalance;
     }
 
-    public double getDifference() {
+    public BigDecimal getDifference() {
         return difference;
     }
 
-    public void setDifference(double difference) {
+    public void setDifference(BigDecimal difference) {
         this.difference = difference;
     }
 

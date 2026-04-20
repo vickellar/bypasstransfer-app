@@ -12,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,9 +26,12 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    private double amount;
-    private double fee;
-    private double netAmount;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal amount = BigDecimal.ZERO;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal fee = BigDecimal.ZERO;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal netAmount = BigDecimal.ZERO;
 
     private String fromAccount;
     private String toAccount;
@@ -71,27 +76,27 @@ public class Transaction {
         this.type = type;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
-    public double getFee() {
+    public BigDecimal getFee() {
         return fee;
     }
 
-    public void setFee(double fee) {
+    public void setFee(BigDecimal fee) {
         this.fee = fee;
     }
 
-    public double getNetAmount() {
+    public BigDecimal getNetAmount() {
         return netAmount;
     }
 
-    public void setNetAmount(double netAmount) {
+    public void setNetAmount(BigDecimal netAmount) {
         this.netAmount = netAmount;
     }
 

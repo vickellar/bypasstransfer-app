@@ -11,6 +11,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,8 +28,8 @@ public class Wallet {
     @Enumerated(EnumType.STRING)
     private Currency currency = Currency.USD;
 
-    @Column(name = "balance")
-    private double balance;
+    @Column(name = "balance", precision = 19, scale = 4)
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "name")
     private String accountType;
@@ -37,14 +40,17 @@ public class Wallet {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "transfer_fee", columnDefinition = "double precision default 0.0")
-    private double transferFee = 0.0;
+    @Column(name = "transfer_fee", precision = 19, scale = 4)
+    private BigDecimal transferFee = BigDecimal.ZERO;
 
-    @Column(name = "low_balance_threshold", columnDefinition = "double precision default 50.0")
-    private double lowBalanceThreshold = 50.0;
+    @Column(name = "low_balance_threshold", precision = 19, scale = 4)
+    private BigDecimal lowBalanceThreshold = new BigDecimal("50.0");
 
     @Column(name = "low_balance_alert_sent", nullable = false, columnDefinition = "boolean default false")
     private boolean lowBalanceAlertSent = false;
+
+    @Version
+    private Long version;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -70,11 +76,11 @@ public class Wallet {
         this.currency = currency;
     }
 
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 
@@ -103,16 +109,16 @@ public class Wallet {
     }
 
     // debit reduces balance; throws if insufficient
-    public void debit(double amount) {
-        if (amount < 0) throw new IllegalArgumentException("amount must be positive");
-        if (this.balance < amount) throw new IllegalArgumentException("insufficient wallet balance");
-        this.balance -= amount;
+    public void debit(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("amount must be positive");
+        if (this.balance.compareTo(amount) < 0) throw new IllegalArgumentException("insufficient wallet balance");
+        this.balance = this.balance.subtract(amount);
     }
 
     // credit increases balance
-    public void credit(double amount) {
-        if (amount < 0) throw new IllegalArgumentException("amount must be positive");
-        this.balance += amount;
+    public void credit(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("amount must be positive");
+        this.balance = this.balance.add(amount);
     }
     
     public LocalDateTime getCreatedAt() {
@@ -123,11 +129,11 @@ public class Wallet {
         this.createdAt = createdAt;
     }
 
-    public double getLowBalanceThreshold() {
+    public BigDecimal getLowBalanceThreshold() {
         return lowBalanceThreshold;
     }
 
-    public void setLowBalanceThreshold(double lowBalanceThreshold) {
+    public void setLowBalanceThreshold(BigDecimal lowBalanceThreshold) {
         this.lowBalanceThreshold = lowBalanceThreshold;
     }
 
@@ -139,11 +145,11 @@ public class Wallet {
         this.lowBalanceAlertSent = lowBalanceAlertSent;
     }
 
-    public double getTransferFee() {
+    public BigDecimal getTransferFee() {
         return transferFee;
     }
 
-    public void setTransferFee(double transferFee) {
+    public void setTransferFee(BigDecimal transferFee) {
         this.transferFee = transferFee;
     }
 
@@ -153,5 +159,13 @@ public class Wallet {
 
     public void setBranch(Branch branch) {
         this.branch = branch;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }
