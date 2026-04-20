@@ -42,7 +42,9 @@ public class BypasstransersApplication {
                 if (userInfo != null && userInfo.contains(":")) {
                     String user = userInfo.split(":")[0];
                     String password = userInfo.split(":")[1];
-                    String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + dbUri.getPort() + dbUri.getPath();
+                    int port = dbUri.getPort();
+                    if (port == -1) port = 5432;
+                    String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() + ":" + port + dbUri.getPath() + "?sslmode=prefer";
                     
                     if (System.getProperty("spring.datasource.url") == null)
                         System.setProperty("spring.datasource.url", jdbcUrl);
