@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,56 +9,238 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        .about-container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
-        
+        * {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .about-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
         /* Hero Section */
-        .about-hero { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 80px 40px; border-radius: 16px; text-align: center; margin-bottom: 64px; }
-        .about-hero h1 { font-size: 42px; font-weight: 700; margin-bottom: 16px; }
-        .about-hero > p { font-size: 18px; opacity: 0.9; max-width: 600px; margin: 0 auto 40px; }
-        
-        .hero-stats { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
-        .stat-item { text-align: center; }
-        .stat-number { font-size: 36px; font-weight: 700; }
-        .stat-label { font-size: 14px; opacity: 0.8; }
-        
+        .about-hero {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 80px 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .about-hero h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .about-hero>p {
+            font-size: 18px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
         /* Mission Section */
-        .mission-section { margin-bottom: 64px; }
-        .mission-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-        .mission-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
-        .mission-icon { width: 64px; height: 64px; background: #eff6ff; color: #3b82f6; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 28px; }
-        .mission-card h3 { font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 12px; }
-        .mission-card p { color: #64748b; line-height: 1.6; }
-        
+        .mission-section {
+            margin-bottom: 64px;
+        }
+
+        .mission-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .mission-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .mission-icon {
+            width: 64px;
+            height: 64px;
+            background: #eff6ff;
+            color: #3b82f6;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 28px;
+        }
+
+        .mission-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .mission-card p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
         /* Team Section */
-        .team-section { margin-bottom: 64px; }
-        .section-header { text-align: center; margin-bottom: 48px; }
-        .section-header h2 { font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-        .section-header p { color: #64748b; }
-        
-        .team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-        .team-member { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .member-photo { height: 200px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; }
-        .member-photo i { font-size: 64px; color: white; opacity: 0.5; }
-        .member-info { padding: 24px; }
-        .member-info h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-        .member-info .title { color: #3b82f6; font-size: 14px; font-weight: 500; margin-bottom: 12px; }
-        .member-info p { color: #64748b; font-size: 14px; line-height: 1.5; }
-        
+        .team-section {
+            margin-bottom: 64px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .section-header p {
+            color: #64748b;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .team-member {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .member-photo {
+            height: 200px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .member-photo i {
+            font-size: 64px;
+            color: white;
+            opacity: 0.5;
+        }
+
+        .member-info {
+            padding: 24px;
+        }
+
+        .member-info h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .member-info .title {
+            color: #3b82f6;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .member-info p {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         /* Values Section */
-        .values-section { background: white; padding: 64px 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 64px; }
-        .values-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
-        .value-item { text-align: center; }
-        .value-icon { width: 56px; height: 56px; background: #f0fdf4; color: #22c55e; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px; }
-        .value-item h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
-        .value-item p { color: #64748b; font-size: 14px; }
-        
+        .values-section {
+            background: white;
+            padding: 64px 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 64px;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+
+        .value-item {
+            text-align: center;
+        }
+
+        .value-icon {
+            width: 56px;
+            height: 56px;
+            background: #f0fdf4;
+            color: #22c55e;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+        }
+
+        .value-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .value-item p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
         @media (max-width: 768px) {
-            .mission-grid, .team-grid, .values-grid { grid-template-columns: 1fr; }
-            .hero-stats { gap: 24px; }
+
+            .mission-grid,
+            .team-grid,
+            .values-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                gap: 24px;
+            }
         }
     </style>
 </head>
+
 <body style="background: #f8fafc;">
     <div th:insert="~{fragments/header :: header}"></div>
 
@@ -94,7 +277,8 @@
                         <i class="fas fa-bullseye"></i>
                     </div>
                     <h3>Our Mission</h3>
-                    <p>To provide fast, secure, and reliable money transfer services across multiple platforms, making financial transactions accessible to everyone.</p>
+                    <p>To provide fast, secure, and reliable money transfer services across multiple platforms, making
+                        financial transactions accessible to everyone.</p>
                 </div>
 
                 <div class="mission-card">
@@ -102,7 +286,8 @@
                         <i class="fas fa-eye"></i>
                     </div>
                     <h3>Our Vision</h3>
-                    <p>To become the leading transfer service provider in Zimbabwe and beyond, known for innovation, security, and exceptional customer service.</p>
+                    <p>To become the leading transfer service provider in Zimbabwe and beyond, known for innovation,
+                        security, and exceptional customer service.</p>
                 </div>
 
                 <div class="mission-card">
@@ -110,7 +295,8 @@
                         <i class="fas fa-heart"></i>
                     </div>
                     <h3>Our Values</h3>
-                    <p>Integrity, transparency, and customer satisfaction guide everything we do. We believe in building trust through reliable service.</p>
+                    <p>Integrity, transparency, and customer satisfaction guide everything we do. We believe in building
+                        trust through reliable service.</p>
                 </div>
             </div>
         </section>
@@ -125,45 +311,54 @@
             <div class="team-grid">
                 <div class="team-member">
                     <div class="member-photo">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="member-info">
-                        <h3>John Moyo</h3>
-                        <p class="title">Chief Executive Officer</p>
-                        <p>Financial technology expert with 15+ years in the remittance industry.</p>
+                        <h3>Ronald Njiswe</h3>
+                        <p class="title">Co-Founder & CEO</p>
+                        <p>Currently pursuing Aeronautical Engineering in Moscow, Russia, Ronald brings a global
+                            perspective and precise analytical thinking to our strategic vision.</p>
+                        <p>Visionary leader steering the company's growth and innovation.</p>
+                        <p>He is the backbone of our company, Operations specialist ensuring smooth transaction across
+                            all platforms.</p>
                     </div>
                 </div>
 
                 <div class="team-member">
                     <div class="member-photo">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="member-info">
-                        <h3>Sarah Ncube</h3>
+                        <h3>Thelma Njiswe</h3>
                         <p class="title">Chief Operations Officer</p>
-                        <p>Operations specialist ensuring smooth transactions across all platforms.</p>
+                        <p>A Supply Chain Management student at Chinhoyi University, Thelma combines logistical
+                            expertise with a professional background in service excellence.</p>
                     </div>
                 </div>
 
                 <div class="team-member">
                     <div class="member-photo">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-code"></i>
                     </div>
                     <div class="member-info">
-                        <h3>Michael Dube</h3>
+                        <h3>Victor Njiswe</h3>
                         <p class="title">Chief Technology Officer</p>
-                        <p>Technology leader driving innovation in secure money transfers.</p>
+                        <p>Operation specialist ensuring smooth transaction across all platforms.
+                            A Computer Engineering student and versatile developer (Java, Python, JS), Victor leads our
+                            technical innovation with a passion for embedded systems and AI.</p>
+                        <p>Technology leader driving innovation in secure and efficient money transfers.</p>
                     </div>
                 </div>
 
                 <div class="team-member">
                     <div class="member-photo">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user-shield"></i>
                     </div>
                     <div class="member-info">
-                        <h3>Grace Mutasa</h3>
-                        <p class="title">Head of Customer Relations</p>
-                        <p>Dedicated to providing exceptional customer support 24/7.</p>
+                        <h3>Ropafadzo Njiswe</h3>
+                        <p class="title">Head of Relations</p>
+                        <p>A Psychology graduate from Midlands State University, Ropafadzo ensures our services are
+                            built on a foundation of trust, empathy, and user-centricity.</p>
                     </div>
                 </div>
             </div>
@@ -210,4 +405,5 @@
 
     <div th:insert="~{fragments/footer :: footer}"></div>
 </body>
+
 </html>

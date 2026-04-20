@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="contact-page">
     <div th:insert="~{fragments/header :: header}"></div>
 
@@ -27,20 +29,22 @@
                     <div class="info-card">
                         <h2>Contact Information</h2>
                         <p>Fill out the form and our team will get back to you within 24 hours.</p>
-                        
+
                         <div class="contact-links">
                             <div class="link-item">
                                 <div class="icon-box"><i class="fas fa-phone-alt"></i></div>
                                 <div>
                                     <h3>Call Us</h3>
-                                    <p>+263 712 345 678</p>
+                                    <p>+263 778 411 140 V. Njiswe</p>
+                                    <p>+7 995 944 37 29 R. Njiswe</p>
+
                                 </div>
                             </div>
                             <div class="link-item">
                                 <div class="icon-box"><i class="fas fa-envelope"></i></div>
                                 <div>
                                     <h3>Email Us</h3>
-                                    <p>support@bypasstransfers.com</p>
+                                    <p>vickellar.01@gmail.com</p>
                                 </div>
                             </div>
                             <div class="link-item">
@@ -48,6 +52,8 @@
                                 <div>
                                     <h3>Visit Office</h3>
                                     <p>123 Business Street, Harare, Zimbabwe</p>
+                                    <p>13 Business Street, Moscow, Russia</p>
+                                    <p>23 Business Street, Masvingo, Zimbabwe</p>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +87,8 @@
                             </div>
                             <div class="input-group">
                                 <label for="email">Email Address</label>
-                                <input type="email" id="email" th:field="*{email}" required placeholder="john@example.com">
+                                <input type="email" id="email" th:field="*{email}" required
+                                    placeholder="john@example.com">
                                 <div class="focus-border"></div>
                             </div>
                         </div>
@@ -99,7 +106,8 @@
 
                         <div class="input-group">
                             <label for="message">Your Message</label>
-                            <textarea id="message" th:field="*{message}" rows="5" required placeholder="How can we help?"></textarea>
+                            <textarea id="message" th:field="*{message}" rows="5" required
+                                placeholder="How can we help?"></textarea>
                             <div class="focus-border"></div>
                         </div>
 
@@ -107,7 +115,8 @@
                             <label class="custom-checkbox">
                                 <input type="checkbox" name="newsletter" value="true">
                                 <span class="checkmark"></span>
-                                <span class="label-text">I agree to the <a href="#">privacy policy</a> and newsletter.</span>
+                                <span class="label-text">I agree to the <a href="#">privacy policy</a> and
+                                    newsletter.</span>
                             </label>
                         </div>
 
@@ -123,4 +132,5 @@
 
     <div th:insert="~{fragments/footer :: footer}"></div>
 </body>
+
 </html>
