@@ -1,19 +1,21 @@
 package com.bypass.bypasstransers.dto;
 
+import java.math.BigDecimal;
+
 public class AccountPerformanceDTO {
     private String accountType; // Mukuru, Econet, Innbucks
     private int totalTransactions;
-    private double totalAmount;
-    private double totalFees;
-    private double totalNet;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal totalFees = BigDecimal.ZERO;
+    private BigDecimal totalNet = BigDecimal.ZERO;
     private int activeUsers;
-    private double percentageOfTotal;
+    private BigDecimal percentageOfTotal = BigDecimal.ZERO;
     private String performanceLevel; // High, Medium, Low
     
     public AccountPerformanceDTO() {}
     
     public AccountPerformanceDTO(String accountType, int totalTransactions, 
-                                 double totalAmount, double totalFees, double totalNet) {
+                                 BigDecimal totalAmount, BigDecimal totalFees, BigDecimal totalNet) {
         this.accountType = accountType;
         this.totalTransactions = totalTransactions;
         this.totalAmount = totalAmount;
@@ -28,20 +30,20 @@ public class AccountPerformanceDTO {
     public int getTotalTransactions() { return totalTransactions; }
     public void setTotalTransactions(int totalTransactions) { this.totalTransactions = totalTransactions; }
     
-    public double getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     
-    public double getTotalFees() { return totalFees; }
-    public void setTotalFees(double totalFees) { this.totalFees = totalFees; }
+    public BigDecimal getTotalFees() { return totalFees; }
+    public void setTotalFees(BigDecimal totalFees) { this.totalFees = totalFees; }
     
-    public double getTotalNet() { return totalNet; }
-    public void setTotalNet(double totalNet) { this.totalNet = totalNet; }
+    public BigDecimal getTotalNet() { return totalNet; }
+    public void setTotalNet(BigDecimal totalNet) { this.totalNet = totalNet; }
     
     public int getActiveUsers() { return activeUsers; }
     public void setActiveUsers(int activeUsers) { this.activeUsers = activeUsers; }
     
-    public double getPercentageOfTotal() { return percentageOfTotal; }
-    public void setPercentageOfTotal(double percentageOfTotal) { this.percentageOfTotal = percentageOfTotal; }
+    public BigDecimal getPercentageOfTotal() { return percentageOfTotal; }
+    public void setPercentageOfTotal(BigDecimal percentageOfTotal) { this.percentageOfTotal = percentageOfTotal; }
     
     public String getPerformanceLevel() { return performanceLevel; }
     public void setPerformanceLevel(String performanceLevel) { this.performanceLevel = performanceLevel; }

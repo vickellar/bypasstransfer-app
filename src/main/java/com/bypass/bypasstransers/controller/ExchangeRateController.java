@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +50,7 @@ public class ExchangeRateController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> getRate(@PathVariable String from, @PathVariable String to) {
         try {
-            Double rate = currencyConversionService.getExchangeRate(from, to);
+            BigDecimal rate = currencyConversionService.getExchangeRate(from, to);
             Map<String, Object> response = new HashMap<>();
             response.put("from", from);
             response.put("to", to);
@@ -83,23 +85,24 @@ public class ExchangeRateController {
     public ResponseEntity<?> updateRate(
             @PathVariable String from,
             @PathVariable String to,
-            @RequestBody Map<String, Double> rateData) {
+            @RequestBody Map<String, BigDecimal> rateData) {
         try {
-            Double rate = rateData.get("rate");
-            if (rate == null || rate <= 0) {
+            BigDecimal rate = rateData.get("rate");
+            if (rate == null || rate.compareTo(BigDecimal.ZERO) <= 0) {
                 return ResponseEntity.badRequest().body("Invalid rate value");
             }
 
             currencyConversionService.updateExchangeRate(from, to, rate, "MANUAL");
             
             // Also update reverse rate
-            currencyConversionService.updateExchangeRate(to, from, 1.0 / rate, "MANUAL_DERIVED");
+            BigDecimal reverseRate = BigDecimal.ONE.divide(rate, 10, RoundingMode.HALF_UP);
+            currencyConversionService.updateExchangeRate(to, from, reverseRate, "MANUAL_DERIVED");
 
             Map<String, Object> response = new HashMap<>();
             response.put("from", from);
             response.put("to", to);
             response.put("rate", rate);
-            response.put("reverseRate", 1.0 / rate);
+            response.put("reverseRate", reverseRate);
             response.put("message", "Rate updated successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -117,6 +120,7 @@ public class ExchangeRateController {
             List<ExchangeRate> rates = exchangeRateRepository.findAll();
             LocalDateTime lastUpdate = rates.stream()
                 .map(ExchangeRate::getLastUpdated)
+                .filter(java.util.Objects::nonNull)
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
 

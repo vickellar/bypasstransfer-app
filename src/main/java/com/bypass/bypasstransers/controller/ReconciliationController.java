@@ -2,6 +2,7 @@ package com.bypass.bypasstransers.controller;
 
 import com.bypass.bypasstransers.model.DailyReconciliation;
 import com.bypass.bypasstransers.service.ReconsiliationService;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class ReconciliationController {
 
     public static class ReconcileWalletRequest {
         private Long walletId;
-        private double actualBalance;
+        private BigDecimal actualBalance;
         private String notes;
 
         public Long getWalletId() {
@@ -51,11 +52,11 @@ public class ReconciliationController {
             this.walletId = walletId;
         }
 
-        public double getActualBalance() {
+        public BigDecimal getActualBalance() {
             return actualBalance;
         }
 
-        public void setActualBalance(double actualBalance) {
+        public void setActualBalance(BigDecimal actualBalance) {
             this.actualBalance = actualBalance;
         }
 
@@ -70,7 +71,7 @@ public class ReconciliationController {
 
     public static class ReconcileRequest {
         private LocalDate date;
-        private double actualBalance;
+        private BigDecimal actualBalance;
 
         public LocalDate getDate() {
             return date;
@@ -80,11 +81,11 @@ public class ReconciliationController {
             this.date = date;
         }
 
-        public double getActualBalance() {
+        public BigDecimal getActualBalance() {
             return actualBalance;
         }
 
-        public void setActualBalance(double actualBalance) {
+        public void setActualBalance(BigDecimal actualBalance) {
             this.actualBalance = actualBalance;
         }
     }

@@ -6,6 +6,7 @@ import com.bypass.bypasstransers.service.ReconsiliationService;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,9 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 
+/**
+ * Controller for administrative reconciliation tasks.
+ */
 @Controller
 @RequestMapping("/reconciliations")
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUPERVISOR')")
@@ -63,10 +67,11 @@ public class ReconciliationAdminController {
     }
 
     @PostMapping("/{id}/approve")
-    public String approve(@PathVariable Long id,
+    public String approve(@PathVariable(required = true) Long id,
                           @RequestParam(required = false) String reviewNotes,
                           RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "Reconciliation ID must not be null");
             reconService.approve(id, reviewNotes);
             ra.addFlashAttribute("success", "Reconciliation #" + id + " approved.");
         } catch (Exception e) {
@@ -76,10 +81,11 @@ public class ReconciliationAdminController {
     }
 
     @PostMapping("/{id}/flag")
-    public String flag(@PathVariable Long id,
+    public String flag(@PathVariable(required = true) Long id,
                        @RequestParam(required = false) String reviewNotes,
                        RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "Reconciliation ID must not be null");
             reconService.flag(id, reviewNotes);
             ra.addFlashAttribute("success", "Reconciliation #" + id + " flagged for further review.");
         } catch (Exception e) {
@@ -89,8 +95,9 @@ public class ReconciliationAdminController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+    public String delete(@PathVariable(required = true) Long id, RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "Reconciliation ID must not be null");
             repo.deleteById(id);
             ra.addFlashAttribute("success", "Reconciliation deleted.");
         } catch (Exception e) {
@@ -110,7 +117,9 @@ public class ReconciliationAdminController {
                 w.printf("%s,%s,%.2f,%.2f,%.2f,%s,%s,%s,%s\n",
                         r.getDate(),
                         r.getAccountName() != null ? r.getAccountName() : "",
-                        r.getSystemBalance(), r.getActualBalance(), r.getDifference(),
+                        r.getSystemBalance() != null ? r.getSystemBalance().doubleValue() : 0.0, 
+                        r.getActualBalance() != null ? r.getActualBalance().doubleValue() : 0.0, 
+                        r.getDifference() != null ? r.getDifference().doubleValue() : 0.0,
                         r.getStatus() != null ? r.getStatus() : "",
                         r.getReconciledBy() != null ? r.getReconciledBy() : "",
                         r.getWeekNumber() != null ? r.getWeekNumber() : "",
@@ -133,7 +142,9 @@ public class ReconciliationAdminController {
             String line = String.format("%s | %s | System: $%.2f | Actual: $%.2f | Diff: $%.2f | %s | By: %s | W%s/%s",
                     r.getDate(),
                     r.getAccountName() != null ? r.getAccountName() : "N/A",
-                    r.getSystemBalance(), r.getActualBalance(), r.getDifference(),
+                    r.getSystemBalance() != null ? r.getSystemBalance().doubleValue() : 0.0, 
+                    r.getActualBalance() != null ? r.getActualBalance().doubleValue() : 0.0, 
+                    r.getDifference() != null ? r.getDifference().doubleValue() : 0.0,
                     r.getStatus() != null ? r.getStatus() : "N/A",
                     r.getReconciledBy() != null ? r.getReconciledBy() : "N/A",
                     r.getWeekNumber() != null ? r.getWeekNumber() : "?",

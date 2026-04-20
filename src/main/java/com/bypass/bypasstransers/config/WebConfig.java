@@ -2,10 +2,16 @@ package com.bypass.bypasstransers.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.Objects;
+
+/**
+ * Web configuration for CORS and static resources.
+ */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -13,11 +19,19 @@ public class WebConfig implements WebMvcConfigurer {
     private String allowedOrigins;
 
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        // Allow CORS for all endpoints during development registry.addMapping("/APA/**") 
-        // This enables access from phones on local network
+    public void addCorsMappings(@NonNull CorsRegistry registry) {
+        String[] patterns;
+        if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+            patterns = allowedOrigins.split(",");
+        } else {
+            patterns = new String[]{"*"};
+        }
+        
+        // Ensure the patterns array itself and its contents are treated as non-null
+        Objects.requireNonNull(patterns, "CORS patterns must not be null");
+        
         registry.addMapping("/**")
-                .allowedOriginPatterns(allowedOrigins.split(","))
+                .allowedOriginPatterns(patterns)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -25,7 +39,7 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // Serve static resources including videos from the static directory
         registry.addResourceHandler("/videos/**")
                 .addResourceLocations("classpath:/static/videos/");

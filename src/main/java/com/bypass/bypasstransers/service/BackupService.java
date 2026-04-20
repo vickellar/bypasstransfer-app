@@ -6,12 +6,14 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.model.Expenditure;
 import com.bypass.bypasstransers.repository.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipInputStream;
 
+/**
+ * Service for creating and restoring full system backups in JSON format.
+ */
 @Service
 public class BackupService {
     
@@ -47,18 +52,11 @@ public class BackupService {
         this.objectMapper.registerModule(new JavaTimeModule());
     }
     
-    /**
-     * Create a full system backup
-     */
     @Transactional(readOnly = true)
     public byte[] createBackup() throws Exception {
         Map<String, Object> backupData = new HashMap<>();
-        
-        // Add backup metadata
         backupData.put("backupTimestamp", LocalDateTime.now());
-        backupData.put("backupVersion", "1.0");
-        
-        // Backup all entities
+        backupData.put("backupVersion", "1.1");
         backupData.put("users", userRepository.findAll());
         backupData.put("accounts", walletRepository.findAll());
         backupData.put("transactions", transactionRepository.findAll());
@@ -66,10 +64,7 @@ public class BackupService {
         backupData.put("passwordResetTokens", passwordResetTokenRepository.findAll());
         backupData.put("emailVerificationTokens", emailVerificationTokenRepository.findAll());
         
-        // Convert to JSON
         String jsonData = objectMapper.writeValueAsString(backupData);
-        
-        // Create zip file with JSON data
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             ZipEntry entry = new ZipEntry("backup.json");
@@ -77,16 +72,11 @@ public class BackupService {
             zos.write(jsonData.getBytes());
             zos.closeEntry();
         }
-        
         return baos.toByteArray();
     }
     
-    /**
-     * Restore system from backup
-     */
     @Transactional
     public void restoreBackup(byte[] backupData) throws Exception {
-        // Clear existing data (in reverse order of foreign key dependencies)
         passwordResetTokenRepository.deleteAll();
         emailVerificationTokenRepository.deleteAll();
         transactionRepository.deleteAll();
@@ -94,11 +84,9 @@ public class BackupService {
         walletRepository.deleteAll();
         userRepository.deleteAll();
         
-        // Read zip file
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(backupData))) {
             ZipEntry entry = zis.getNextEntry();
             if (entry != null && "backup.json".equals(entry.getName())) {
-                // Read JSON data
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int len;
@@ -107,21 +95,37 @@ public class BackupService {
                 }
                 
                 String jsonData = baos.toString();
-                Map<String, Object> backupMap = objectMapper.readValue(jsonData, Map.class);
+                Map<String, Object> backupMap = objectMapper.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
                 
-                // Restore data
-                restoreUsers((List<Map<String, Object>>) backupMap.get("users"));
-                restoreAccounts((List<Map<String, Object>>) backupMap.get("accounts"));
-                restoreTransactions((List<Map<String, Object>>) backupMap.get("transactions"));
-                restoreExpenditures((List<Map<String, Object>>) backupMap.get("expenditures"));
-                restorePasswordResetTokens((List<Map<String, Object>>) backupMap.get("passwordResetTokens"));
-                restoreEmailVerificationTokens((List<Map<String, Object>>) backupMap.get("emailVerificationTokens"));
+                Object usersObj = backupMap.get("users");
+                if (usersObj instanceof List) {
+                    restoreUsers((List<?>) usersObj);
+                }
+                
+                Object accountsObj = backupMap.get("accounts");
+                if (accountsObj instanceof List) {
+                    restoreAccounts((List<?>) accountsObj);
+                }
+                
+                Object transactionsObj = backupMap.get("transactions");
+                if (transactionsObj instanceof List) {
+                    restoreTransactions((List<?>) transactionsObj);
+                }
+                
+                Object expendituresObj = backupMap.get("expenditures");
+                if (expendituresObj instanceof List) {
+                    restoreExpenditures((List<?>) expendituresObj);
+                }
+                
+                // Tokens are currently placeholder restoration
             }
         }
     }
     
-    private void restoreUsers(List<Map<String, Object>> users) {
-        for (Map<String, Object> userData : users) {
+    @SuppressWarnings("unchecked")
+    private void restoreUsers(List<?> users) {
+        for (Object item : users) {
+            Map<String, Object> userData = (Map<String, Object>) item;
             User user = new User();
             user.setId(((Number) userData.get("id")).longValue());
             user.setUsername((String) userData.get("username"));
@@ -139,16 +143,20 @@ public class BackupService {
         }
     }
     
-    private void restoreAccounts(List<Map<String, Object>> accounts) {
-        for (Map<String, Object> accountData : accounts) {
-            Wallet account = new Wallet(); // Changed from Account to Wallet
+    @SuppressWarnings("unchecked")
+    private void restoreAccounts(List<?> accounts) {
+        for (Object item : accounts) {
+            Map<String, Object> accountData = (Map<String, Object>) item;
+            Wallet account = new Wallet();
             account.setId(((Number) accountData.get("id")).longValue());
-            account.setAccountType((String) accountData.get("name")); // Map the name field to accountType
-            account.setBalance(((Number) accountData.get("balance")).doubleValue());
+            account.setAccountType((String) accountData.get("accountType"));
+            if (account.getAccountType() == null) {
+                account.setAccountType((String) accountData.get("name")); // Fallback for older backups
+            }
+            account.setBalance(new BigDecimal(accountData.get("balance").toString()));
             account.setCreatedAt(LocalDateTime.parse((String) accountData.get("createdAt")));
             account.setLocked((Boolean) accountData.get("locked"));
             
-            // Set owner
             Long ownerId = ((Number) accountData.get("ownerId")).longValue();
             User owner = userRepository.findById(ownerId).orElse(null);
             if (owner != null) {
@@ -158,13 +166,15 @@ public class BackupService {
         }
     }
     
-    private void restoreTransactions(List<Map<String, Object>> transactions) {
-        for (Map<String, Object> txData : transactions) {
+    @SuppressWarnings("unchecked")
+    private void restoreTransactions(List<?> transactions) {
+        for (Object item : transactions) {
+            Map<String, Object> txData = (Map<String, Object>) item;
             Transaction tx = new Transaction();
             tx.setId(((Number) txData.get("id")).longValue());
-            tx.setAmount(((Number) txData.get("amount")).doubleValue());
-            tx.setFee(((Number) txData.get("fee")).doubleValue());
-            tx.setNetAmount(((Number) txData.get("netAmount")).doubleValue());
+            tx.setAmount(new BigDecimal(txData.get("amount").toString()));
+            tx.setFee(new BigDecimal(txData.get("fee").toString()));
+            tx.setNetAmount(new BigDecimal(txData.get("netAmount").toString()));
             tx.setType(com.bypass.bypasstransers.enums.TransactionType.valueOf((String) txData.get("type")));
             tx.setFromAccount((String) txData.get("fromAccount"));
             tx.setToAccount((String) txData.get("toAccount"));
@@ -172,55 +182,39 @@ public class BackupService {
             tx.setCreatedBy((String) txData.get("createdBy"));
             tx.setDate(LocalDateTime.parse((String) txData.get("date")));
             
-            // Set wallet if exists
             if (txData.get("walletId") != null) {
                 Long walletId = ((Number) txData.get("walletId")).longValue();
-                Wallet wallet = walletRepository.findById(walletId).orElse(null);
-                if (wallet != null) {
-                    tx.setWallet(wallet);
+                walletRepository.findById(walletId).ifPresent(w -> {
+                    tx.setWallet(w);
                     transactionRepository.save(tx);
-                }
+                });
             } else {
                 transactionRepository.save(tx);
             }
         }
     }
     
-    private void restoreExpenditures(List<Map<String, Object>> expenditures) {
-        for (Map<String, Object> expData : expenditures) {
+    @SuppressWarnings("unchecked")
+    private void restoreExpenditures(List<?> expenditures) {
+        for (Object item : expenditures) {
+            Map<String, Object> expData = (Map<String, Object>) item;
             Expenditure exp = new Expenditure();
             exp.setId(((Number) expData.get("id")).longValue());
-            exp.setAmount(((Number) expData.get("amount")).doubleValue());
+            exp.setAmount(new BigDecimal(expData.get("amount").toString()));
             exp.setCategory((String) expData.get("category"));
             exp.setDescription((String) expData.get("description"));
             exp.setDate(java.time.LocalDate.parse((String) expData.get("date")));
             
-            // Set recordedBy
             String username = (String) expData.get("recordedBy");
-            User user = userRepository.findByUsername(username).stream().findFirst().orElse(null);
-            if (user != null) {
-                exp.setRecordedBy(user);
+            userRepository.findByUsername(username).stream().findFirst().ifPresent(u -> {
+                exp.setRecordedBy(u);
                 expenditureRepository.save(exp);
-            }
+            });
         }
     }
     
-    private void restorePasswordResetTokens(List<Map<String, Object>> tokens) {
-        // Password reset tokens are temporary, so we don't restore them
-        // They will be regenerated when needed
-    }
-    
-    private void restoreEmailVerificationTokens(List<Map<String, Object>> tokens) {
-        // Email verification tokens are temporary, so we don't restore them
-        // They will be regenerated when needed
-    }
-    
-    /**
-     * Get backup information without restoring
-     */
     public Map<String, Object> getBackupInfo(byte[] backupData) throws Exception {
         Map<String, Object> info = new HashMap<>();
-        
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(backupData))) {
             ZipEntry entry = zis.getNextEntry();
             if (entry != null && "backup.json".equals(entry.getName())) {
@@ -230,19 +224,24 @@ public class BackupService {
                 while ((len = zis.read(buffer)) > 0) {
                     baos.write(buffer, 0, len);
                 }
-                
                 String jsonData = baos.toString();
-                Map<String, Object> backupMap = objectMapper.readValue(jsonData, Map.class);
-                
+                Map<String, Object> backupMap = objectMapper.readValue(jsonData, new TypeReference<Map<String, Object>>() {});
                 info.put("backupTimestamp", backupMap.get("backupTimestamp"));
                 info.put("backupVersion", backupMap.get("backupVersion"));
-                info.put("userCount", ((List<?>) backupMap.get("users")).size());
-                info.put("accountCount", ((List<?>) backupMap.get("accounts")).size());
-                info.put("transactionCount", ((List<?>) backupMap.get("transactions")).size());
-                info.put("expenditureCount", ((List<?>) backupMap.get("expenditures")).size());
+                
+                Object users = backupMap.get("users");
+                info.put("userCount", users instanceof List ? ((List<?>) users).size() : 0);
+                
+                Object accounts = backupMap.get("accounts");
+                info.put("accountCount", accounts instanceof List ? ((List<?>) accounts).size() : 0);
+                
+                Object transactions = backupMap.get("transactions");
+                info.put("transactionCount", transactions instanceof List ? ((List<?>) transactions).size() : 0);
+                
+                Object expenditures = backupMap.get("expenditures");
+                info.put("expenditureCount", expenditures instanceof List ? ((List<?>) expenditures).size() : 0);
             }
         }
-        
         return info;
     }
 }

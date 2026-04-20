@@ -21,13 +21,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 
+/**
+ * Controller for staff members to manage their expenses and view their transaction history.
+ */
 @Controller
 @RequestMapping("/staff")
 public class StaffExpenseController {
@@ -56,13 +61,10 @@ public class StaffExpenseController {
     @Autowired
     private OfflineTransactionRepository offlineTransactionRepository;
 
-    // ============================================================
-    // TRANSACTION HISTORY
-    // ============================================================
+    @Autowired
+    private com.bypass.bypasstransers.service.ReconsiliationService reconService;
 
-    /** All transactions for this staff member across ALL their wallets
-     * @param model
-     * @return  */
+    /** All transactions for this staff member across ALL their wallets */
     @GetMapping("/transactions")
     public String myTransactionHistory(Model model) {
         User currentUser = securityService.getCurrentUser();
@@ -79,8 +81,12 @@ public class StaffExpenseController {
             wallets = walletRepository.findByOwnerId(currentUser.getId());
         }
 
-        double totalVolume = transactions.stream().mapToDouble(Transaction::getAmount).sum();
-        double totalFees   = transactions.stream().mapToDouble(Transaction::getFee).sum();
+        BigDecimal totalVolume = transactions.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFees   = transactions.stream()
+                .map(Transaction::getFee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OfflineTransaction> offlineTxs = offlineTransactionRepository.findByUsernameOrderByOfflineRecordedAtDesc(currentUser.getUsername());
 
@@ -88,23 +94,19 @@ public class StaffExpenseController {
         model.addAttribute("transactions", transactions);
         model.addAttribute("offlineTransactions", offlineTxs);
         model.addAttribute("wallets", wallets);
-        model.addAttribute("totalVolume", totalVolume);
-        model.addAttribute("totalFees", totalFees);
+        model.addAttribute("totalVolume", totalVolume.doubleValue());
+        model.addAttribute("totalFees", totalFees.doubleValue());
         model.addAttribute("selectedWallet", null);
         return "staff-transaction-history";
     }
 
-    /** Transactions for a SPECIFIC wallet (per-account history)
-     * @param walletId
-     * @param model
-     * @param ra
-     * @return  */
+    /** Transactions for a SPECIFIC wallet (per-account history) */
     @GetMapping("/transactions/wallet/{walletId}")
     public String walletTransactionHistory(@PathVariable Long walletId, Model model,
-                                           org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+                                           RedirectAttributes ra) {
         User currentUser = securityService.getCurrentUser();
 
-        // Security: make sure the wallet belongs to the current user OR their branch
+        Objects.requireNonNull(walletId, "Wallet ID must not be null");
         Wallet wallet = walletService.getWalletById(walletId).orElse(null);
         if (wallet == null) {
             ra.addFlashAttribute("error", "Wallet not found or access denied");
@@ -114,8 +116,12 @@ public class StaffExpenseController {
         List<Transaction> transactions = transactionRepository.findByWalletId(walletId);
         List<Wallet> wallets = walletService.getCurrentUserWallets();
 
-        double totalVolume = transactions.stream().mapToDouble(Transaction::getAmount).sum();
-        double totalFees   = transactions.stream().mapToDouble(Transaction::getFee).sum();
+        BigDecimal totalVolume = transactions.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFees   = transactions.stream()
+                .map(Transaction::getFee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<OfflineTransaction> offlineTxs = offlineTransactionRepository.findByUsernameOrderByOfflineRecordedAtDesc(currentUser.getUsername())
                 .stream()
@@ -127,22 +133,13 @@ public class StaffExpenseController {
         model.addAttribute("transactions", transactions);
         model.addAttribute("offlineTransactions", offlineTxs);
         model.addAttribute("wallets", wallets);
-        model.addAttribute("totalVolume", totalVolume);
-        model.addAttribute("totalFees", totalFees);
+        model.addAttribute("totalVolume", totalVolume.doubleValue());
+        model.addAttribute("totalFees", totalFees.doubleValue());
         model.addAttribute("selectedWallet", wallet);
         return "staff-transaction-history";
     }
 
-    // ============================================================
-    // RECONCILIATION
-    // ============================================================
-
-    @Autowired
-    private com.bypass.bypasstransers.service.ReconsiliationService reconService;
-
-    /** Staff reconciliation page — compare expected vs actual balances
-     * @param model
-     * @return  */
+    /** Staff reconciliation page — compare expected vs actual balances */
     @GetMapping("/reconciliation")
     public String reconciliationPage(Model model) {
         User currentUser = securityService.getCurrentUser();
@@ -156,17 +153,20 @@ public class StaffExpenseController {
             transactions = transactionRepository.findByWalletOwnerId(currentUser.getId());
         }
 
-        double expectedBalance = wallets.stream().mapToDouble(Wallet::getBalance).sum();
-        // Total cash in = sum of netAmount on RECEIVE-type transactions
-        double totalIn  = transactions.stream()
+        BigDecimal expectedBalance = wallets.stream()
+                .map(Wallet::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal totalIn = transactions.stream()
                 .filter(t -> t.getType() != null && t.getType().name().equals("RECEIVE"))
-                .mapToDouble(Transaction::getNetAmount).sum();
-        // Total cash out = sum of amount on SEND-type transactions
-        double totalOut = transactions.stream()
+                .map(Transaction::getNetAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal totalOut = transactions.stream()
                 .filter(t -> t.getType() != null && t.getType().name().equals("SEND"))
-                .mapToDouble(Transaction::getAmount).sum();
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Check which wallets are already reconciled this week
         java.util.Map<Long, Boolean> walletReconciledThisWeek = new java.util.HashMap<>();
         java.util.Map<Long, com.bypass.bypasstransers.model.DailyReconciliation> walletReconResults = new java.util.HashMap<>();
         for (Wallet w : wallets) {
@@ -179,32 +179,33 @@ public class StaffExpenseController {
             }
         }
 
-        // Get this staff's reconciliation history
         List<com.bypass.bypasstransers.model.DailyReconciliation> myHistory = 
             reconService.getHistoryByStaff(currentUser.getUsername());
 
         model.addAttribute("user", currentUser);
         model.addAttribute("wallets", wallets);
         model.addAttribute("transactions", transactions);
-        model.addAttribute("expectedBalance", expectedBalance);
-        model.addAttribute("totalIn", totalIn);
-        model.addAttribute("totalOut", totalOut);
+        model.addAttribute("expectedBalance", expectedBalance.doubleValue());
+        model.addAttribute("totalIn", totalIn.doubleValue());
+        model.addAttribute("totalOut", totalOut.doubleValue());
         model.addAttribute("walletReconciledThisWeek", walletReconciledThisWeek);
         model.addAttribute("walletReconResults", walletReconResults);
         model.addAttribute("myHistory", myHistory);
         return "staff-reconciliation";
     }
 
-
-
     @GetMapping("/expenses")
     public String listExpenses(Model model) {
         User currentUser = securityService.getCurrentUser();
         List<Expenditure> expenses = expenditureRepository.findByRecordedBy(currentUser);
         
+        BigDecimal totalAmount = expenses.stream()
+                .map(Expenditure::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         model.addAttribute("expenses", expenses);
         model.addAttribute("user", currentUser);
-        model.addAttribute("totalAmount", expenses.stream().mapToDouble(Expenditure::getAmount).sum());
+        model.addAttribute("totalAmount", totalAmount.doubleValue());
         
         return "staff-expenses";
     }
@@ -213,8 +214,6 @@ public class StaffExpenseController {
     public String newExpenseForm(Model model) {
         model.addAttribute("isEdit", false);
         User currentUser = securityService.getCurrentUser();
-        
-        // Get user's wallets
         List<Wallet> userWallets = walletService.getCurrentUserWallets();
         
         model.addAttribute("expense", new ExpenditureDTO());
@@ -228,7 +227,7 @@ public class StaffExpenseController {
     @PostMapping("/expenses/save")
     public String saveExpense(
             @RequestParam("walletId") Long walletId,
-            @RequestParam("amount") Double amount,
+            @RequestParam("amount") BigDecimal amount,
             @RequestParam("category") String category,
             @RequestParam("currency") Currency currency,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -237,8 +236,7 @@ public class StaffExpenseController {
         try {
             User currentUser = securityService.getCurrentUser();
             
-            // Validate required fields
-            if (amount <= 0) {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                 ra.addFlashAttribute("error", "Amount must be greater than zero");
                 return "redirect:/staff/expenses/new";
             }
@@ -248,7 +246,6 @@ public class StaffExpenseController {
                 return "redirect:/staff/expenses/new";
             }
             
-            // Verify wallet ownership
             Wallet wallet = walletService.getWalletById(walletId)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
             
@@ -257,28 +254,23 @@ public class StaffExpenseController {
                 return "redirect:/staff/expenses/new";
             }
             
-            // Convert amount to wallet currency if needed
-            Double amountInWalletCurrency = amount;
+            BigDecimal amountInWalletCurrency = amount;
             String conversionNote = "";
-            
-            // Check if wallet has a currency. If not, default to USD (should be fixed by migration/entity default)
             Currency walletCurrency = wallet.getCurrency() != null ? wallet.getCurrency() : Currency.USD;
             
             if (currency != walletCurrency) {
                 amountInWalletCurrency = currencyConversionService.convert(amount, currency.name(), walletCurrency.name());
                 conversionNote = String.format(" (Converted from %.2f %s to %.2f %s)", 
-                    amount, currency, amountInWalletCurrency, walletCurrency);
+                    amount.doubleValue(), currency, amountInWalletCurrency.doubleValue(), walletCurrency);
             }
 
-            // Check if wallet has sufficient balance
-            if (wallet.getBalance() < amountInWalletCurrency) {
+            if (wallet.getBalance().compareTo(amountInWalletCurrency) < 0) {
                 ra.addFlashAttribute("error", "Insufficient wallet balance. Required: " + 
-                    String.format("%.2f", amountInWalletCurrency) + " " + wallet.getCurrency() + 
-                    ". Available: " + String.format("%.2f", wallet.getBalance()) + " " + wallet.getCurrency());
+                    amountInWalletCurrency.setScale(2, RoundingMode.HALF_UP) + " " + walletCurrency + 
+                    ". Available: " + wallet.getBalance().setScale(2, RoundingMode.HALF_UP) + " " + walletCurrency);
                 return "redirect:/staff/expenses/new";
             }
             
-            // Create expenditure
             Expenditure expense = new Expenditure();
             expense.setDescription(description);
             expense.setCategory(category);
@@ -286,17 +278,15 @@ public class StaffExpenseController {
             expense.setDate(date != null ? date : LocalDate.now());
             expense.setRecordedBy(currentUser);
             expense.setCurrency(currency);
-            expense.setWallet(wallet); // Link to wallet
+            expense.setWallet(wallet);
             
             expenditureRepository.save(expense);
             
-            // Deduct from wallet balance
-            wallet.setBalance(wallet.getBalance() - amountInWalletCurrency);
+            wallet.setBalance(wallet.getBalance().subtract(amountInWalletCurrency));
             walletRepository.save(wallet);
             
-            // Audit log
             auditService.logEntity(currentUser.getUsername(), "expenditures", expense.getId(), "CREATE",
-                "0", String.valueOf(expense.getAmount()));
+                "0", expense.getAmount().toString());
             
             ra.addFlashAttribute("success", "Expense recorded successfully." + conversionNote + " Amount deducted from " + wallet.getAccountType() + " wallet.");
             
@@ -311,11 +301,12 @@ public class StaffExpenseController {
     public String editExpenseForm(@PathVariable Long id, Model model, RedirectAttributes ra) {
         model.addAttribute("isEdit", true);
         User currentUser = securityService.getCurrentUser();
+        
+        Objects.requireNonNull(id, "Expense ID must not be null");
         Expenditure expense = expenditureRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
         
-        // Check ownership
-        if (!expense.getRecordedBy().getId().equals(currentUser.getId())) {
+        if (expense.getRecordedBy() == null || !expense.getRecordedBy().getId().equals(currentUser.getId())) {
             ra.addFlashAttribute("error", "You can only edit your own expenses");
             return "redirect:/staff/expenses";
         }
@@ -332,9 +323,8 @@ public class StaffExpenseController {
         
         model.addAttribute("expense", expenseDTO);
         model.addAttribute("user", currentUser);
-        model.addAttribute("currencies", com.bypass.bypasstransers.enums.Currency.values());
-		model.addAttribute("wallets", walletService.getCurrentUserWallets());
-		 // Get user's wallets
+        model.addAttribute("currencies", Currency.values());
+        model.addAttribute("wallets", walletService.getCurrentUserWallets());
         
         return "staff-expense-form";
     }
@@ -343,22 +333,21 @@ public class StaffExpenseController {
     public String updateExpense(@PathVariable Long id, @ModelAttribute ExpenditureDTO expenseDTO, RedirectAttributes ra) {
         try {
             User currentUser = securityService.getCurrentUser();
+            
+            Objects.requireNonNull(id, "Expense ID must not be null");
             Expenditure existingExpense = expenditureRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
             
-            // Check ownership
-            if (!existingExpense.getRecordedBy().getId().equals(currentUser.getId())) {
+            if (existingExpense.getRecordedBy() == null || !existingExpense.getRecordedBy().getId().equals(currentUser.getId())) {
                 ra.addFlashAttribute("error", "You can only edit your own expenses");
                 return "redirect:/staff/expenses";
             }
             
-            // Validate
-            if (expenseDTO.getAmount() <= 0) {
+            if (expenseDTO.getAmount() == null || expenseDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
                 ra.addFlashAttribute("error", "Amount must be greater than zero");
                 return "redirect:/staff/expenses/" + id + "/edit";
             }
             
-            // Update expense
             existingExpense.setAmount(expenseDTO.getAmount());
             existingExpense.setCategory(expenseDTO.getCategory());
             existingExpense.setDescription(expenseDTO.getDescription());
@@ -369,7 +358,7 @@ public class StaffExpenseController {
             expenditureRepository.save(existingExpense);
             
             auditService.logEntity(currentUser.getUsername(), "expenditures", existingExpense.getId(), "UPDATE",
-                String.valueOf(existingExpense.getAmount()), String.valueOf(existingExpense.getAmount()));
+                existingExpense.getAmount().toString(), existingExpense.getAmount().toString());
             
             ra.addFlashAttribute("success", "Expense updated successfully");
             
@@ -384,11 +373,12 @@ public class StaffExpenseController {
     public String deleteExpense(@PathVariable Long id, RedirectAttributes ra) {
         try {
             User currentUser = securityService.getCurrentUser();
+            
+            Objects.requireNonNull(id, "Expense ID must not be null");
             Expenditure expense = expenditureRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
             
-            // Check ownership
-            if (!expense.getRecordedBy().getId().equals(currentUser.getId())) {
+            if (expense.getRecordedBy() == null || !expense.getRecordedBy().getId().equals(currentUser.getId())) {
                 ra.addFlashAttribute("error", "You can only delete your own expenses");
                 return "redirect:/staff/expenses";
             }
@@ -396,7 +386,7 @@ public class StaffExpenseController {
             expenditureRepository.delete(expense);
             
             auditService.logEntity(currentUser.getUsername(), "expenditures", expense.getId(), "DELETE",
-                String.valueOf(expense.getAmount()), "0");
+                expense.getAmount().toString(), "0");
             
             ra.addFlashAttribute("success", "Expense deleted successfully");
             
@@ -406,5 +396,4 @@ public class StaffExpenseController {
         
         return "redirect:/staff/expenses";
     }
-
 }

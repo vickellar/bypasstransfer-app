@@ -1,11 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,33 +16,43 @@ public class TransactionAnalysisService {
     @Autowired
     private TransactionRepository repo;
 
-    public double totalVolume() {
+    public BigDecimal totalVolume() {
         return repo.findAll()
                    .stream()
-                   .mapToDouble(Transaction::getAmount)
-                   .sum();
+                   .map(Transaction::getAmount)
+                   .reduce(BigDecimal.ZERO, BigDecimal::add)
+                   .setScale(2, RoundingMode.HALF_UP);
     }
 
-    public double totalFees() {
+    public BigDecimal totalFees() {
         return repo.findAll()
                    .stream()
-                   .mapToDouble(Transaction::getFee)
-                   .sum();
+                   .map(Transaction::getFee)
+                   .reduce(BigDecimal.ZERO, BigDecimal::add)
+                   .setScale(2, RoundingMode.HALF_UP);
     }
 
-    public Map<String, Double> volumePerAccount() {
-        Map<String, Double> map = new HashMap<>();
-
+    public Map<String, BigDecimal> volumePerAccount() {
+        Map<String, BigDecimal> map = new HashMap<>();
         for (Object[] row : repo.volumeByAccount()) {
-            map.put((String) row[0], (Double) row[1]);
+            if (row == null || row.length < 2) continue;
+            String name = (String) row[0];
+            Object valObj = row[1];
+            BigDecimal value = BigDecimal.ZERO;
+            if (valObj instanceof BigDecimal) {
+                value = (BigDecimal) valObj;
+            } else if (valObj instanceof Number) {
+                value = new BigDecimal(valObj.toString());
+            }
+            map.put(name, value.setScale(2, RoundingMode.HALF_UP));
         }
         return map;
     }
-    public List<Transaction> suspiciousTransactions(double threshold) {
-    return repo.findAll()
-        .stream()
-        .filter(t -> t.getAmount() > threshold)
-        .toList();
-}
 
+    public List<Transaction> suspiciousTransactions(BigDecimal threshold) {
+        return repo.findAll()
+            .stream()
+            .filter(t -> t.getAmount().compareTo(threshold) > 0)
+            .toList();
+    }
 }

@@ -4,16 +4,13 @@ import com.bypass.bypasstransers.dto.TransactionSummary;
 import com.bypass.bypasstransers.dto.UserTransactionSummary;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
-import com.bypass.bypasstransers.repository.AccountRepository;
-import com.bypass.bypasstransers.repository.DailyReconciliationRepository;
-import com.bypass.bypasstransers.repository.TransactionRepository;
-import com.bypass.bypasstransers.service.AlertService;
 import com.bypass.bypasstransers.service.ExchangeRateService;
 import com.bypass.bypasstransers.service.ReconsiliationService;
 import com.bypass.bypasstransers.service.SecurityService;
 import com.bypass.bypasstransers.service.TransactionService;
 import com.bypass.bypasstransers.service.WalletService;
 import com.bypass.bypasstransers.service.WalletTransactionService;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,26 +23,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+/**
+ * Controller for main user accounts and dashboard
+ */
 @Controller
 public class AccountController {
-
-    @Autowired
-    private AccountRepository accountRepo;
-
-    @Autowired
-    private TransactionRepository txRepo;
 
     @Autowired
     private TransactionService service;
 
     @Autowired
     private ReconsiliationService reconService;
-
-    @Autowired
-    private DailyReconciliationRepository dailyRepo;
-
-    @Autowired
-    private AlertService alertService;
 
     @Autowired
     private SecurityService securityService;
@@ -59,23 +47,13 @@ public class AccountController {
     @Autowired
     private ExchangeRateService exchangeRateService;
 
-    /**
-     * Main dashboard - routes to appropriate view based on user role
-     * 
-     * @param model
-     * @return
-     */
     @GetMapping("/app")
     public String dashboard(Model model) {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             return "redirect:/login";
         }
-
-        // Add exchange rates to the model for all dashboards
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
-
-        // Route to appropriate dashboard based on role
         if (securityService.isSupervisorOrAbove()) {
             return supervisorDashboard(model);
         } else {
@@ -83,78 +61,50 @@ public class AccountController {
         }
     }
 
-    /**
-     * Staff dashboard - shows only their own data
-     * 
-     * @param model
-     * @return
-     */
     @GetMapping("/app/staff")
     public String staffDashboard(Model model) {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             return "redirect:/login";
         }
-
-        // Get staff-specific data
         List<Wallet> wallets = walletService.getCurrentUserWallets();
-        Double totalBalance = walletService.getCurrentUserTotalBalance();
+        BigDecimal totalBalance = walletService.getCurrentUserTotalBalance();
         long walletCount = walletService.countCurrentUserWallets();
         TransactionSummary txSummary = service.getCurrentUserSummary();
 
         model.addAttribute("user", currentUser);
         model.addAttribute("wallets", wallets);
-        model.addAttribute("totalBalance", totalBalance);
+        model.addAttribute("totalBalance", totalBalance.doubleValue());
         model.addAttribute("walletCount", walletCount);
         model.addAttribute("txSummary", txSummary);
-
-        // Add exchange rates to the model
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
-
         return "staff-dashboard";
     }
 
-    /**
-     * Supervisor/Admin dashboard - shows company overview
-     * 
-     * @param model
-     * @return
-     */
     @GetMapping("/app/supervisor")
     public String supervisorDashboard(Model model) {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             return "redirect:/login";
         }
-
-        // Ensure only supervisors and above
         if (!securityService.isSupervisorOrAbove()) {
             return "redirect:/app";
         }
-
-        // Get company-wide data
         List<Wallet> allWallets = walletService.getAllWallets();
-        Double companyBalance = walletService.getCompanyTotalBalance();
+        BigDecimal companyBalance = walletService.getCompanyTotalBalance();
         List<UserTransactionSummary> userSummaries = service.getCompanyTransactionSummary();
 
         model.addAttribute("user", currentUser);
         model.addAttribute("allWallets", allWallets);
-        model.addAttribute("companyBalance", companyBalance);
+        model.addAttribute("companyBalance", companyBalance.doubleValue());
         model.addAttribute("userSummaries", userSummaries);
         model.addAttribute("isSupervisor", securityService.isSupervisorOrAbove());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
-
-        // Add exchange rates to the model
         model.addAttribute("exchangeRates", exchangeRateService.getAllRates());
-
-        // Add pending reconciliation count for notification badge
-        long pendingReconCount = reconService.countPendingAndFlagged();
-        model.addAttribute("pendingReconCount", pendingReconCount);
-
+        model.addAttribute("pendingReconCount", reconService.countPendingAndFlagged());
         return "supervisor-dashboard";
     }
 
-    // Explicit dashboard mapping used as post-login landing to avoid redirect loops
     @GetMapping("/dashboard")
     public String dashboardAlias(Model model) {
         return dashboard(model);
@@ -162,7 +112,7 @@ public class AccountController {
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/receive")
-    public String receive(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
+    public String receive(@RequestParam String account, @RequestParam BigDecimal amount, RedirectAttributes ra) {
         try {
             walletTransactionService.receive(account, amount);
             ra.addFlashAttribute("success", "Received $" + amount + " into " + account);
@@ -174,11 +124,12 @@ public class AccountController {
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/send")
-    public String send(@RequestParam String account, @RequestParam double amount, RedirectAttributes ra) {
+    public String send(@RequestParam String account, @RequestParam BigDecimal amount, RedirectAttributes ra) {
         try {
             walletTransactionService.send(account, amount);
             ra.addFlashAttribute("success", "Sent $" + amount + " from " + account);
         } catch (Exception ex) {
+            ex.printStackTrace(); // <-- Added to see exact JPA transaction error
             ra.addFlashAttribute("error", "Failed to send: " + ex.getMessage());
         }
         return "redirect:/app";
@@ -186,7 +137,7 @@ public class AccountController {
 
     @PreAuthorize("hasAnyRole('STAFF','SUPERVISOR','ADMIN','SUPER_ADMIN')")
     @PostMapping("/transfer")
-    public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam double amount,
+    public String transfer(@RequestParam String from, @RequestParam String to, @RequestParam BigDecimal amount,
             RedirectAttributes ra) {
         try {
             walletTransactionService.transfer(from, to, amount);
@@ -197,12 +148,11 @@ public class AccountController {
         return "redirect:/app";
     }
 
-    // Handle reconciliation form POST from the dashboard
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','SUPERVISOR')")
     @PostMapping("/reconcile")
     public String reconcile(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam double actualBalance,
+            @RequestParam BigDecimal actualBalance,
             RedirectAttributes redirectAttributes) {
         LocalDate d = date != null ? date : LocalDate.now();
         try {

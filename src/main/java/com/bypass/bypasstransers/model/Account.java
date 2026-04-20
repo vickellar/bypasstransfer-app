@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Entity
 public class Account {
@@ -39,15 +38,16 @@ public class Account {
 
     @ManyToOne
     private User owner;
-    
+
     @Column(name = "low_balance_threshold", precision = 19, scale = 4)
     private BigDecimal lowBalanceThreshold = new BigDecimal("50"); // default
-    
+
     @Column(name = "low_balance_alert_sent", nullable = false, columnDefinition = "boolean default false")
     private boolean lowBalanceAlertSent = false; // default
 
     @Version
     private Long version;
+
 
     // getters & setters
 

@@ -2,138 +2,68 @@
   "properties": [
     {
       "name": "spring.security.debug",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.security.debug'"
+      "type": "java.lang.Boolean",
+      "description": "Enables Spring Security debug mode."
     },
     {
       "name": "spring.flyway.enabled",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.enabled'"
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable Flyway."
     },
     {
       "name": "spring.flyway.locations",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.locations'"
+      "type": "java.util.List<java.lang.String>",
+      "description": "Locations of migrations scripts."
     },
     {
       "name": "spring.jpa.hibernate.globally_quoted_identifiers",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.jpa.hibernate.globally_quoted_identifiers'"
+      "type": "java.lang.Boolean",
+      "description": "Whether to use quoted identifiers in the generated SQL."
     },
     {
       "name": "spring.task.scheduling.enabled",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.task.scheduling.enabled'"
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable task scheduling."
     },
     {
       "name": "exchange.rate.api.key",
       "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.api.key'"
+      "description": "API Key for the exchange rate service."
     },
     {
       "name": "exchange.rate.api.url",
       "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.api.url'"
+      "description": "Base URL for the exchange rate API."
     },
     {
       "name": "exchange.rate.update.cron",
       "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.update.cron'"
+      "description": "Cron expression for scheduled rate updates."
     },
     {
       "name": "server.tomcat.min-spare-threads",
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.min-spare-threads'"
+      "type": "java.lang.Integer",
+      "description": "Minimum spare threads for Tomcat."
     },
     {
       "name": "server.tomcat.max-threads",
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.max-threads'"
+      "type": "java.lang.Integer",
+      "description": "Maximum threads for Tomcat."
     },
     {
       "name": "spring.flyway.baseline-on-migrate",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.baseline-on-migrate'"
+      "type": "java.lang.Boolean",
+      "description": "Whether to automatically baseline when a non-empty schema is found."
     },
     {
       "name": "spring.thymeleaf.servlet.max-chunk-size",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.thymeleaf.servlet.max-chunk-size'"
+      "type": "java.lang.Integer",
+      "description": "Maximum size in bytes of each chunk in the response buffer."
     },
     {
+      "name": "app.security.debug-enabled",
       "type": "java.lang.String",
-      "description": "A description for 'spring.thymeleaf.servlet.max-chunk-size'"
-    },
-    {
-      "name": "server.tomcat.max-threads",
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.max-threads'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.max-threads'"
-    },
-    {
-      "name": "exchange.rate.api.key",
-      "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.api.key'"
-    },
-    {
-      "name": "spring.jpa.hibernate.globally_quoted_identifiers",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.jpa.hibernate.globally_quoted_identifiers'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.baseline-on-migrate'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.locations'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.enabled'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.max-threads'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.min-spare-threads'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'spring.security.debug'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.update.cron'"
-    },
-    {
-      "type": "java.lang.String",
-      "description": "A description for 'exchange.rate.api.url'"
-    },
-    {
-      "name": "server.tomcat.max-threads",
-      "type": "java.lang.String",
-      "description": "A description for 'server.tomcat.max-threads'"
-    },
-    {
-      "name": "spring.jpa.hibernate.globally_quoted_identifiers",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.jpa.hibernate.globally_quoted_identifiers'"
-    },
-    {
-      "name": "spring.flyway.enabled",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.flyway.enabled'"
-    },
-    {
-      "name": "spring.security.debug",
-      "type": "java.lang.String",
-      "description": "A description for 'spring.security.debug'"
+      "description": "A description for 'app.security.debug-enabled'"
     }
   ]
 }

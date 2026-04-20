@@ -7,7 +7,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 
+/**
+ * Repository for matching incoming RUB transactions with outgoing USD transactions.
+ */
 public interface TransactionMatchRepository extends JpaRepository<TransactionMatch, Long> {
 
     /** Check if a transaction is already part of any match (as incoming or outgoing). */
@@ -15,7 +19,9 @@ public interface TransactionMatchRepository extends JpaRepository<TransactionMat
             Transaction incoming, Transaction outgoing);
 
     /** Find all matches in sort order. */
-    List<TransactionMatch> findAll(Sort sort);
+    @Override
+    @NonNull
+    List<TransactionMatch> findAll(@NonNull Sort sort);
 
     /** Find matches where a specific transaction is the incoming side. */
     List<TransactionMatch> findByIncomingTransaction(Transaction incoming);

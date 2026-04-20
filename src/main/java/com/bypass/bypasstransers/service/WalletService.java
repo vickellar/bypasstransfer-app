@@ -3,6 +3,7 @@ package com.bypass.bypasstransers.service;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -94,13 +95,13 @@ public class WalletService {
     /**
      * Get total balance for current user
      */
-    public Double getCurrentUserTotalBalance() {
+    public BigDecimal getCurrentUserTotalBalance() {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
             throw new AccessDeniedException("Not authenticated");
         }
 
-        Double total;
+        BigDecimal total;
         if (securityService.isStaffOnly()) {
             Long branchId = currentUser.getBranch() != null ? currentUser.getBranch().getId() : null;
             if (branchId != null) {
@@ -109,24 +110,22 @@ public class WalletService {
                 total = walletRepository.getTotalBalanceByOwnerId(currentUser.getId());
             }
         } else {
-            // Supervisors and above see company total balance anyway in their specific method, 
-            // but for this generic method we'll give them their own wallets total.
             total = walletRepository.getTotalBalanceByOwnerId(currentUser.getId());
         }
-        return total != null ? total : 0.0;
+        return total != null ? total : BigDecimal.ZERO;
     }
 
     /**
      * Get total balance for all users - only for supervisors
      */
-    public Double getCompanyTotalBalance() {
+    public BigDecimal getCompanyTotalBalance() {
         if (!securityService.isSupervisorOrAbove()) {
             throw new AccessDeniedException("Insufficient privileges");
         }
 
         return walletRepository.findAll().stream()
-                .mapToDouble(Wallet::getBalance)
-                .sum();
+                .map(Wallet::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**

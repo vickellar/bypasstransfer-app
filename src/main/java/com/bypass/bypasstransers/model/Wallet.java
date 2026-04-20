@@ -10,10 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,7 +35,7 @@ public class Wallet {
 
     @Column(name = "locked", nullable = false, columnDefinition = "boolean default false")
     private boolean locked = false;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -51,6 +50,8 @@ public class Wallet {
 
     @Version
     private Long version;
+
+
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -110,17 +111,20 @@ public class Wallet {
 
     // debit reduces balance; throws if insufficient
     public void debit(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("amount must be positive");
-        if (this.balance.compareTo(amount) < 0) throw new IllegalArgumentException("insufficient wallet balance");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("amount must be positive");
+        if (this.balance.compareTo(amount) < 0)
+            throw new IllegalArgumentException("insufficient wallet balance");
         this.balance = this.balance.subtract(amount);
     }
 
     // credit increases balance
     public void credit(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("amount must be positive");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("amount must be positive");
         this.balance = this.balance.add(amount);
     }
-    
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

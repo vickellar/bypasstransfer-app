@@ -10,7 +10,6 @@ import com.bypass.bypasstransers.service.EmailService;
 import com.bypass.bypasstransers.service.ExchangeRateService;
 import com.bypass.bypasstransers.service.PasswordResetService;
 import com.bypass.bypasstransers.service.SmsService;
-import com.bypass.bypasstransers.service.UserProvisioningService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Controller for public access routes like home, about, registration, and contact.
+ */
 @Controller
 public class PublicController {
 
@@ -35,7 +37,6 @@ public class PublicController {
     private final EmailService emailService;
     private final SmsService smsService;
     private final ExchangeRateService exchangeRateService;
-    private final UserProvisioningService userProvisioningService;
 
     public PublicController(UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -44,8 +45,7 @@ public class PublicController {
             EmailVerificationService emailVerificationService,
             EmailService emailService,
             SmsService smsService,
-            ExchangeRateService exchangeRateService,
-            UserProvisioningService userProvisioningService) {
+            ExchangeRateService exchangeRateService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetService = passwordResetService;
@@ -54,7 +54,6 @@ public class PublicController {
         this.emailService = emailService;
         this.smsService = smsService;
         this.exchangeRateService = exchangeRateService;
-        this.userProvisioningService = userProvisioningService;
     }
 
     @GetMapping("/")
@@ -136,8 +135,7 @@ public class PublicController {
             }
         }
 
-        // Send email verification token (if email present) so users can verify their
-        // address
+        // Send email verification token (if email present) so users can verify their address
         try {
             emailVerificationService.createTokenForUser(u);
         } catch (Exception e) {

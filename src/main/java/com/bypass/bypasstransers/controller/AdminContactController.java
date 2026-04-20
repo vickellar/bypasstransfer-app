@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Objects;
+
+/**
+ * Controller for managing contact messages from the admin console.
+ */
 @Controller
 @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
 public class AdminContactController {
@@ -26,8 +31,9 @@ public class AdminContactController {
     }
 
     @PostMapping("/admin/contact-messages/delete")
-    public String deleteMessage(@RequestParam Long id, RedirectAttributes ra) {
+    public String deleteMessage(@RequestParam(required = true) Long id, RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "Message ID must not be null");
             contactRepo.deleteById(id);
             ra.addFlashAttribute("success", "Message deleted");
         } catch (Exception ex) {

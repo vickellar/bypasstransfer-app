@@ -15,6 +15,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @SpringBootApplication
@@ -90,9 +91,9 @@ public class BypasstransersApplication {
             try {
                 long count = accountRepo.count();
                 if (count == 0) {
-                    accountRepo.save(new Account(null, "Econet", 0.0, 0.033));
-                    accountRepo.save(new Account(null, "InnBucks", 0.0, 0.02));
-                    accountRepo.save(new Account(null, "Mukuru", 0.0, 0.015));
+                    accountRepo.save(new Account(null, "Econet", BigDecimal.ZERO, new BigDecimal("0.033")));
+                    accountRepo.save(new Account(null, "InnBucks", BigDecimal.ZERO, new BigDecimal("0.02")));
+                    accountRepo.save(new Account(null, "Mukuru", BigDecimal.ZERO, new BigDecimal("0.015")));
                     log.info("Seeded default accounts");
                 }
 

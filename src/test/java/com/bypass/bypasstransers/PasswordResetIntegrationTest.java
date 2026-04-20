@@ -2,10 +2,8 @@ package com.bypass.bypasstransers;
 
 import com.bypass.bypasstransers.model.PasswordResetToken;
 import com.bypass.bypasstransers.model.User;
-import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
-import com.bypass.bypasstransers.repository.WalletRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,9 +33,6 @@ public class PasswordResetIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private WalletRepository walletRepository;
-
-    @Autowired
     private PasswordResetTokenRepository tokenRepository;
 
     @Autowired
@@ -47,7 +42,7 @@ public class PasswordResetIntegrationTest {
     public void setUp() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     }
-    
+
     @Test
     public void testForgotPasswordAndResetFlow() throws Exception {
         // Use unique username to avoid conflicts
@@ -91,6 +86,7 @@ public class PasswordResetIntegrationTest {
         List<User> users = userRepository.findByUsername(username);
         Assertions.assertFalse(users.isEmpty(), "User should exist");
         User updated = users.get(0);
-        Assertions.assertTrue(passwordEncoder.matches(newPass, updated.getPassword()), "Password should be updated to the new value");
+        Assertions.assertTrue(passwordEncoder.matches(newPass, updated.getPassword()),
+                "Password should be updated to the new value");
     }
 }

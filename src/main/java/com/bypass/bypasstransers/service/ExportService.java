@@ -43,8 +43,10 @@ public class ExportService {
                 r.createCell(1).setCellValue(tx.getType() != null ? tx.getType().name() : "");
                 r.createCell(2).setCellValue(tx.getFromAccount() != null ? tx.getFromAccount() : "");
                 r.createCell(3).setCellValue(tx.getToAccount() != null ? tx.getToAccount() : "");
-                r.createCell(4).setCellValue(tx.getAmount());
-                r.createCell(5).setCellValue(tx.getFee());
+                
+                // Convert BigDecimal to double for Excel cell compatibility
+                r.createCell(4).setCellValue(tx.getAmount() != null ? tx.getAmount().doubleValue() : 0.0);
+                r.createCell(5).setCellValue(tx.getFee() != null ? tx.getFee().doubleValue() : 0.0);
             }
 
             wb.write(response.getOutputStream());

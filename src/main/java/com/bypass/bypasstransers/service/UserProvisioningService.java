@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class UserProvisioningService {
                 wallet.setOwner(user);
                 wallet.setAccountType(type);
                 wallet.setCurrency(targetCurrency);
-                wallet.setBalance(0.0);
+                wallet.setBalance(BigDecimal.ZERO);
                 wallet.setLocked(false);
                 walletRepository.save(wallet);
                 System.out.println("[WALLET CREATION] Created wallet " + type + " (" + targetCurrency + ") for user " + user.getUsername());

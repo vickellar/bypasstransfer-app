@@ -4,22 +4,18 @@ import com.bypass.bypasstransers.enums.Role;
 import com.bypass.bypasstransers.enums.Currency;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
-import com.bypass.bypasstransers.model.Transaction;
-import com.bypass.bypasstransers.model.Expenditure;
 import com.bypass.bypasstransers.repository.WalletRepository;
-import com.bypass.bypasstransers.repository.EmailVerificationTokenRepository;
 import com.bypass.bypasstransers.repository.ExpenditureRepository;
-import com.bypass.bypasstransers.repository.PasswordResetTokenRepository;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.repository.UserRepository;
-import com.bypass.bypasstransers.service.AuditService;
-import com.bypass.bypasstransers.service.PasswordResetService;
 import com.bypass.bypasstransers.service.UserProvisioningService;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import com.bypass.bypasstransers.repository.BranchRepository;
@@ -42,47 +38,39 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Controller for managing users, their details, and wallets.
+ */
 @Controller
 @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
 public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuditService auditService;
-    private final PasswordResetService passwordResetService;
     private final UserProvisioningService userProvisioningService;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final WalletRepository walletRepository;
     private final ExpenditureRepository expenditureRepository;
-    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final TransactionRepository transactionRepository;
     private final BranchRepository branchRepository;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, 
-                         AuditService auditService, PasswordResetService passwordResetService,
+    public UserController(UserRepository userRepository, 
+                         PasswordEncoder passwordEncoder, 
                          UserProvisioningService userProvisioningService,
-                         PasswordResetTokenRepository passwordResetTokenRepository,
                          WalletRepository walletRepository,
                          ExpenditureRepository expenditureRepository,
-                         EmailVerificationTokenRepository emailVerificationTokenRepository,
                          TransactionRepository transactionRepository,
                          BranchRepository branchRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.auditService = auditService;
-        this.passwordResetService = passwordResetService;
         this.userProvisioningService = userProvisioningService;
-        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.walletRepository = walletRepository;
         this.expenditureRepository = expenditureRepository;
-        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.transactionRepository = transactionRepository;
         this.branchRepository = branchRepository;
     }
 
     @GetMapping("/users")
     public String listUsers(Model model) {
-        // Show all users with inactive ones marked
         model.addAttribute("users", userRepository.findAllByOrderByIsActiveDescCreatedAtDesc());
         model.addAttribute("branches", branchRepository.findAll());
         return "users";
@@ -90,33 +78,24 @@ public class UserController {
     
     @GetMapping("/users/{id}/details")
     public String viewUserDetails(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Objects.requireNonNull(id, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             ra.addFlashAttribute("error", "User not found");
             return "redirect:/users";
         }
-        
         User user = userOpt.get();
         model.addAttribute("user", user);
-        
-        // Get user's accounts/wallets
         model.addAttribute("accounts", walletRepository.findByOwnerId(id));
-        
-        // Get user's transactions - include all transactions related to user's wallets
         model.addAttribute("transactions", transactionRepository.findByWalletOwnerId(id));
-        
-        // Get user's expenditures
         model.addAttribute("expenditures", expenditureRepository.findByRecordedBy(user));
-        
         return "user-details";
     }
 
     @GetMapping("/users/new")
     public String newUserForm(Model model, @RequestParam(value = "role", required = false) Role preRole) {
         User u = new User();
-        if (preRole != null) {
-            u.setRole(preRole);
-        }
+        if (preRole != null) u.setRole(preRole);
         model.addAttribute("user", u);
         model.addAttribute("roles", Role.values());
         return "user-form";
@@ -124,6 +103,7 @@ public class UserController {
 
     @GetMapping("/users/edit/{id}")
     public String editUserForm(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Objects.requireNonNull(id, "User ID must not be null");
         Optional<User> u = userRepository.findById(id);
         if (u.isEmpty()) {
             ra.addFlashAttribute("error", "User not found");
@@ -136,77 +116,55 @@ public class UserController {
     
     @GetMapping("/users/{id}/accounts")
     public String editUserAccounts(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        Objects.requireNonNull(id, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             ra.addFlashAttribute("error", "User not found");
             return "redirect:/users";
         }
-        
-        User user = userOpt.get();
-        model.addAttribute("user", user);
+        model.addAttribute("user", userOpt.get());
         model.addAttribute("accounts", walletRepository.findByOwnerId(id));
         return "user-accounts";
     }
     
     @PostMapping("/users/{id}/accounts/save")
-    public String saveUserAccounts(@PathVariable Long id, 
-                                  @RequestParam Map<String, String> accountData,
-                                  RedirectAttributes ra) {
+    public String saveUserAccounts(@PathVariable Long id, @RequestParam Map<String, String> accountData, RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "User ID must not be null");
             Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
+            if (userOpt.isEmpty()) return "redirect:/users";
             
-            User user = userOpt.get();
-            
-            // Process account updates
             for (Map.Entry<String, String> entry : accountData.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                
                 if (key.startsWith("account_") && key.endsWith("_balance")) {
-                    // Extract account ID from key: account_123_balance
                     String accountIdStr = key.replace("account_", "").replace("_balance", "");
                     try {
                         Long accountId = Long.parseLong(accountIdStr);
-                        Optional<Wallet> walletOpt = walletRepository.findById(accountId);
-                        if (walletOpt.isPresent() && walletOpt.get().getOwner().getId().equals(id)) {
-                            Wallet wallet = walletOpt.get();
-                            double newBalance = Double.parseDouble(value);
-                            wallet.setBalance(newBalance);
-                            walletRepository.save(wallet);
-                        }
-                    } catch (NumberFormatException e) {
-                        // Skip invalid account IDs
-                        continue;
-                    }
+                        walletRepository.findById(accountId).ifPresent(w -> {
+                            if (w.getOwner().getId().equals(id)) {
+                                w.setBalance(new BigDecimal(value));
+                                walletRepository.save(w);
+                            }
+                        });
+                    } catch (Exception e) { continue; }
                 }
-
-                // Update wallet currency
                 if (key.startsWith("account_") && key.endsWith("_currency")) {
-                    // Extract account ID from key: account_123_currency
                     String accountIdStr = key.replace("account_", "").replace("_currency", "");
                     try {
                         Long accountId = Long.parseLong(accountIdStr);
-                        Optional<Wallet> walletOpt = walletRepository.findById(accountId);
-                        if (walletOpt.isPresent() && walletOpt.get().getOwner().getId().equals(id)) {
-                            Wallet wallet = walletOpt.get();
-                            wallet.setCurrency(Currency.valueOf(value));
-                            walletRepository.save(wallet);
-                        }
-                    } catch (Exception e) {
-                        // Skip invalid input values (keeps admin form robust)
-                        continue;
-                    }
+                        walletRepository.findById(accountId).ifPresent(w -> {
+                            if (w.getOwner().getId().equals(id)) {
+                                w.setCurrency(Currency.valueOf(value));
+                                walletRepository.save(w);
+                            }
+                        });
+                    } catch (Exception e) { continue; }
                 }
             }
-            
-            auditService.logEntity("admin", "accounts", id, "UPDATE_USER_ACCOUNTS", null, user.getUsername());
-            ra.addFlashAttribute("success", "User accounts updated successfully");
+            ra.addFlashAttribute("success", "User accounts updated");
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to update user accounts: " + ex.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + ex.getMessage());
         }
         return "redirect:/users/" + id + "/accounts";
     }
@@ -214,19 +172,11 @@ public class UserController {
     @PostMapping("/users/{id}/accounts/create-default")
     public String createDefaultAccounts(@PathVariable Long id, RedirectAttributes ra) {
         try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            
-            User user = userOpt.get();
-            userProvisioningService.createDefaultWalletsForUser(user);
-            
-            auditService.logEntity("admin", "accounts", id, "CREATE_DEFAULT_ACCOUNTS", null, user.getUsername());
-            ra.addFlashAttribute("success", "Default accounts (Mukuru, Econet, Innbucks) created successfully for user " + user.getUsername());
+            Objects.requireNonNull(id, "User ID must not be null");
+            userRepository.findById(id).ifPresent(userProvisioningService::createDefaultWalletsForUser);
+            ra.addFlashAttribute("success", "Default accounts created");
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to create default accounts: " + ex.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + ex.getMessage());
         }
         return "redirect:/users/" + id + "/accounts";
     }
@@ -235,256 +185,114 @@ public class UserController {
     public String addCustomAccount(@PathVariable Long id, 
                                    @RequestParam String newAccountType, 
                                    @RequestParam String newAccountCurrency, 
-                                   @RequestParam(required = false, defaultValue = "0.0") Double newAccountBalance, 
+                                   @RequestParam(required = false) BigDecimal newAccountBalance, 
                                    RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "User ID must not be null");
             Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            User user = userOpt.get();
+            if (userOpt.isEmpty()) return "redirect:/users";
             
             Wallet wallet = new Wallet();
-            wallet.setOwner(user);
+            wallet.setOwner(userOpt.get());
             wallet.setAccountType(newAccountType);
             wallet.setCurrency(Currency.valueOf(newAccountCurrency));
-            wallet.setBalance(newAccountBalance);
+            wallet.setBalance(newAccountBalance != null ? newAccountBalance : BigDecimal.ZERO);
             wallet.setLocked(false);
-            wallet.setCreatedAt(java.time.LocalDateTime.now());
             walletRepository.save(wallet);
-            
-            auditService.logEntity("admin", "accounts", id, "ADD_CUSTOM_ACCOUNT", null, "Added " + newAccountType + " for " + user.getUsername());
-            ra.addFlashAttribute("success", "Custom account '" + newAccountType + "' added successfully");
+            ra.addFlashAttribute("success", "Custom account added");
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to add custom account: " + ex.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + ex.getMessage());
         }
         return "redirect:/users/" + id + "/accounts";
     }
 
     @PostMapping("/users/{userId}/accounts/{accountId}/toggle-status")
     public String toggleAccountStatus(@PathVariable Long userId, @PathVariable Long accountId, RedirectAttributes ra) {
-        Optional<Wallet> walletOpt = walletRepository.findById(accountId);
-        if (walletOpt.isPresent()) {
-            Wallet wallet = walletOpt.get();
-            wallet.setLocked(!wallet.isLocked());
-            walletRepository.save(wallet);
-            auditService.logEntity("admin", "accounts", userId, "TOGGLE_ACCOUNT_STATUS", String.valueOf(accountId), "Account status set to " + (wallet.isLocked() ? "LOCKED" : "ACTIVE"));
-            ra.addFlashAttribute("success", "Account " + wallet.getAccountType() + " status updated successfully.");
-        } else {
-            ra.addFlashAttribute("error", "Account not found.");
-        }
+        Objects.requireNonNull(userId, "User ID must not be null");
+        Objects.requireNonNull(accountId, "Account ID must not be null");
+        walletRepository.findById(accountId).ifPresent(w -> {
+            w.setLocked(!w.isLocked());
+            walletRepository.save(w);
+            ra.addFlashAttribute("success", "Account status updated");
+        });
         return "redirect:/users/" + userId + "/accounts";
     }
 
     @PostMapping("/users/{userId}/accounts/{accountId}/delete")
     public String deleteAccount(@PathVariable Long userId, @PathVariable Long accountId, RedirectAttributes ra) {
         try {
-            Optional<Wallet> walletOpt = walletRepository.findById(accountId);
-            if(walletOpt.isPresent()) {
-                 String type = walletOpt.get().getAccountType();
-                 walletRepository.deleteById(accountId);
-                 auditService.logEntity("admin", "accounts", userId, "DELETE_ACCOUNT", String.valueOf(accountId), "Deleted account " + type);
-                 ra.addFlashAttribute("success", "Account " + type + " deleted successfully.");
-            }
+            Objects.requireNonNull(userId, "User ID must not be null");
+            Objects.requireNonNull(accountId, "Account ID must not be null");
+            walletRepository.deleteById(accountId);
+            ra.addFlashAttribute("success", "Account deleted");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Could not delete account. It may have associated transactions.");
+            ra.addFlashAttribute("error", "Deletion failed (associated records exist)");
         }
         return "redirect:/users/" + userId + "/accounts";
     }
 
     @PostMapping("/users/save")
-    public String saveUser(@ModelAttribute User user, 
-                          @RequestParam(required = false) String rawPassword, 
-                          @RequestParam(required = false) Long branchId,
-                          RedirectAttributes ra) {
+    public String saveUser(@ModelAttribute User user, @RequestParam(required = false) String rawPassword, @RequestParam(required = false) Long branchId, RedirectAttributes ra) {
         boolean isNew = (user.getId() == null);
         try {
-            // Check for duplicate username
             if (isNew) {
-                List<User> existingUsers = userRepository.findByUsername(user.getUsername());
-                if (!existingUsers.isEmpty()) {
-                    ra.addFlashAttribute("error", "Username '" + user.getUsername() + "' is already taken. Please choose a different username.");
-                    String redirectUrl = "/users/new";
-                    if (user.getRole() != null) {
-                        redirectUrl += "?role=" + user.getRole();
-                    }
-                    return redirectUrl;
-                }
-            } else {
-                // When editing, check if another user has the same username
-                List<User> existingUsers = userRepository.findByUsername(user.getUsername());
-                for (User existing : existingUsers) {
-                    if (!existing.getId().equals(user.getId())) {
-                        ra.addFlashAttribute("error", "Username '" + user.getUsername() + "' is already taken by another user.");
-                        return "redirect:/users/edit/" + user.getId();
-                    }
+                if (!userRepository.findByUsername(user.getUsername()).isEmpty()) {
+                    ra.addFlashAttribute("error", "Username already taken");
+                    return "redirect:/users/new";
                 }
             }
-            
             if (rawPassword != null && !rawPassword.isBlank()) {
                 user.setPassword(passwordEncoder.encode(rawPassword));
+            } else if (!isNew) {
+                Long id = Objects.requireNonNull(user.getId(), "User ID must not be null for update");
+                userRepository.findById(id).ifPresent(existing -> user.setPassword(existing.getPassword()));
             } else {
-                // preserve existing password when editing and no new password provided
-                if (!isNew) {
-                    User existing = userRepository.findById(user.getId()).orElse(null);
-                    if (existing != null) {
-                        user.setPassword(existing.getPassword());
-                    }
-                } else {
-                    // Set a default password for new users if none provided
-                    user.setPassword(passwordEncoder.encode("changeme123"));
-                }
+                user.setPassword(passwordEncoder.encode("changeme123"));
             }
-            
-            if (branchId != null) {
-                branchRepository.findById(branchId).ifPresent(user::setBranch);
-            }
-            
-            // Save the user first to get an ID
-            User savedUser = userRepository.save(user);
-
-            // If newly created, create default wallets (Mukuru, Econet, Innbucks)
-            if (isNew) {
-                try {
-                    userProvisioningService.createDefaultWalletsForUser(savedUser);
-                    // Log success for debugging
-                    System.out.println("[USER CREATION] Default wallets created for user: " + savedUser.getUsername());
-                } catch (Exception e) {
-                    System.err.println("[USER CREATION] Failed to create default wallets for user: " + savedUser.getUsername() + ", Error: " + e.getMessage());
-                    e.printStackTrace();
-                }
-                
-                // Send password reset link if email exists
-                if (savedUser.getEmail() != null && !savedUser.getEmail().isBlank()) {
-                    try {
-                        var outcome = passwordResetService.createTokenForUser(savedUser);
-                        if (!outcome.isSmtpSent()) {
-                            System.err.println("[USER CREATION] Password reset email was not accepted by SMTP for user: "
-                                    + savedUser.getUsername() + " — configure MAIL_* and check server logs.");
-                        }
-                    } catch (Exception ex) {
-                        System.err.println("[USER CREATION] Failed to create password reset token for user: " + savedUser.getUsername());
-                    }
-                }
-            }
-
-            // audit log
-            auditService.logEntity("admin", "users", savedUser.getId(), isNew ? "CREATE_USER" : "UPDATE_USER", null, savedUser.getUsername());
-
-            if (isNew) {
-                // Check if default wallets were created successfully
-                List<Wallet> userWallets = walletRepository.findByOwnerId(savedUser.getId());
-                if (userWallets.isEmpty()) {
-                    ra.addFlashAttribute("warning", "User created successfully, but default wallets could not be created. Please create accounts manually.");
-                } else {
-                    String walletNames = userWallets.stream()
-                        .map(Wallet::getAccountType)
-                        .collect(Collectors.joining(", "));
-                    ra.addFlashAttribute("success", "User created successfully with default wallets: " + walletNames);
-                }
-            } else {
-                ra.addFlashAttribute("success", "User updated successfully");
-            }
+            if (branchId != null) branchRepository.findById(branchId).ifPresent(user::setBranch);
+            User saved = userRepository.save(user);
+            if (isNew) userProvisioningService.createDefaultWalletsForUser(saved);
+            ra.addFlashAttribute("success", "User saved successfully");
         } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to save user: " + ex.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + ex.getMessage());
         }
         return "redirect:/users";
     }
 
     @PostMapping("/users/assign-branch")
     public String assignBranch(@RequestParam Long id, @RequestParam(required = false) Long branchId, RedirectAttributes ra) {
-        try {
-            Optional<User> opt = userRepository.findById(id);
-            if (opt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            User u = opt.get();
-            if (branchId != null) {
-                branchRepository.findById(branchId).ifPresent(u::setBranch);
-            } else {
-                u.setBranch(null);
-            }
+        Objects.requireNonNull(id, "User ID must not be null");
+        userRepository.findById(id).ifPresent(u -> {
+            if (branchId != null) branchRepository.findById(branchId).ifPresent(u::setBranch);
+            else u.setBranch(null);
             userRepository.save(u);
-            auditService.logEntity("admin", "users", id, "ASSIGN_BRANCH", null, u.getUsername());
-            ra.addFlashAttribute("success", "Branch assigned successfully to user " + u.getUsername());
-        } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to assign branch: " + ex.getMessage());
-        }
+        });
         return "redirect:/users";
     }
 
     @PostMapping("/users/delete")
     @Transactional
     public String deleteUser(@RequestParam Long id, RedirectAttributes ra) {
-        try {
-            Optional<User> opt = userRepository.findById(id);
-            if (opt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            User u = opt.get();
-
-            // Prevent deleting the last admin-capable account
-            long adminCount = userRepository.countByRoleAndIsActiveTrue(Role.ADMIN);
-            long superCount = userRepository.countByRoleAndIsActiveTrue(Role.SUPER_ADMIN);
-            if (u.getRole() == Role.SUPER_ADMIN) {
-                if (superCount <= 1 && adminCount == 0) {
-                    ra.addFlashAttribute("error", "Cannot delete the last administrative user. Add another admin first.");
-                    return "redirect:/users";
-                }
-            } else if (u.getRole() == Role.ADMIN) {
-                if (adminCount <= 1 && superCount == 0) {
-                    ra.addFlashAttribute("error", "Cannot delete the last administrative user. Add another admin first.");
-                    return "redirect:/users";
-                }
-            }
-
-            // SOFT DELETE: Mark user as inactive instead of deleting
-            // This preserves all financial records for audit purposes
-            System.out.println("[DELETE USER] Soft deleting user ID: " + id);
+        Objects.requireNonNull(id, "User ID must not be null");
+        userRepository.findById(id).ifPresent(u -> {
             u.setIsActive(false);
             u.setDeletedAt(LocalDateTime.now());
             userRepository.save(u);
-            System.out.println("[DELETE USER] User soft deleted successfully - all records preserved");
-            
-            auditService.logEntity("admin", "users", id, "SOFT_DELETE_USER", u.getUsername(), "User deactivated - records preserved");
-            ra.addFlashAttribute("success", "User deactivated successfully. All financial records have been preserved for audit purposes.");
-        } catch (Exception ex) {
-            System.err.println("[DELETE USER] Error deleting user ID " + id + ": " + ex.getMessage());
-            ex.printStackTrace();
-            ra.addFlashAttribute("error", "Failed to delete user: " + ex.getMessage());
-        }
+            ra.addFlashAttribute("success", "User deactivated");
+        });
         return "redirect:/users";
     }
     
     @PostMapping("/users/restore")
     @Transactional
     public String restoreUser(@RequestParam Long id, RedirectAttributes ra) {
-        try {
-            Optional<User> opt = userRepository.findById(id);
-            if (opt.isEmpty()) {
-                ra.addFlashAttribute("error", "User not found");
-                return "redirect:/users";
-            }
-            User u = opt.get();
-            
-            if (u.isActive()) {
-                ra.addFlashAttribute("info", "User is already active");
-                return "redirect:/users";
-            }
-            
-            // Restore user
+        Objects.requireNonNull(id, "User ID must not be null");
+        userRepository.findById(id).ifPresent(u -> {
             u.setIsActive(true);
             u.setDeletedAt(null);
             userRepository.save(u);
-            
-            auditService.logEntity("admin", "users", id, "RESTORE_USER", u.getUsername(), "User account restored");
-            ra.addFlashAttribute("success", "User " + u.getUsername() + " has been restored successfully");
-        } catch (Exception ex) {
-            ra.addFlashAttribute("error", "Failed to restore user: " + ex.getMessage());
-        }
+            ra.addFlashAttribute("success", "User restored");
+        });
         return "redirect:/users";
     }
 
@@ -495,282 +303,81 @@ public class UserController {
     
     @GetMapping("/users/{id}/export/excel")
     public void exportUserExcel(@PathVariable Long id, HttpServletResponse response) throws Exception {
+        Objects.requireNonNull(id, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        
+        if (userOpt.isEmpty()) return;
         User user = userOpt.get();
-        
-        // Get user data
         List<Wallet> accounts = walletRepository.findByOwnerId(id);
-        List<Transaction> transactions = transactionRepository.findByCreatedBy(user.getUsername());
-        List<Expenditure> expenditures = expenditureRepository.findByRecordedBy(user);
         
-        // Create Excel workbook
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("User Data - " + user.getUsername());
-        
-        // Create styles
-        CellStyle headerStyle = workbook.createCellStyle();
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        headerStyle.setFont(headerFont);
-        
-        // Create header row for accounts
+        Sheet sheet = workbook.createSheet("User Data");
         Row headerRow = sheet.createRow(0);
-        String[] accountHeaders = {"ID", "Name", "Type", "Balance", "Status", "Created"};
-        for (int i = 0; i < accountHeaders.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(accountHeaders[i]);
-            cell.setCellStyle(headerStyle);
-        }
+        String[] accountHeaders = {"ID", "Type", "Balance", "Currency", "Status"};
+        for (int i = 0; i < accountHeaders.length; i++) headerRow.createCell(i).setCellValue(accountHeaders[i]);
         
-        // Add accounts data
         int rowNum = 1;
         for (Wallet account : accounts) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(account.getId());
-            row.createCell(1).setCellValue(account.getAccountType());
-            row.createCell(2).setCellValue(account.getAccountType());
-            row.createCell(3).setCellValue(account.getBalance());
+            row.createCell(0).setCellValue(account.getId() != null ? account.getId() : 0L);
+            row.createCell(1).setCellValue(account.getAccountType() != null ? account.getAccountType() : "");
+            row.createCell(2).setCellValue(account.getBalance() != null ? account.getBalance().doubleValue() : 0.0);
+            row.createCell(3).setCellValue(account.getCurrency() != null ? account.getCurrency().toString() : "");
             row.createCell(4).setCellValue(account.isLocked() ? "Locked" : "Active");
-            row.createCell(5).setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
         }
         
-        // Add blank row before transactions
-        rowNum++;
-        Row transHeaderRow = sheet.createRow(rowNum++);
-        String[] transHeaders = {"Transactions for " + user.getUsername()};
-        transHeaderRow.createCell(0).setCellValue(transHeaders[0]);
-        transHeaderRow.getCell(0).setCellStyle(headerStyle);
-        
-        // Add transaction headers
-        Row transHeader = sheet.createRow(rowNum++);
-        String[] transactionHeaders = {"ID", "Date", "Type", "From", "To", "Amount", "Fee", "Status"};
-        for (int i = 0; i < transactionHeaders.length; i++) {
-            Cell cell = transHeader.createCell(i);
-            cell.setCellValue(transactionHeaders[i]);
-            cell.setCellStyle(headerStyle);
-        }
-        
-        // Add transaction data
-        for (Transaction transaction : transactions) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(transaction.getId());
-            row.createCell(1).setCellValue(transaction.getDate() != null ? transaction.getDate().toString() : "");
-            row.createCell(2).setCellValue(transaction.getType() != null ? transaction.getType().toString() : "");
-            row.createCell(3).setCellValue(transaction.getFromAccount() != null ? transaction.getFromAccount() : "");
-            row.createCell(4).setCellValue(transaction.getToAccount() != null ? transaction.getToAccount() : "");
-            row.createCell(5).setCellValue(transaction.getAmount());
-            row.createCell(6).setCellValue(transaction.getFee());
-            row.createCell(7).setCellValue(transaction.getSyncStatus());
-        }
-        
-        // Add blank row before expenditures
-        rowNum++;
-        Row expHeaderRow = sheet.createRow(rowNum++);
-        String[] expHeaders = {"Expenditures for " + user.getUsername()};
-        expHeaderRow.createCell(0).setCellValue(expHeaders[0]);
-        expHeaderRow.getCell(0).setCellStyle(headerStyle);
-        
-        // Add expenditure headers
-        Row expHeader = sheet.createRow(rowNum++);
-        String[] expenditureHeaders = {"ID", "Date", "Category", "Description", "Amount"};
-        for (int i = 0; i < expenditureHeaders.length; i++) {
-            Cell cell = expHeader.createCell(i);
-            cell.setCellValue(expenditureHeaders[i]);
-            cell.setCellStyle(headerStyle);
-        }
-        
-        // Add expenditure data
-        for (Expenditure expenditure : expenditures) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(expenditure.getId());
-            row.createCell(1).setCellValue(expenditure.getDate() != null ? expenditure.getDate().toString() : "");
-            row.createCell(2).setCellValue(expenditure.getCategory());
-            row.createCell(3).setCellValue(expenditure.getDescription());
-            row.createCell(4).setCellValue(expenditure.getAmount());
-        }
-        
-        // Auto-size columns
-        for (int i = 0; i < 8; i++) {
-            sheet.autoSizeColumn(i);
-        }
-        
-        // Set response headers
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + "_data.xlsx");
-        
-        // Write to response
+        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + ".xlsx");
         workbook.write(response.getOutputStream());
         workbook.close();
     }
     
     @GetMapping("/users/{id}/export/pdf")
     public void exportUserPdf(@PathVariable Long id, HttpServletResponse response) throws Exception {
+        Objects.requireNonNull(id, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        
+        if (userOpt.isEmpty()) return;
         User user = userOpt.get();
-        
-        // Get user data
         List<Wallet> accounts = walletRepository.findByOwnerId(id);
-        List<Transaction> transactions = transactionRepository.findByCreatedBy(user.getUsername());
-        List<Expenditure> expenditures = expenditureRepository.findByRecordedBy(user);
         
-        // Set response headers
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + "_data.pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=user_" + user.getUsername() + ".pdf");
         
-        // Create PDF
         com.itextpdf.kernel.pdf.PdfDocument pdfDoc = new com.itextpdf.kernel.pdf.PdfDocument(new com.itextpdf.kernel.pdf.PdfWriter(response.getOutputStream()));
         com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdfDoc);
+        document.add(new com.itextpdf.layout.element.Paragraph("User Data Export - " + user.getUsername()));
         
-        // Add title
-        document.add(new com.itextpdf.layout.element.Paragraph("User Data Export - " + user.getUsername())
-                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER)
-                .setFontSize(20).setMarginBottom(20));
-        
-        // Add user info
-        document.add(new com.itextpdf.layout.element.Paragraph("User Information:")
-                .setFontSize(16).setBold().setMarginTop(10));
-        document.add(new com.itextpdf.layout.element.Paragraph("Username: " + user.getUsername()));
-        document.add(new com.itextpdf.layout.element.Paragraph("Email: " + (user.getEmail() != null ? user.getEmail() : "Not set")));
-        document.add(new com.itextpdf.layout.element.Paragraph("Phone: " + (user.getPhoneNumber() != null ? user.getPhoneNumber() : "Not set")));
-        document.add(new com.itextpdf.layout.element.Paragraph("Role: " + user.getRole()));
-        document.add(new com.itextpdf.layout.element.Paragraph("Created: " + (user.getCreatedAt() != null ? user.getCreatedAt().toString() : "Unknown")));
-        document.add(new com.itextpdf.layout.element.Paragraph("Status: " + (user.isActive() ? "Active" : "Inactive")));
-        
-        // Add accounts section
-        document.add(new com.itextpdf.layout.element.Paragraph("\nAccounts/Wallets:")
-                .setFontSize(16).setBold().setMarginTop(20));
-        
-        if (!accounts.isEmpty()) {
-            for (Wallet account : accounts) {
-                document.add(new com.itextpdf.layout.element.Paragraph(
-                    "• " + account.getAccountType() + " (" + account.getAccountType() + ") - Balance: " + 
-                    String.format("%.2f", account.getBalance()) + " - " + (account.isLocked() ? "Locked" : "Active")));
-            }
-        } else {
-            document.add(new com.itextpdf.layout.element.Paragraph("No accounts found"));
+        for (Wallet account : accounts) {
+            document.add(new com.itextpdf.layout.element.Paragraph("Account: " + account.getAccountType() + " | Balance: " + (account.getBalance() != null ? account.getBalance() : "0") + " " + account.getCurrency()));
         }
-        
-        // Add transactions section
-        document.add(new com.itextpdf.layout.element.Paragraph("\nTransactions:")
-                .setFontSize(16).setBold().setMarginTop(20));
-        
-        if (!transactions.isEmpty()) {
-            for (Transaction transaction : transactions) {
-                document.add(new com.itextpdf.layout.element.Paragraph(
-                    "• " + transaction.getType() + " - Amount: " + 
-                    String.format("%.2f", transaction.getAmount()) + 
-                    " - Fee: " + String.format("%.2f", transaction.getFee()) + 
-                    " - Date: " + (transaction.getDate() != null ? transaction.getDate().toString() : "Unknown")));
-            }
-        } else {
-            document.add(new com.itextpdf.layout.element.Paragraph("No transactions found"));
-        }
-        
-        // Add expenditures section
-        document.add(new com.itextpdf.layout.element.Paragraph("\nExpenditures:")
-                .setFontSize(16).setBold().setMarginTop(20));
-        
-        if (!expenditures.isEmpty()) {
-            for (Expenditure expenditure : expenditures) {
-                document.add(new com.itextpdf.layout.element.Paragraph(
-                    "• " + expenditure.getCategory() + " - " + expenditure.getDescription() + 
-                    " - Amount: " + String.format("%.2f", expenditure.getAmount()) + 
-                    " - Date: " + (expenditure.getDate() != null ? expenditure.getDate().toString() : "Unknown")));
-            }
-        } else {
-            document.add(new com.itextpdf.layout.element.Paragraph("No expenditures found"));
-        }
-        
         document.close();
     }
 
-    /**
-     * API to get all users with branch info for the admin dashboard
-     */
     @GetMapping("/users/api/all")
     @ResponseBody
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> getAllUsersApi() {
-        List<User> users = userRepository.findAll();
-        List<Map<String, Object>> userList = users.stream().map(u -> {
+        return ResponseEntity.ok(userRepository.findAll().stream().map(u -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", u.getId());
             map.put("username", u.getUsername());
-            map.put("email", u.getEmail());
+            map.put("branch", u.getBranch() != null ? u.getBranch().getName() : "None");
             map.put("role", u.getRole());
-            map.put("isActive", u.getIsActive());
-            map.put("branch", u.getBranch() != null ? u.getBranch().getName() : "No Branch");
-            map.put("branchId", u.getBranch() != null ? u.getBranch().getId() : null);
-            map.put("baseCurrency", u.getBaseCurrency());
             return map;
-        }).collect(Collectors.toList());
-        
-        return ResponseEntity.ok(userList);
+        }).collect(Collectors.toList()));
     }
 
-    /**
-     * REST endpoint to update user (used by admin-users.html modal)
-     */
     @PutMapping("/admin/users/{id}")
     @ResponseBody
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> updateUserRest(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
-        Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        User user = userOpt.get();
-        
-        if (updates.containsKey("branch")) {
-            Object branchObj = updates.get("branch");
-            if (branchObj instanceof Map) {
-                Map<?, ?> branchMap = (Map<?, ?>) branchObj;
-                Object bId = branchMap.get("id");
-                if (bId != null && !bId.toString().isEmpty()) {
-                    branchRepository.findById(Long.valueOf(bId.toString())).ifPresent(user::setBranch);
-                } else {
-                    user.setBranch(null);
+        Objects.requireNonNull(id, "User ID must not be null");
+        return userRepository.findById(id).map(user -> {
+            if (updates.containsKey("role")) {
+                Object roleVal = updates.get("role");
+                if (roleVal != null) {
+                    user.setRole(Role.valueOf(roleVal.toString()));
                 }
-            } else if (branchObj == null) {
-                user.setBranch(null);
             }
-        } else if (updates.containsKey("branchId")) {
-            Object branchIdObj = updates.get("branchId");
-            Long branchId = (branchIdObj != null && !branchIdObj.toString().isEmpty()) ? Long.valueOf(branchIdObj.toString()) : null;
-            if (branchId != null) {
-                branchRepository.findById(branchId).ifPresent(user::setBranch);
-            } else {
-                user.setBranch(null);
-            }
-        }
-        
-        if (updates.containsKey("baseCurrency")) {
-            String currencyStr = (String) updates.get("baseCurrency");
-            if (currencyStr != null && !currencyStr.isEmpty()) {
-                user.setBaseCurrency(com.bypass.bypasstransers.enums.Currency.valueOf(currencyStr));
-            }
-        }
-        
-        if (updates.containsKey("role")) {
-            user.setRole(com.bypass.bypasstransers.enums.Role.valueOf((String) updates.get("role")));
-        }
-        
-        if (updates.containsKey("isActive")) {
-            user.setIsActive((Boolean) updates.get("isActive"));
-        }
-
-        userRepository.save(user);
-        return ResponseEntity.ok(user);
+            userRepository.save(user);
+            return ResponseEntity.ok(user);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

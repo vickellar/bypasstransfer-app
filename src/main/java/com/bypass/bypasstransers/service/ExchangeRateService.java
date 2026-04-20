@@ -14,7 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.bypass.bypasstransers.util.ChargeCalculator;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
+/**
+ * Service for managing currency exchange rates and providing conversion logic.
+ */
 @Service
 public class ExchangeRateService {
 
@@ -49,13 +55,27 @@ public class ExchangeRateService {
         if (apiUrl != null && !apiUrl.isBlank()) {
             RestTemplate restTemplate = new RestTemplate();
             try {
-                Map<String, Object> response = restTemplate.getForObject(apiUrl, Map.class);
+                ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
+                    apiUrl, 
+                    HttpMethod.GET, 
+                    null, 
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+                );
+                
+                Map<String, Object> response = responseEntity.getBody();
                 if (response != null && response.containsKey("conversion_rates")) {
-                    Map<String, Number> rates = (Map<String, Number>) response.get("conversion_rates");
-                    for (Map.Entry<String, Number> entry : rates.entrySet()) {
-                        exchangeRates.put(entry.getKey(), new BigDecimal(entry.getValue().toString()));
+                    Object ratesObj = response.get("conversion_rates");
+                    if (ratesObj instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> ratesMap = (Map<String, Object>) ratesObj;
+                        for (Map.Entry<String, Object> entry : ratesMap.entrySet()) {
+                            Object val = entry.getValue();
+                            if (val instanceof Number) {
+                                exchangeRates.put(entry.getKey(), new BigDecimal(val.toString()));
+                            }
+                        }
+                        System.out.println("[ExchangeRateService] Live rates fetched successfully from API.");
                     }
-                    System.out.println("[ExchangeRateService] Live rates fetched successfully from API.");
                 }
             } catch (Exception e) {
                 System.err.println("[ExchangeRateService] Failed to fetch live exchange rates, using fallback. Error: " + e.getMessage());
@@ -80,13 +100,7 @@ public class ExchangeRateService {
             throw new IllegalArgumentException("Unsupported currency: " + fromCurrency + " or " + toCurrency);
         }
 
-        // To convert from one currency to another using USD as base:
-        // FromCurrency -> USD -> ToCurrency
-        // First, find how much USD we get for 1 unit of fromCurrency
-        // 1 fromCurrency = (1 / fromRate) USD
-        // Then convert USD to toCurrency
-        // (1 / fromRate) USD = (1 / fromRate) * toRate toCurrency
-        // So 1 fromCurrency = (toRate / fromRate) toCurrency
+        // 1 fromCurrency = (toRate / fromRate) toCurrency
         return toRate.divide(fromRate, 6, RoundingMode.HALF_UP);
     }
 
@@ -132,8 +146,6 @@ public class ExchangeRateService {
 
     /**
      * Get rate to convert FROM a currency TO USD
-     * This is the inverse of getUsdRate - it returns how many USD you get for 1
-     * unit of the currency
      */
     public BigDecimal getRateToUsd(String currency) {
         BigDecimal usdRate = exchangeRates.get(currency);
@@ -141,10 +153,8 @@ public class ExchangeRateService {
             throw new IllegalArgumentException("Unsupported currency: " + currency);
         }
         if (BigDecimal.ONE.compareTo(usdRate) == 0) {
-            // If currency is USD, return 1 (1 USD = 1 USD)
             return BigDecimal.ONE;
         }
-        // Return the inverse: 1 / usdRate
         return BigDecimal.ONE.divide(usdRate, 6, RoundingMode.HALF_UP);
     }
 
@@ -157,8 +167,7 @@ public class ExchangeRateService {
 
         for (Transaction transaction : allTransactions) {
             if (transaction.getType() != null && transaction.getType() != TransactionType.INCOME) {
-                BigDecimal profit = new BigDecimal(transaction.getAmount()).multiply(
-                        BigDecimal.valueOf(ChargeCalculator.BASE_PROFIT_DEFAULT));
+                BigDecimal profit = transaction.getAmount().multiply(ChargeCalculator.BASE_PROFIT_DEFAULT);
                 totalProfit = totalProfit.add(profit);
             }
         }
@@ -177,8 +186,7 @@ public class ExchangeRateService {
             java.time.LocalDate transactionDate = transaction.getDate().toLocalDate();
             if (!transactionDate.isBefore(startDate) && !transactionDate.isAfter(endDate)) {
                 if (transaction.getType() != null && transaction.getType() != TransactionType.INCOME) {
-                    BigDecimal profit = new BigDecimal(transaction.getAmount()).multiply(
-                            BigDecimal.valueOf(ChargeCalculator.BASE_PROFIT_DEFAULT));
+                    BigDecimal profit = transaction.getAmount().multiply(ChargeCalculator.BASE_PROFIT_DEFAULT);
                     totalProfit = totalProfit.add(profit);
                 }
             }

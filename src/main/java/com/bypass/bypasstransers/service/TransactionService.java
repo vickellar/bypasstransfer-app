@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,6 @@ public class TransactionService {
         return acc;
     }
 
-    /* 1️⃣ RECEIVE MONEY */
     @Transactional(rollbackFor = Exception.class)
     public void receive(String accountName, BigDecimal amount) {
         validateAmount(amount);
@@ -84,11 +82,9 @@ public class TransactionService {
         auditService.logEntity(null, "transactions", tx.getId(), "RECEIVE",
                 prevBalance.toString(), acc.getBalance().toString());
         sendTransactionSms(acc, "Received " + amount + " into " + accountName + ". New balance: " + acc.getBalance());
-
         checkLowBalance(acc);
     }
 
-    /* 2️⃣ SEND MONEY (EXPENSE) */
     @Transactional(rollbackFor = Exception.class)
     public void send(String accountName, BigDecimal amount) {
         validateAmount(amount);
@@ -118,13 +114,9 @@ public class TransactionService {
         auditService.logEntity(null, "transactions", tx.getId(), "SEND",
                 prevBalance.toString(), acc.getBalance().toString());
         sendTransactionSms(acc, "Sent " + amount + " (fee: " + fee + ") from " + accountName + ". New balance: " + acc.getBalance());
-
         checkLowBalance(acc);
     }
 
-    /**
-     * Get transactions for current user with role-based filtering
-     */
     public List<Transaction> findAllForCurrentUser() {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
@@ -144,7 +136,7 @@ public class TransactionService {
 
     public List<Transaction> findAll() {
         if (!securityService.isSupervisorOrAbove()) {
-            throw new AccessDeniedException("Insufficient privileges to view all transactions");
+            throw new AccessDeniedException("Insufficient privileges");
         }
         return txRepo.findAll();
     }
@@ -183,9 +175,6 @@ public class TransactionService {
         return txRepo.findByWalletId(walletId);
     }
 
-    /**
-     * Get transaction summary for current user
-     */
     public TransactionSummary getCurrentUserSummary() {
         User currentUser = securityService.getCurrentUser();
         if (currentUser == null) {
@@ -216,14 +205,11 @@ public class TransactionService {
 
         TransactionSummary summary = new TransactionSummary();
         summary.setTransactionCount(count);
-        summary.setTotalAmount(totalAmount != null ? totalAmount.doubleValue() : 0.0);
-        summary.setTotalFees(totalFees != null ? totalFees.doubleValue() : 0.0);
+        summary.setTotalAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO);
+        summary.setTotalFees(totalFees != null ? totalFees : BigDecimal.ZERO);
         return summary;
     }
 
-    /**
-     * Get company-wide transaction summary - only for supervisors
-     */
     public List<UserTransactionSummary> getCompanyTransactionSummary() {
         if (!securityService.isSupervisorOrAbove()) {
             throw new AccessDeniedException("Insufficient privileges");
@@ -238,10 +224,10 @@ public class TransactionService {
             summary.setUserId(ownerId);
             summary.setUsername((String) row[1]);
             summary.setTransactionCount((Long) row[2]);
-            summary.setTotalAmount(row[3] != null ? ((BigDecimal) row[3]).doubleValue() : 0.0);
-            summary.setTotalFees(row[4] != null ? ((BigDecimal) row[4]).doubleValue() : 0.0);
+            summary.setTotalAmount(row[3] != null ? (BigDecimal) row[3] : BigDecimal.ZERO);
+            summary.setTotalFees(row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO);
             BigDecimal walletBalance = walletRepository.getTotalBalanceByOwnerId(ownerId);
-            summary.setWalletBalance(walletBalance != null ? walletBalance.doubleValue() : 0.0);
+            summary.setWalletBalance(walletBalance != null ? walletBalance : BigDecimal.ZERO);
             summaries.add(summary);
         }
 
@@ -255,7 +241,6 @@ public class TransactionService {
         return txRepo.save(tx);
     }
 
-    /* 3️⃣ TRANSFER BETWEEN ACCOUNTS */
     @Transactional(rollbackFor = Exception.class)
     public void transfer(String fromName, String toName, BigDecimal amount) {
         validateAmount(amount);
@@ -304,11 +289,10 @@ public class TransactionService {
                 smsService.sendAlert(owner, message);
             }
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(TransactionService.class).warn("SMS notification failed: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(TransactionService.class).warn("SMS failed: {}", e.getMessage());
         }
     }
 
-    /* 4️⃣ PROFIT & FEES */
     public BigDecimal totalFees() {
         return txRepo.findAll()
                 .stream()
@@ -319,7 +303,6 @@ public class TransactionService {
     private void checkLowBalance(Account account) {
         if (account.getBalance().compareTo(account.getLowBalanceThreshold()) < 0
                 && !account.isLowBalanceAlertSent()) {
-
             alertService.notifyLowBalance(account);
             accountRepo.save(account);
         }

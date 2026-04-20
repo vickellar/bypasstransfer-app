@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +69,7 @@ public class OfflineTransactionController {
             transaction.setOfflineRecordedAt(LocalDateTime.now());
 
             // Validate required fields
-            if (transaction.getAmount() == null || transaction.getAmount() <= 0) {
+            if (transaction.getAmount() == null || transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
                 ra.addFlashAttribute("error", "Amount must be greater than zero");
                 return "redirect:/offline/transactions/new";
             }
@@ -142,8 +143,6 @@ public class OfflineTransactionController {
             return "redirect:/offline/transactions";
         }
     }
-
-    // JSON API endpoints for sync management page
 
     @PostMapping("/api/sync")
     @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN')")

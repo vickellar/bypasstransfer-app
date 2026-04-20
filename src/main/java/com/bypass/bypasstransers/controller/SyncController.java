@@ -20,7 +20,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+/**
+ * Controller for managing offline transaction synchronization.
+ */
 @Controller
 @PreAuthorize("hasAnyRole('STAFF','ADMIN','SUPER_ADMIN','SUPERVISOR')")
 public class SyncController {
@@ -81,7 +85,8 @@ public class SyncController {
     }
 
     @GetMapping("/users/{userId}/transactions")
-    public String getUserTransactions(@PathVariable Long userId, Model model) {
+    public String getUserTransactions(@PathVariable(required = true) Long userId, Model model) {
+        Objects.requireNonNull(userId, "User ID must not be null");
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -104,8 +109,9 @@ public class SyncController {
     }
     
     @PostMapping("/sync/process-single")
-    public String processSingleTransaction(@RequestParam Long id, RedirectAttributes ra) {
+    public String processSingleTransaction(@RequestParam(required = true) Long id, RedirectAttributes ra) {
         try {
+            Objects.requireNonNull(id, "Transaction ID must not be null");
             OfflineTransaction offlineTx = offlineTransactionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Offline transaction not found"));
             offlineSyncService.syncSingleTransaction(offlineTx);

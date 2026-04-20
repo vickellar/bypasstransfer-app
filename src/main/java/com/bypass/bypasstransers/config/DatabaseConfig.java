@@ -1,31 +1,11 @@
 package com.bypass.bypasstransers.config;
 
-import org.springframework.boot.jdbc.DataSourceBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-
-import javax.sql.DataSource;
-
-@Configuration
-@Profile("default") // Only active for default profile (local development)
-public class DatabaseConfig {
-
-    @Bean
-    public DataSource dataSource() {
-        String dbUrl = System.getenv("DB_URL");
-        String dbUser = System.getenv("DB_USERNAME");
-        String dbPassword = System.getenv("DB_PASSWORD");
-
-        if (dbUrl == null || dbUser == null || dbPassword == null) {
-            throw new IllegalStateException("Database environment variables are not set for default profile");
-        }
-
-        return DataSourceBuilder.create()
-                .url(dbUrl)
-                .username(dbUser)
-                .password(dbPassword)
-                .driverClassName("org.postgresql.Driver")
-                .build();
-    }
-}
+// This file is intentionally left as a no-op placeholder.
+// DataSource configuration is fully handled by Spring Boot auto-configuration
+// using spring.datasource.* properties in application.properties, which are
+// populated from the .env file (for local dev) or environment variables (for prod/Render).
+//
+// Previously this class manually created a dataSource bean using System.getenv(),
+// but that conflicted with Spring Boot's auto-configuration and did not read
+// System properties set by the .env loader. The auto-configuration approach
+// is simpler, more reliable, and supports profile-based overrides via property files.

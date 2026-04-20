@@ -1,13 +1,14 @@
 package com.bypass.bypasstransers.dto;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import com.bypass.bypasstransers.enums.Currency;
 
 public class ExpenditureDTO {
     private Long id;
     private String description;
     private String category; // Rent, Utilities, Salaries, Supplies, Other
-    private double amount;
+    private BigDecimal amount = BigDecimal.ZERO;
     private LocalDate date;
     private String recordedBy;
     private String notes;
@@ -26,8 +27,8 @@ public class ExpenditureDTO {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     
-    public double getAmount() { return amount; }
-    public void setAmount(double amount) { this.amount = amount; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
     
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }

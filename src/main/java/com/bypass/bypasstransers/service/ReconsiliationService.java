@@ -5,6 +5,7 @@ import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.model.Wallet;
 import com.bypass.bypasstransers.repository.DailyReconciliationRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
@@ -60,34 +61,34 @@ public class ReconsiliationService {
     }
 
     /**
-     * Legacy method — reconcile total system (kept for backward compatibility)
+     * Legacy method — reconcile total system
      */
     @Transactional
-    public DailyReconciliation reconcile(LocalDate date, double actualBalance) {
+    public DailyReconciliation reconcile(LocalDate date, BigDecimal actualBalance) {
         User currentUser = securityService.getCurrentUser();
         String username = (currentUser != null) ? currentUser.getUsername() : "SYSTEM";
 
-        double systemBalance = walletRepository.findAll()
+        BigDecimal systemBalance = walletRepository.findAll()
                 .stream()
-                .mapToDouble(Wallet::getBalance)
-                .sum();
+                .map(Wallet::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         DailyReconciliation r = new DailyReconciliation();
         r.setDate(date);
         r.setSystemBalance(systemBalance);
         r.setActualBalance(actualBalance);
-        r.setDifference(actualBalance - systemBalance);
+        r.setDifference(actualBalance.subtract(systemBalance));
         r.setAccountName("TOTAL_SYSTEM");
         r.setReconciledBy(username);
         r.setCreatedAt(LocalDateTime.now());
         r.setWeekNumber(getCurrentWeekNumber());
         r.setYear(getCurrentYear());
 
-        // Auto-set status based on difference
-        if (Math.abs(r.getDifference()) < 0.01) {
-            r.setStatus("APPROVED"); // No discrepancy
+        // Auto-set status based on difference (discrepancy threshold: 0.01)
+        if (r.getDifference().abs().compareTo(new BigDecimal("0.01")) < 0) {
+            r.setStatus("APPROVED"); 
         } else {
-            r.setStatus("FLAGGED"); // Any non-zero difference is flagged
+            r.setStatus("FLAGGED");
         }
 
         return dailyRepo.save(r);
@@ -97,11 +98,10 @@ public class ReconsiliationService {
      * Reconcile a specific wallet with notes and audit trail
      */
     @Transactional
-    public DailyReconciliation reconcileWallet(Long walletId, double actualBalance, String notes) {
+    public DailyReconciliation reconcileWallet(Long walletId, BigDecimal actualBalance, String notes) {
         User currentUser = securityService.getCurrentUser();
         String username = (currentUser != null) ? currentUser.getUsername() : "SYSTEM";
 
-        // Prevent duplicate reconciliation for the same wallet this week
         int week = getCurrentWeekNumber();
         int year = getCurrentYear();
         Optional<DailyReconciliation> existing = dailyRepo.findByWeekNumberAndYearAndWalletId(week, year, walletId);
@@ -116,7 +116,7 @@ public class ReconsiliationService {
         r.setDate(LocalDate.now());
         r.setSystemBalance(wallet.getBalance());
         r.setActualBalance(actualBalance);
-        r.setDifference(actualBalance - wallet.getBalance());
+        r.setDifference(actualBalance.subtract(wallet.getBalance()));
         r.setWalletId(wallet.getId());
         r.setAccountName(wallet.getAccountType());
         r.setReconciledBy(username);
@@ -126,10 +126,10 @@ public class ReconsiliationService {
         r.setYear(year);
 
         // Auto-set status based on difference
-        if (Math.abs(r.getDifference()) < 0.01) {
-            r.setStatus("APPROVED"); // No discrepancy — auto-approve
+        if (r.getDifference().abs().compareTo(new BigDecimal("0.01")) < 0) {
+            r.setStatus("APPROVED");
         } else {
-            r.setStatus("FLAGGED"); // Any non-zero difference → needs supervisor review
+            r.setStatus("FLAGGED");
         }
 
         return dailyRepo.save(r);
@@ -139,7 +139,7 @@ public class ReconsiliationService {
      * Backward-compatible overload (no notes)
      */
     @Transactional
-    public DailyReconciliation reconcileWallet(Long walletId, double actualBalance) {
+    public DailyReconciliation reconcileWallet(Long walletId, BigDecimal actualBalance) {
         return reconcileWallet(walletId, actualBalance, null);
     }
 
@@ -181,30 +181,18 @@ public class ReconsiliationService {
         return dailyRepo.save(r);
     }
 
-    /**
-     * Get number of pending/flagged reconciliations (for supervisor badge)
-     */
     public long countPendingAndFlagged() {
         return dailyRepo.countPendingAndFlagged();
     }
 
-    /**
-     * Get all pending/flagged reconciliations
-     */
     public List<DailyReconciliation> getPendingAndFlagged() {
         return dailyRepo.findPendingAndFlagged();
     }
 
-    /**
-     * Get reconciliation history for a specific staff member
-     */
     public List<DailyReconciliation> getHistoryByStaff(String username) {
         return dailyRepo.findByReconciledByOrderByCreatedAtDesc(username);
     }
 
-    /**
-     * Get all reconciliations (for admin)
-     */
     public List<DailyReconciliation> getAllReconciliations() {
         return dailyRepo.findAllByOrderByCreatedAtDesc();
     }

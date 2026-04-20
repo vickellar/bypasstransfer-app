@@ -1,9 +1,10 @@
 package com.bypass.bypasstransers.service;
 
-import com.bypass.bypasstransers.model.Transaction;
 import com.bypass.bypasstransers.repository.TransactionRepository;
 import com.bypass.bypasstransers.enums.TransactionType;
 import com.bypass.bypasstransers.util.ChargeCalculator;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -17,8 +18,8 @@ public class AnalysisService {
     @Autowired
     private TransactionRepository repo;
 
-    public Map<LocalDate, Double> dailyVolume() {
-        Map<LocalDate, Double> map = new LinkedHashMap<>();
+    public Map<LocalDate, BigDecimal> dailyVolume() {
+        Map<LocalDate, BigDecimal> map = new LinkedHashMap<>();
         for (Object[] r : repo.dailyVolume()) {
             if (r == null || r.length < 2) continue;
             Object dateObj = r[0];
@@ -30,54 +31,57 @@ public class AnalysisService {
             } else if (dateObj instanceof java.sql.Date) {
                 key = ((java.sql.Date) dateObj).toLocalDate();
             } else {
-                // fallback parse
                 key = LocalDate.parse(dateObj.toString());
             }
 
             Object valObj = r[1];
-            double value = 0.0;
-            if (valObj instanceof Number) {
-                value = ((Number) valObj).doubleValue();
+            BigDecimal value = BigDecimal.ZERO;
+            if (valObj instanceof BigDecimal) {
+                value = (BigDecimal) valObj;
+            } else if (valObj instanceof Number) {
+                value = new BigDecimal(valObj.toString());
             } else if (valObj != null) {
                 try {
-                    value = Double.parseDouble(valObj.toString());
+                    value = new BigDecimal(valObj.toString());
                 } catch (Exception e) {
-                    value = 0.0;
+                    value = BigDecimal.ZERO;
                 }
             }
 
-            map.put(key, value);
+            map.put(key, value.setScale(2, RoundingMode.HALF_UP));
         }
         return map;
     }
 
-    public Map<String, Double> feesByAccount() {
-        Map<String, Double> map = new HashMap<>();
+    public Map<String, BigDecimal> feesByAccount() {
+        Map<String, BigDecimal> map = new HashMap<>();
         for (Object[] r : repo.feesByAccount()) {
             if (r == null || r.length < 2) continue;
             String acct = r[0] != null ? r[0].toString() : "";
             Object valObj = r[1];
-            double value = 0.0;
-            if (valObj instanceof Number) {
-                value = ((Number) valObj).doubleValue();
+            BigDecimal value = BigDecimal.ZERO;
+            if (valObj instanceof BigDecimal) {
+                value = (BigDecimal) valObj;
+            } else if (valObj instanceof Number) {
+                value = new BigDecimal(valObj.toString());
             } else if (valObj != null) {
                 try {
-                    value = Double.parseDouble(valObj.toString());
+                    value = new BigDecimal(valObj.toString());
                 } catch (Exception e) {
-                    value = 0.0;
+                    value = BigDecimal.ZERO;
                 }
             }
-            map.put(acct, value);
+            map.put(acct, value.setScale(2, RoundingMode.HALF_UP));
         }
         return map;
     }
 
-    public double totalProfit() {
+    public BigDecimal totalProfit() {
         return repo.findAll()
                 .stream()
-                // Profit is always the company 5% component on chargeable transactions
                 .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
-                .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
-                .sum();
+                .map(t -> t.getAmount().multiply(ChargeCalculator.BASE_PROFIT_DEFAULT))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

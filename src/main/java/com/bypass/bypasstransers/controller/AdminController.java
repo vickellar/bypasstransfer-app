@@ -23,9 +23,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+/**
+ * Controller for general administrative tasks and overview.
+ */
 @Controller
 @RequestMapping("/admin")
 @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
@@ -62,34 +68,30 @@ public class AdminController {
     public String adminHome(Model model) {
         User currentUser = securityService.getCurrentUser();
         
-        // Count users by role
         long totalUsers = userRepository.count();
         long staffCount = userRepository.findAll().stream().filter(u -> u.getRole() == Role.STAFF).count();
         long supervisorCount = userRepository.findAll().stream().filter(u -> u.getRole() == Role.SUPERVISOR).count();
         long adminCount = userRepository.findAll().stream().filter(u -> u.getRole() == Role.ADMIN || u.getRole() == Role.SUPER_ADMIN).count();
         
-        // Get all wallets and group by currency
         List<Wallet> allWallets = walletRepository.findAll();
         
-        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> balanceByCurrency = allWallets.stream()
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, BigDecimal> balanceByCurrency = allWallets.stream()
             .filter(w -> w.getCurrency() != null)
-            .collect(java.util.stream.Collectors.groupingBy(
+            .collect(Collectors.groupingBy(
                 Wallet::getCurrency,
-                java.util.stream.Collectors.summingDouble(Wallet::getBalance)
+                Collectors.mapping(Wallet::getBalance, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
             ));
             
-        // Calculate estimated total in USD
-        double totalBalanceInUsd = allWallets.stream()
+        BigDecimal totalBalanceInUsd = allWallets.stream()
             .filter(w -> w.getCurrency() != null)
-            .mapToDouble(w -> {
+            .map(w -> {
                 try {
-                    java.math.BigDecimal amount = java.math.BigDecimal.valueOf(w.getBalance());
-                    return exchangeRateService.convert(amount, w.getCurrency().name(), "USD").doubleValue();
+                    return exchangeRateService.convert(w.getBalance(), w.getCurrency().name(), "USD");
                 } catch (Exception e) {
-                    return 0.0;
+                    return BigDecimal.ZERO;
                 }
             })
-            .sum();
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         model.addAttribute("user", currentUser);
         model.addAttribute("totalUsers", totalUsers);
@@ -97,14 +99,14 @@ public class AdminController {
         model.addAttribute("supervisorCount", supervisorCount);
         model.addAttribute("adminCount", adminCount);
         model.addAttribute("totalWallets", allWallets.size());
-        model.addAttribute("totalBalanceInUsd", totalBalanceInUsd);
+        model.addAttribute("totalBalanceInUsd", totalBalanceInUsd.doubleValue());
         model.addAttribute("balanceByCurrency", balanceByCurrency);
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
         
         return "admin";
     }
     
-    @GetMapping("/profit")  // This maps to /admin/profit due to the @RequestMapping("/admin") on the class
+    @GetMapping("/profit")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public String viewProfit(Model model) {
         User currentUser = securityService.getCurrentUser();
@@ -112,32 +114,30 @@ public class AdminController {
             return "redirect:/admin";
         }
         
-        // Calculate total profit grouped by currency
         List<Transaction> allTransactions = transactionRepository.findAll();
         
-        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> profitByCurrency = allTransactions.stream()
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, BigDecimal> profitByCurrency = allTransactions.stream()
             .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME && t.getCurrency() != null)
-            .collect(java.util.stream.Collectors.groupingBy(
+            .collect(Collectors.groupingBy(
                 Transaction::getCurrency,
-                java.util.stream.Collectors.summingDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
+                Collectors.mapping(t -> t.getAmount().multiply(ChargeCalculator.BASE_PROFIT_DEFAULT),
+                                 Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
             ));
             
-        // Calculate estimated total profit in USD
-        double totalProfitInUsd = profitByCurrency.entrySet().stream()
-            .mapToDouble(entry -> {
+        BigDecimal totalProfitInUsd = profitByCurrency.entrySet().stream()
+            .map(entry -> {
                 try {
-                    java.math.BigDecimal amount = java.math.BigDecimal.valueOf(entry.getValue());
-                    return exchangeRateService.convert(amount, entry.getKey().name(), "USD").doubleValue();
+                    return exchangeRateService.convert(entry.getValue(), entry.getKey().name(), "USD");
                 } catch (Exception e) {
-                    return 0.0;
+                    return BigDecimal.ZERO;
                 }
             })
-            .sum();
-            
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
         long totalTransactionsCount = allTransactions.size();
             
         model.addAttribute("profitByCurrency", profitByCurrency);
-        model.addAttribute("totalProfitInUsd", totalProfitInUsd);
+        model.addAttribute("totalProfitInUsd", totalProfitInUsd.doubleValue());
         model.addAttribute("totalTransactions", totalTransactionsCount);
         model.addAttribute("user", currentUser);
         
@@ -147,28 +147,27 @@ public class AdminController {
     @GetMapping("/reports")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR','SUPER_ADMIN')")
     public String reportsPage(Model model) {
-        // Calculate transaction statistics grouped by currency
         List<Transaction> allTransactions = transactionRepository.findAll();
         
-        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> amountByCurrency = allTransactions.stream()
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, BigDecimal> amountByCurrency = allTransactions.stream()
             .filter(t -> t.getCurrency() != null)
-            .collect(java.util.stream.Collectors.groupingBy(
+            .collect(Collectors.groupingBy(
                 Transaction::getCurrency,
-                java.util.stream.Collectors.summingDouble(Transaction::getAmount)
+                Collectors.mapping(Transaction::getAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
             ));
             
-        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> feesByCurrency = allTransactions.stream()
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, BigDecimal> feesByCurrency = allTransactions.stream()
             .filter(t -> t.getCurrency() != null)
-            .collect(java.util.stream.Collectors.groupingBy(
+            .collect(Collectors.groupingBy(
                 Transaction::getCurrency,
-                java.util.stream.Collectors.summingDouble(Transaction::getFee)
+                Collectors.mapping(Transaction::getFee, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
             ));
             
-        java.util.Map<com.bypass.bypasstransers.enums.Currency, Double> netByCurrency = allTransactions.stream()
+        java.util.Map<com.bypass.bypasstransers.enums.Currency, BigDecimal> netByCurrency = allTransactions.stream()
             .filter(t -> t.getCurrency() != null)
-            .collect(java.util.stream.Collectors.groupingBy(
+            .collect(Collectors.groupingBy(
                 Transaction::getCurrency,
-                java.util.stream.Collectors.summingDouble(Transaction::getNetAmount)
+                Collectors.mapping(Transaction::getNetAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
             ));
             
         model.addAttribute("totalTransactions", allTransactions.size());
@@ -176,10 +175,9 @@ public class AdminController {
         model.addAttribute("feesByCurrency", feesByCurrency);
         model.addAttribute("netByCurrency", netByCurrency);
         
-        
         List<User> staffMembers = userRepository.findAll().stream()
                 .filter(u -> u.getIsActive() && (u.getRole() == Role.STAFF || u.getRole() == Role.SUPERVISOR))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         model.addAttribute("staffMembers", staffMembers);
         
         return "reports";
@@ -204,10 +202,6 @@ public class AdminController {
         return "admin-settings";
     }
 
-    /**
-     * Migrate old users by creating default wallets (Mukuru, Econet, Innbucks) for users who don't have them.
-     * This is useful for users created before the multi-account system was implemented.
-     */
     @PostMapping("/migrate-users")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public String migrateOldUsers(RedirectAttributes ra) {
@@ -217,7 +211,6 @@ public class AdminController {
         
         for (User user : allUsers) {
             try {
-                // Check if user already has default wallets
                 if (!userProvisioningService.hasDefaultWallets(user)) {
                     userProvisioningService.createDefaultWalletsForUser(user);
                     migratedCount++;
@@ -225,21 +218,18 @@ public class AdminController {
                     skippedCount++;
                 }
             } catch (Exception e) {
-                // Log error but continue with other users
                 System.err.println("Failed to migrate user " + user.getUsername() + ": " + e.getMessage());
             }
         }
         
-        ra.addFlashAttribute("success", "Migration complete: " + migratedCount + " users migrated, " + skippedCount + " users already had wallets.");
+        ra.addFlashAttribute("success", "Migration complete: " + migratedCount + " users migrated, " + skippedCount + " already have wallets.");
         return "redirect:/admin";
     }
 
-    /**
-     * Create default wallets for a specific user (admin action)
-     */
     @PostMapping("/create-wallets")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public String createWalletsForUser(@RequestParam Long userId, RedirectAttributes ra) {
+    public String createWalletsForUser(@RequestParam(required = true) Long userId, RedirectAttributes ra) {
+        Objects.requireNonNull(userId, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             ra.addFlashAttribute("error", "User not found.");
@@ -252,7 +242,7 @@ public class AdminController {
                 ra.addFlashAttribute("info", "User " + user.getUsername() + " already has all default wallets.");
             } else {
                 userProvisioningService.createDefaultWalletsForUser(user);
-                ra.addFlashAttribute("success", "Default wallets (Mukuru, Econet, Innbucks) created for " + user.getUsername());
+                ra.addFlashAttribute("success", "Default wallets created for " + user.getUsername());
             }
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Failed to create wallets: " + e.getMessage());
@@ -261,12 +251,10 @@ public class AdminController {
         return "redirect:/users";
     }
     
-    /**
-     * Activate a user and create default wallets for them
-     */
     @PostMapping("/activate-user")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public String activateUser(@RequestParam Long userId, RedirectAttributes ra) {
+    public String activateUser(@RequestParam(required = true) Long userId, RedirectAttributes ra) {
+        Objects.requireNonNull(userId, "User ID must not be null");
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             ra.addFlashAttribute("error", "User not found.");
@@ -275,15 +263,11 @@ public class AdminController {
         
         User user = userOpt.get();
         try {
-            // Activate the user
             user.setIsActive(true);
-            user.setDeletedAt(null); // Clear the deletion timestamp
+            user.setDeletedAt(null);
             userRepository.save(user);
-            
-            // Create default wallets for the activated user
             userProvisioningService.createDefaultWalletsForUser(user);
-            
-            ra.addFlashAttribute("success", "User " + user.getUsername() + " has been activated and default wallets created.");
+            ra.addFlashAttribute("success", "User " + user.getUsername() + " activated and wallets created.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Failed to activate user: " + e.getMessage());
         }
@@ -306,6 +290,7 @@ public class AdminController {
                                RedirectAttributes ra) {
         try {
             User currentUser = securityService.getCurrentUser();
+            Objects.requireNonNull(currentUser, "Current user must not be null");
             Optional<User> userOpt = userRepository.findById(currentUser.getId());
             
             if (userOpt.isEmpty()) {
@@ -314,34 +299,26 @@ public class AdminController {
             }
             
             User user = userOpt.get();
-            
-            // Verify current password
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-                ra.addFlashAttribute("error", "Current password is incorrect");
+                ra.addFlashAttribute("error", "Current password incorrect");
                 return "redirect:/admin/change-password";
             }
-            
-            // Check if new passwords match
             if (!newPassword.equals(confirmPassword)) {
-                ra.addFlashAttribute("error", "New passwords do not match");
+                ra.addFlashAttribute("error", "Passwords do not match");
                 return "redirect:/admin/change-password";
             }
-            
-            // Check password strength
             if (newPassword.length() < 8) {
-                ra.addFlashAttribute("error", "Password must be at least 8 characters long");
+                ra.addFlashAttribute("error", "Password too short");
                 return "redirect:/admin/change-password";
             }
             
-            // Update password
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
-            
-            ra.addFlashAttribute("success", "Password changed successfully");
+            ra.addFlashAttribute("success", "Password changed");
             return "redirect:/admin";
             
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Failed to change password: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + e.getMessage());
             return "redirect:/admin/change-password";
         }
     }
@@ -356,12 +333,10 @@ public class AdminController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public void downloadBackup(HttpServletResponse response) throws Exception {
         byte[] backupData = backupService.createBackup();
-        
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=backup_" + 
                           java.time.LocalDateTime.now().toString().replace(":", "-") + ".zip");
         response.setContentLength(backupData.length);
-        
         response.getOutputStream().write(backupData);
         response.getOutputStream().flush();
     }
@@ -372,24 +347,16 @@ public class AdminController {
                                RedirectAttributes ra) {
         try {
             if (file.isEmpty()) {
-                ra.addFlashAttribute("error", "Please select a backup file to restore");
+                ra.addFlashAttribute("error", "No file selected");
                 return "redirect:/admin/backup";
             }
-            
             byte[] backupData = file.getBytes();
-            
-            // Get backup info for confirmation
             java.util.Map<String, Object> backupInfo = backupService.getBackupInfo(backupData);
-            
-            // Store backup data in session for confirmation
-            // In a real application, you'd want to handle this more securely
             ra.addFlashAttribute("backupInfo", backupInfo);
             ra.addFlashAttribute("backupData", backupData);
-            
             return "redirect:/admin/backup/confirm";
-            
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Failed to process backup file: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + e.getMessage());
             return "redirect:/admin/backup";
         }
     }
@@ -397,23 +364,13 @@ public class AdminController {
     @GetMapping("/backup/confirm")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public String confirmRestorePage(Model model) {
-        // This would typically get backup info from session
-        // For simplicity, we'll just show a generic confirmation
         return "admin-backup-confirm";
     }
     
     @PostMapping("/backup/restore/confirm")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public String confirmRestore(RedirectAttributes ra) {
-        try {
-            // In a real implementation, you'd get the backup data from session
-            // For now, we'll show a message that this requires manual confirmation
-            ra.addFlashAttribute("info", "Restore functionality requires manual database restoration for safety");
-            return "redirect:/admin/backup";
-            
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "Restore failed: " + e.getMessage());
-            return "redirect:/admin/backup";
-        }
+        ra.addFlashAttribute("info", "Restore requires manual database intervention for safety");
+        return "redirect:/admin/backup";
     }
 }

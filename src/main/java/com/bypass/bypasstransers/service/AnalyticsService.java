@@ -14,6 +14,8 @@ import com.bypass.bypasstransers.repository.UserRepository;
 import com.bypass.bypasstransers.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
@@ -51,7 +53,7 @@ public class AnalyticsService {
         }
 
         // Sort by total amount (descending)
-        performanceList.sort((a, b) -> Double.compare(b.getTotalAmount(), a.getTotalAmount()));
+        performanceList.sort((a, b) -> b.getTotalAmount().compareTo(a.getTotalAmount()));
         
         // Assign performance levels
         assignPerformanceLevels(performanceList);
@@ -72,10 +74,16 @@ public class AnalyticsService {
         }
 
         int totalTransactions = transactions.size();
-        double totalAmount = transactions.stream().mapToDouble(Transaction::getAmount).sum();
-        double totalFees = transactions.stream().mapToDouble(Transaction::getFee).sum();
-        double totalNet = totalAmount - totalFees;
-        double walletBalance = wallets.stream().mapToDouble(Wallet::getBalance).sum();
+        BigDecimal totalAmount = transactions.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFees = transactions.stream()
+                .map(Transaction::getFee)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalNet = totalAmount.subtract(totalFees);
+        BigDecimal walletBalance = wallets.stream()
+                .map(Wallet::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         StaffPerformanceDTO dto = new StaffPerformanceDTO();
         dto.setStaffId(user.getId());
@@ -93,14 +101,18 @@ public class AnalyticsService {
     private void assignPerformanceLevels(List<StaffPerformanceDTO> performanceList) {
         if (performanceList.isEmpty()) return;
 
-        double maxAmount = performanceList.get(0).getTotalAmount();
+        BigDecimal maxAmount = performanceList.get(0).getTotalAmount();
         
         for (StaffPerformanceDTO dto : performanceList) {
-            double percentage = maxAmount > 0 ? (dto.getTotalAmount() / maxAmount) * 100 : 0;
+            BigDecimal percentage = BigDecimal.ZERO;
+            if (maxAmount.compareTo(BigDecimal.ZERO) > 0) {
+                percentage = dto.getTotalAmount().multiply(new BigDecimal("100"))
+                        .divide(maxAmount, 2, RoundingMode.HALF_UP);
+            }
             
-            if (percentage >= 80) {
+            if (percentage.compareTo(new BigDecimal("80")) >= 0) {
                 dto.setPerformanceLevel("High");
-            } else if (percentage >= 50) {
+            } else if (percentage.compareTo(new BigDecimal("50")) >= 0) {
                 dto.setPerformanceLevel("Medium");
             } else {
                 dto.setPerformanceLevel("Low");
@@ -119,7 +131,7 @@ public class AnalyticsService {
         List<String> accountTypes = Arrays.asList("Mukuru", "Econet", "Innbucks");
         List<AccountPerformanceDTO> performanceList = new ArrayList<>();
 
-        double totalCompanyAmount = 0;
+        BigDecimal totalCompanyAmount = BigDecimal.ZERO;
         Map<String, AccountPerformanceDTO> dtoMap = new HashMap<>();
 
         for (String accountType : accountTypes) {
@@ -131,9 +143,13 @@ public class AnalyticsService {
             }
 
             int totalTransactions = transactions.size();
-            double totalAmount = transactions.stream().mapToDouble(Transaction::getAmount).sum();
-            double totalFees = transactions.stream().mapToDouble(Transaction::getFee).sum();
-            double totalNet = totalAmount - totalFees;
+            BigDecimal totalAmount = transactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalFees = transactions.stream()
+                    .map(Transaction::getFee)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalNet = totalAmount.subtract(totalFees);
             
             Set<Long> activeUserIds = wallets.stream()
                     .map(w -> w.getOwner().getId())
@@ -148,19 +164,20 @@ public class AnalyticsService {
             dto.setActiveUsers(activeUserIds.size());
 
             dtoMap.put(accountType, dto);
-            totalCompanyAmount += totalAmount;
+            totalCompanyAmount = totalCompanyAmount.add(totalAmount);
         }
 
         // Calculate percentages
         for (AccountPerformanceDTO dto : dtoMap.values()) {
-            if (totalCompanyAmount > 0) {
-                dto.setPercentageOfTotal((dto.getTotalAmount() / totalCompanyAmount) * 100);
+            if (totalCompanyAmount.compareTo(BigDecimal.ZERO) > 0) {
+                dto.setPercentageOfTotal(dto.getTotalAmount().multiply(new BigDecimal("100"))
+                        .divide(totalCompanyAmount, 2, RoundingMode.HALF_UP));
             }
             
             // Assign performance level
-            if (dto.getPercentageOfTotal() >= 40) {
+            if (dto.getPercentageOfTotal().compareTo(new BigDecimal("40")) >= 0) {
                 dto.setPerformanceLevel("High");
-            } else if (dto.getPercentageOfTotal() >= 25) {
+            } else if (dto.getPercentageOfTotal().compareTo(new BigDecimal("25")) >= 0) {
                 dto.setPerformanceLevel("Medium");
             } else {
                 dto.setPerformanceLevel("Low");
@@ -170,7 +187,7 @@ public class AnalyticsService {
         }
 
         // Sort by total amount
-        performanceList.sort((a, b) -> Double.compare(b.getTotalAmount(), a.getTotalAmount()));
+        performanceList.sort((a, b) -> b.getTotalAmount().compareTo(a.getTotalAmount()));
         
         return performanceList;
     }
@@ -206,39 +223,39 @@ public class AnalyticsService {
         expenditureRepository.deleteById(id);
     }
 
-    public double getTotalExpenditureThisMonth() {
+    public BigDecimal getTotalExpenditureThisMonth() {
         YearMonth currentMonth = YearMonth.now();
         LocalDate startDate = currentMonth.atDay(1);
         LocalDate endDate = currentMonth.atEndOfMonth();
         
-        Double total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
-        return total != null ? total : 0.0;
+        BigDecimal total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
+        return total != null ? total : BigDecimal.ZERO;
     }
 
-    public double getTotalExpenditureThisYear() {
+    public BigDecimal getTotalExpenditureThisYear() {
         LocalDate startDate = LocalDate.now().withDayOfYear(1);
         LocalDate endDate = LocalDate.now();
         
-        Double total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
-        return total != null ? total : 0.0;
+        BigDecimal total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
+        return total != null ? total : BigDecimal.ZERO;
     }
 
-    public double getTotalExpenditureForPeriod(LocalDate startDate, LocalDate endDate) {
-        Double total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
-        return total != null ? total : 0.0;
+    public BigDecimal getTotalExpenditureForPeriod(LocalDate startDate, LocalDate endDate) {
+        BigDecimal total = expenditureRepository.getTotalExpenditureForPeriod(startDate, endDate);
+        return total != null ? total : BigDecimal.ZERO;
     }
 
-    public Map<String, Double> getMonthlyExpenditureSummary() {
+    public Map<String, BigDecimal> getMonthlyExpenditureSummary() {
         YearMonth currentMonth = YearMonth.now();
         LocalDate startDate = currentMonth.atDay(1);
         LocalDate endDate = currentMonth.atEndOfMonth();
         
         List<Object[]> results = expenditureRepository.getExpenditureByCategoryForPeriod(startDate, endDate);
-        Map<String, Double> summary = new HashMap<>();
+        Map<String, BigDecimal> summary = new HashMap<>();
         
         for (Object[] result : results) {
             String category = (String) result[0];
-            Double amount = (Double) result[1];
+            BigDecimal amount = (BigDecimal) result[1];
             summary.put(category, amount);
         }
         

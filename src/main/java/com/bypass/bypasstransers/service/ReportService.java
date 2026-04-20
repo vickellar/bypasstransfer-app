@@ -9,6 +9,8 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +25,13 @@ public class ReportService {
     @Autowired
     private TransactionRepository txRepo;
 
-    public double profit() {
+    public BigDecimal profit() {
         return txRepo.findAll()
                 .stream()
                 .filter(t -> t.getType() != null && t.getType() != TransactionType.INCOME)
-                .mapToDouble(t -> t.getAmount() * ChargeCalculator.BASE_PROFIT_DEFAULT)
-                .sum();
+                .map(t -> t.getAmount().multiply(ChargeCalculator.BASE_PROFIT_DEFAULT))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public void generateDailyReport(LocalDate date, OutputStream out) throws Exception {

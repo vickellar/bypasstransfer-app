@@ -24,7 +24,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
@@ -43,7 +44,15 @@ public class SecurityConfig {
                 .contentTypeOptions(cto -> {}) // Prevent MIME sniffing
                 .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                 .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';")
+                    .policyDirectives(
+                        "default-src 'self'; " +
+                        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+                        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; " +
+                        "img-src 'self' data: https:; " +
+                        "connect-src 'self'; " +
+                        "frame-ancestors 'none';"
+                    )
                 )
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)

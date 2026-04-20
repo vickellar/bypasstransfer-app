@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -34,24 +35,21 @@ public class AnalyticsController {
     public String analyticsDashboard(Model model) {
         User currentUser = securityService.getCurrentUser();
         
-        // Staff Performance Data
         List<StaffPerformanceDTO> staffPerformance = analyticsService.getStaffPerformance();
         model.addAttribute("staffPerformance", staffPerformance);
-        double totalStaffWalletBalance = staffPerformance.stream()
-                .filter(Objects::nonNull)
-                .mapToDouble(StaffPerformanceDTO::getWalletBalance)
-                .sum();
-        model.addAttribute("totalStaffWalletBalance", totalStaffWalletBalance);
         
-        // Account Performance Data
+        BigDecimal totalStaffWalletBalance = staffPerformance.stream()
+                .filter(Objects::nonNull)
+                .map(StaffPerformanceDTO::getWalletBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        model.addAttribute("totalStaffWalletBalance", totalStaffWalletBalance.doubleValue());
+        
         List<AccountPerformanceDTO> accountPerformance = analyticsService.getAccountPerformance();
         model.addAttribute("accountPerformance", accountPerformance);
         
-        // Expenditure Summary
         model.addAttribute("monthlyExpenditure", analyticsService.getMonthlyExpenditureSummary());
-        model.addAttribute("totalExpenditureThisMonth", analyticsService.getTotalExpenditureThisMonth());
+        model.addAttribute("totalExpenditureThisMonth", analyticsService.getTotalExpenditureThisMonth().doubleValue());
         
-        // Top Performers
         model.addAttribute("topStaff", analyticsService.getTopPerformingStaff(5));
         model.addAttribute("topAccounts", analyticsService.getTopPerformingAccounts(3));
         
@@ -68,16 +66,21 @@ public class AnalyticsController {
         List<StaffPerformanceDTO> staffPerformance = analyticsService.getStaffPerformanceDetailed();
         model.addAttribute("staffPerformance", staffPerformance);
         
-        // Calculate totals for summary cards
         int totalTransactions = staffPerformance.stream().mapToInt(StaffPerformanceDTO::getTotalTransactions).sum();
-        double totalAmount = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getTotalAmount).sum();
-        double totalFees = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getTotalFees).sum();
-        double totalWalletBalance = staffPerformance.stream().mapToDouble(StaffPerformanceDTO::getWalletBalance).sum();
+        BigDecimal totalAmount = staffPerformance.stream()
+                .map(StaffPerformanceDTO::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFees = staffPerformance.stream()
+                .map(StaffPerformanceDTO::getTotalFees)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalWalletBalance = staffPerformance.stream()
+                .map(StaffPerformanceDTO::getWalletBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         model.addAttribute("sumTransactions", totalTransactions);
-        model.addAttribute("sumAmount", totalAmount);
-        model.addAttribute("sumFees", totalFees);
-        model.addAttribute("sumWalletBalance", totalWalletBalance);
+        model.addAttribute("sumAmount", totalAmount.doubleValue());
+        model.addAttribute("sumFees", totalFees.doubleValue());
+        model.addAttribute("sumWalletBalance", totalWalletBalance.doubleValue());
         
         model.addAttribute("user", currentUser);
         
@@ -91,13 +94,14 @@ public class AnalyticsController {
         List<AccountPerformanceDTO> accountPerformance = analyticsService.getAccountPerformanceDetailed();
         model.addAttribute("accountPerformance", accountPerformance);
         
-        // Calculate totals for summary cards
         int totalTransactions = accountPerformance.stream().mapToInt(AccountPerformanceDTO::getTotalTransactions).sum();
-        double totalAmount = accountPerformance.stream().mapToDouble(AccountPerformanceDTO::getTotalAmount).sum();
+        BigDecimal totalAmount = accountPerformance.stream()
+                .map(AccountPerformanceDTO::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         int totalActiveUsers = accountPerformance.stream().mapToInt(AccountPerformanceDTO::getActiveUsers).sum();
         
         model.addAttribute("sumTransactions", totalTransactions);
-        model.addAttribute("sumAmount", totalAmount);
+        model.addAttribute("sumAmount", totalAmount.doubleValue());
         model.addAttribute("sumActiveUsers", totalActiveUsers);
         
         model.addAttribute("user", currentUser);
@@ -105,14 +109,13 @@ public class AnalyticsController {
         return "account-performance-detail";
     }
 
-    // Expenditure Management
     @GetMapping("/expenditures")
     public String expendituresList(Model model) {
         User currentUser = securityService.getCurrentUser();
         
         model.addAttribute("expenditures", analyticsService.getAllExpenditures());
-        model.addAttribute("totalThisMonth", analyticsService.getTotalExpenditureThisMonth());
-        model.addAttribute("totalThisYear", analyticsService.getTotalExpenditureThisYear());
+        model.addAttribute("totalThisMonth", analyticsService.getTotalExpenditureThisMonth().doubleValue());
+        model.addAttribute("totalThisYear", analyticsService.getTotalExpenditureThisYear().doubleValue());
         model.addAttribute("user", currentUser);
         
         return "expenditures-list";
@@ -128,9 +131,9 @@ public class AnalyticsController {
     public String saveExpenditure(@ModelAttribute ExpenditureDTO expenditure, RedirectAttributes ra) {
         try {
             analyticsService.saveExpenditure(expenditure);
-            ra.addFlashAttribute("success", "Expenditure recorded successfully");
+            ra.addFlashAttribute("success", "Expenditure recorded");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Failed to save expenditure: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + e.getMessage());
         }
         return "redirect:/admin/analytics/expenditures";
     }
@@ -139,14 +142,13 @@ public class AnalyticsController {
     public String deleteExpenditure(@RequestParam Long id, RedirectAttributes ra) {
         try {
             analyticsService.deleteExpenditure(id);
-            ra.addFlashAttribute("success", "Expenditure deleted");
+            ra.addFlashAttribute("success", "Deleted");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Failed to delete: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed: " + e.getMessage());
         }
         return "redirect:/admin/analytics/expenditures";
     }
 
-    // Reports
     @GetMapping("/reports/expenditure")
     public String expenditureReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -159,31 +161,22 @@ public class AnalyticsController {
         model.addAttribute("expenditureReport", analyticsService.getExpenditureReport(startDate, endDate));
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
-        model.addAttribute("totalAmount", analyticsService.getTotalExpenditureForPeriod(startDate, endDate));
+        model.addAttribute("totalAmount", analyticsService.getTotalExpenditureForPeriod(startDate, endDate).doubleValue());
         
         return "expenditure-report";
     }
     
-    // Advanced Profit Analytics Endpoints
     @GetMapping("/profit-trends")
     public String profitTrends(Model model) {
-        User currentUser = securityService.getCurrentUser();
-        
-        // Calculate profit trends
-        model.addAttribute("user", currentUser);
+        model.addAttribute("user", securityService.getCurrentUser());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
-        
         return "profit-trends";
     }
     
     @GetMapping("/profit-forecast")
     public String profitForecast(Model model) {
-        User currentUser = securityService.getCurrentUser();
-        
-        // Calculate profit forecasts
-        model.addAttribute("user", currentUser);
+        model.addAttribute("user", securityService.getCurrentUser());
         model.addAttribute("isSuperAdmin", securityService.isSuperAdmin());
-        
         return "profit-forecast";
     }
 }

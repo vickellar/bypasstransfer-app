@@ -2,6 +2,7 @@ package com.bypass.bypasstransers.service;
 
 import com.bypass.bypasstransers.model.Account;
 import com.bypass.bypasstransers.repository.AccountRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +26,11 @@ public class AlertService {
     @Autowired
     private SmsService smsService;
 
-    public List<Account> lowBalance(double threshold) {
+    public List<Account> lowBalance(BigDecimal threshold) {
         try {
             return accountRepository.findAll()
                     .stream()
-                    .filter(a -> a.getBalance() < threshold)
+                    .filter(a -> a.getBalance() != null && a.getBalance().compareTo(threshold) < 0)
                     .toList();
         } catch (Exception e) {
             log.error("Failed to fetch low balance accounts", e);
@@ -42,7 +43,8 @@ public class AlertService {
         try {
             return accountRepository.findAll()
                     .stream()
-                    .filter(a -> a.getBalance() < a.getLowBalanceThreshold())
+                    .filter(a -> a.getBalance() != null && a.getLowBalanceThreshold() != null 
+                             && a.getBalance().compareTo(a.getLowBalanceThreshold()) < 0)
                     .toList();
         } catch (Exception e) {
             log.error("Failed to fetch low balance accounts", e);

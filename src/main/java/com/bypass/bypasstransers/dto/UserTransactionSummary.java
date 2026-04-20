@@ -1,12 +1,14 @@
 package com.bypass.bypasstransers.dto;
 
+import java.math.BigDecimal;
+
 public class UserTransactionSummary {
     private Long userId;
     private String username;
     private long transactionCount;
-    private double totalAmount;
-    private double totalFees;
-    private double walletBalance;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal totalFees = BigDecimal.ZERO;
+    private BigDecimal walletBalance = BigDecimal.ZERO;
 
     public UserTransactionSummary() {
     }
@@ -35,27 +37,27 @@ public class UserTransactionSummary {
         this.transactionCount = transactionCount;
     }
 
-    public double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 
-    public double getTotalFees() {
+    public BigDecimal getTotalFees() {
         return totalFees;
     }
 
-    public void setTotalFees(double totalFees) {
+    public void setTotalFees(BigDecimal totalFees) {
         this.totalFees = totalFees;
     }
 
-    public double getWalletBalance() {
+    public BigDecimal getWalletBalance() {
         return walletBalance;
     }
 
-    public void setWalletBalance(double walletBalance) {
+    public void setWalletBalance(BigDecimal walletBalance) {
         this.walletBalance = walletBalance;
     }
 }
