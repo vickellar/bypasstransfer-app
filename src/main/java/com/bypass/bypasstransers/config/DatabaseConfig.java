@@ -20,11 +20,18 @@ public class DatabaseConfig {
         String dbUrl = System.getenv("DATABASE_URL");
         
         if (dbUrl == null || dbUrl.isEmpty()) {
-            log.info("No DATABASE_URL found, falling back to localhost database configuration.");
+            log.warn("No DATABASE_URL found, falling back to localhost database configuration.");
+            log.warn("This will NOT work on Render! Make sure DATABASE_URL is set in Render environment variables.");
+            
+            String fallbackUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/bypass_records";
+            String fallbackUser = System.getenv("DB_USERNAME") != null ? System.getenv("DB_USERNAME") : "postgres";
+            String fallbackPass = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "";
+            
+            log.info("Using fallback URL: {}", fallbackUrl);
             return DataSourceBuilder.create()
-                .url(System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/bypass_records")
-                .username(System.getenv("DB_USERNAME") != null ? System.getenv("DB_USERNAME") : "postgres")
-                .password(System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "")
+                .url(fallbackUrl)
+                .username(fallbackUser)
+                .password(fallbackPass)
                 .driverClassName("org.postgresql.Driver")
                 .build();
         }
@@ -61,15 +68,19 @@ public class DatabaseConfig {
             int port = uri.getPort();
             if (port == -1) port = 5432;
 
-            String jdbcUrl = "jdbc:postgresql://" + uri.getHost() + ":" + port + uri.getPath() + "?sslmode=prefer";
+            String jdbcUrl = "jdbc:postgresql://" + uri.getHost() + ":" + port + uri.getPath() + "?sslmode=require&ssl=true";
             log.info("Successfully constructed JDBC URL for host: {}", uri.getHost());
+            log.info("JDBC URL: {}", jdbcUrl.replace(password, "***"));
 
-            return DataSourceBuilder.create()
+            DataSource dataSource = DataSourceBuilder.create()
                 .url(jdbcUrl)
                 .username(user)
                 .password(password)
                 .driverClassName("org.postgresql.Driver")
                 .build();
+            
+            log.info("DataSource created successfully. Testing connection...");
+            return dataSource;
 
         } catch (Exception e) {
             log.error("Failed to parse DATABASE_URL: {}", e.getMessage(), e);
