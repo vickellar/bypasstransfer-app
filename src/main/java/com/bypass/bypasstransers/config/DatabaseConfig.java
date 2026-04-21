@@ -17,7 +17,17 @@ public class DatabaseConfig {
     @Bean
     @Primary
     public DataSource dataSource() {
+        log.info("========================================");
+        log.info("Database Configuration Starting...");
+        log.info("========================================");
+        
         String dbUrl = System.getenv("DATABASE_URL");
+        
+        log.info("DATABASE_URL environment variable: {}", dbUrl != null ? "FOUND" : "NOT FOUND");
+        
+        if (dbUrl != null && !dbUrl.isEmpty()) {
+            log.info("DATABASE_URL starts with: {}", dbUrl.substring(0, Math.min(20, dbUrl.length())));
+        }
         
         if (dbUrl == null || dbUrl.isEmpty()) {
             log.warn("No DATABASE_URL found, falling back to localhost database configuration.");
