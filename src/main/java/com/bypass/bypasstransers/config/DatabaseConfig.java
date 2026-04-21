@@ -33,11 +33,23 @@ public class DatabaseConfig {
             log.warn("No DATABASE_URL found, falling back to localhost database configuration.");
             log.warn("This will NOT work on Render! Make sure DATABASE_URL is set in Render environment variables.");
             
-            String fallbackUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/bypass_records";
+            // Try DB_URL as fallback (which might be your postgresql:// URL)
+            String fallbackUrl = System.getenv("DB_URL");
+            if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
+                // Normalize postgresql:// to postgres://
+                if (fallbackUrl.startsWith("postgresql://")) {
+                    fallbackUrl = fallbackUrl.replaceFirst("postgresql://", "postgres://");
+                    log.info("Normalized DB_URL from postgresql:// to postgres://");
+                }
+                log.info("Using DB_URL fallback: {}", fallbackUrl.split(":")[0] + ":***");
+            } else {
+                fallbackUrl = "jdbc:postgresql://localhost:5432/bypass_records";
+                log.info("Using localhost fallback");
+            }
+            
             String fallbackUser = System.getenv("DB_USERNAME") != null ? System.getenv("DB_USERNAME") : "postgres";
             String fallbackPass = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "";
             
-            log.info("Using fallback URL: {}", fallbackUrl);
             return DataSourceBuilder.create()
                 .url(fallbackUrl)
                 .username(fallbackUser)
@@ -59,8 +71,15 @@ public class DatabaseConfig {
                     .build();
             }
 
+            // Normalize postgresql:// to postgres:// for Java URI parsing
+            String normalizedUrl = dbUrl;
+            if (dbUrl.startsWith("postgresql://")) {
+                normalizedUrl = dbUrl.replaceFirst("postgresql://", "postgres://");
+                log.info("Normalized postgresql:// to postgres://");
+            }
+
             // Parse Render's postgres:// or postgresql:// URL
-            URI uri = new URI(dbUrl);
+            URI uri = new URI(normalizedUrl);
             String userInfo = uri.getUserInfo();
             String user = "postgres";
             String password = "";
