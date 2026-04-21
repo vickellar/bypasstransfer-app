@@ -21,34 +21,32 @@ public class DatabaseConfig {
         log.info("Database Configuration Starting...");
         log.info("========================================");
         
+        // Priority 1: DATABASE_URL (Render's default)
         String dbUrl = System.getenv("DATABASE_URL");
         
-        log.info("DATABASE_URL environment variable: {}", dbUrl != null ? "FOUND" : "NOT FOUND");
+        // Priority 2: DB_URL (for local development with postgresql:// URLs)
+        if (dbUrl == null || dbUrl.isEmpty()) {
+            dbUrl = System.getenv("DB_URL");
+            if (dbUrl != null && !dbUrl.isEmpty()) {
+                log.info("Using DB_URL environment variable");
+            }
+        }
+        
+        log.info("Database URL environment variable: {}", dbUrl != null ? "FOUND" : "NOT FOUND");
         
         if (dbUrl != null && !dbUrl.isEmpty()) {
-            log.info("DATABASE_URL starts with: {}", dbUrl.substring(0, Math.min(20, dbUrl.length())));
+            log.info("Database URL starts with: {}", dbUrl.substring(0, Math.min(30, dbUrl.length())) + "...");
         }
         
         if (dbUrl == null || dbUrl.isEmpty()) {
-            log.warn("No DATABASE_URL found, falling back to localhost database configuration.");
-            log.warn("This will NOT work on Render! Make sure DATABASE_URL is set in Render environment variables.");
+            log.warn("No DATABASE_URL or DB_URL found, falling back to localhost.");
             
-            // Try DB_URL as fallback (which might be your postgresql:// URL)
-            String fallbackUrl = System.getenv("DB_URL");
-            if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
-                // Normalize postgresql:// to postgres://
-                if (fallbackUrl.startsWith("postgresql://")) {
-                    fallbackUrl = fallbackUrl.replaceFirst("postgresql://", "postgres://");
-                    log.info("Normalized DB_URL from postgresql:// to postgres://");
-                }
-                log.info("Using DB_URL fallback: {}", fallbackUrl.split(":")[0] + ":***");
-            } else {
-                fallbackUrl = "jdbc:postgresql://localhost:5432/bypass_records";
-                log.info("Using localhost fallback");
-            }
-            
+            // Fallback to localhost for local development
+            String fallbackUrl = "jdbc:postgresql://localhost:5432/bypass_records";
             String fallbackUser = System.getenv("DB_USERNAME") != null ? System.getenv("DB_USERNAME") : "postgres";
             String fallbackPass = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "";
+            
+            log.info("Using localhost: jdbc:postgresql://localhost:5432/bypass_records");
             
             return DataSourceBuilder.create()
                 .url(fallbackUrl)

@@ -37,4 +37,4 @@ cookies.txt
 .env
 *.env
 logs/
-
+*.bat
