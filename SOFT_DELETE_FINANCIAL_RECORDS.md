@@ -214,7 +214,7 @@ public void testForgotPasswordAndResetFlow() throws Exception {
 ### Find Active Users Only:
 ```java
 // Default behavior - excludes soft-deleted users
-List<User> activeUsers = userRepository.findByIsActiveTrue();
+List<User> users = userRepository.findByUsername(resolvedUsername);
 ```
 
 ### Find Inactive Users:

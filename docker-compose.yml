@@ -31,15 +31,29 @@ services:
       DB_URL: jdbc:postgresql://db:5432/bypass_records
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-NjisweVic~2030}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # JVM optimizations for Docker
+      JAVA_OPTS: >-
+        -Xmx512m
+        -Xms256m
+        -XX:+UseG1GC
+        -XX:+UseStringDeduplication
+        -Djava.security.egd=file:/dev/./urandom
+      # Spring Boot optimizations
+      SPRING_JPA_OPEN_IN_VIEW: "false"
+      SPRING_THYMELEAF_CACHE: "false"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    # Volume mount for faster file access (development only)
+    volumes:
+      - ./logs:/app/logs
     deploy:
       resources:
         limits:
           memory: 1g
+          cpus: '2.0'
 
 volumes:
   pgdata:

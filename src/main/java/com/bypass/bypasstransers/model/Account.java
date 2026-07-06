@@ -9,6 +9,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 
+/**
+ *
+ * @author Vickeller.01
+ */
 @Entity
 public class Account {
 
