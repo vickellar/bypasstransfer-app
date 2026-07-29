@@ -15,9 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Controller
 public class PasswordResetController {
+
+    private static final Pattern STRONG_PASSWORD_PATTERN = Pattern.compile(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
+    );
 
     private final UserRepository userRepository;
     private final PasswordResetService passwordResetService;
@@ -135,9 +140,15 @@ public class PasswordResetController {
             return "redirect:/change-password";
         }
 
-        // Validate new password
-        if (newPassword == null || newPassword.length() < 6) {
-            ra.addFlashAttribute("error", "New password must be at least 6 characters long.");
+        // Validate new password strength
+        if (newPassword == null || !STRONG_PASSWORD_PATTERN.matcher(newPassword).matches()) {
+            ra.addFlashAttribute("error", "Password must be at least 12 characters with uppercase, lowercase, numbers, and symbols (@$!%*?&).");
+            return "redirect:/change-password";
+        }
+
+        // Prevent reuse of current password
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            ra.addFlashAttribute("error", "New password must be different from your current password.");
             return "redirect:/change-password";
         }
 

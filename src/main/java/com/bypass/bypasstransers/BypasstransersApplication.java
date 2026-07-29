@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.util.List;
 
 @SpringBootApplication
@@ -75,31 +76,50 @@ public class BypasstransersApplication {
 
                 long users = userRepo.count();
                 if (users == 0) {
+                    // Read credentials from environment variables; generate secure random passwords if not set
+                    String superAdminPass = getEnvOrDefault("SUPERADMIN_PASSWORD", null);
+                    String adminPass = getEnvOrDefault("ADMIN_PASSWORD", null);
+                    String staffPass = getEnvOrDefault("STAFF_PASSWORD", null);
+
+                    boolean generated = false;
+                    if (superAdminPass == null) { superAdminPass = generateSecurePassword(); generated = true; }
+                    if (adminPass == null) { adminPass = generateSecurePassword(); generated = true; }
+                    if (staffPass == null) { staffPass = generateSecurePassword(); generated = true; }
+
                     // create a super admin
                     User superAdmin = new User();
-                    superAdmin.setUsername("superadmin");
-                    superAdmin.setPassword(passwordEncoder.encode("superpass"));
+                    superAdmin.setUsername(getEnvOrDefault("SUPERADMIN_USERNAME", "superadmin"));
+                    superAdmin.setPassword(passwordEncoder.encode(superAdminPass));
                     superAdmin.setPhoneNumber("+26377801140");
                     superAdmin.setRole(Role.SUPER_ADMIN);
                     userRepo.save(superAdmin);
 
                     // create an admin
                     User admin = new User();
-                    admin.setUsername("admin");
-                    admin.setPassword(passwordEncoder.encode("adminpass"));
+                    admin.setUsername(getEnvOrDefault("ADMIN_USERNAME", "admin"));
+                    admin.setPassword(passwordEncoder.encode(adminPass));
                     admin.setPhoneNumber("+263717847646");
                     admin.setRole(Role.ADMIN);
                     userRepo.save(admin);
 
                     // create a staff user
                     User staff = new User();
-                    staff.setUsername("staff");
-                    staff.setPassword(passwordEncoder.encode("staffpass"));
+                    staff.setUsername(getEnvOrDefault("STAFF_USERNAME", "staff"));
+                    staff.setPassword(passwordEncoder.encode(staffPass));
                     staff.setPhoneNumber("+1000000002");
                     staff.setRole(Role.STAFF);
                     userRepo.save(staff);
 
                     log.info("Seeded default users: superadmin/admin/staff");
+                    if (generated) {
+                        log.warn("========================================");
+                        log.warn("GENERATED TEMPORARY PASSWORDS (change immediately!):");
+                        log.warn("  superadmin password: {}", superAdminPass);
+                        log.warn("  admin password:      {}", adminPass);
+                        log.warn("  staff password:      {}", staffPass);
+                        log.warn("Set SUPERADMIN_PASSWORD, ADMIN_PASSWORD, STAFF_PASSWORD env vars to avoid this.");
+                        log.warn("========================================");
+                    }
                 }
 
                 // Migrate any existing plain-text passwords to BCrypt
@@ -120,6 +140,41 @@ public class BypasstransersApplication {
                 log.warn("Initialization skipped: {}", ex.getMessage());
             }
         };
+    }
+
+    private static String getEnvOrDefault(String key, String defaultValue) {
+        String val = System.getenv(key);
+        if (val != null && !val.isBlank()) return val;
+        String prop = System.getProperty(key);
+        if (prop != null && !prop.isBlank()) return prop;
+        return defaultValue;
+    }
+
+    private static String generateSecurePassword() {
+        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lower = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String special = "@$!%*?&";
+        String all = upper + lower + digits + special;
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(16);
+        // Guarantee at least one of each category
+        sb.append(upper.charAt(random.nextInt(upper.length())));
+        sb.append(lower.charAt(random.nextInt(lower.length())));
+        sb.append(digits.charAt(random.nextInt(digits.length())));
+        sb.append(special.charAt(random.nextInt(special.length())));
+        for (int i = 4; i < 16; i++) {
+            sb.append(all.charAt(random.nextInt(all.length())));
+        }
+        // Shuffle to avoid predictable positions
+        char[] chars = sb.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char tmp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = tmp;
+        }
+        return new String(chars);
     }
 
 }

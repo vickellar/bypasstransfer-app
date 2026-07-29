@@ -73,10 +73,10 @@ SPRING_PROFILES_ACTIVE=dev     # Development optimizations
 
 ## 📊 Performance Comparison
 
-| Method | Startup Time | Memory Usage | Best For |
-|--------|--------------|--------------|----------|
-| **Local (Maven)** | 15-20 sec | ~400 MB | Development |
-| **Docker** | 30-45 sec | ~800 MB | Testing/Production |
+| Method 			| Startup Time | Memory Usage | Best For |
+|-------------------|--------------|--------------|----------|
+| **Local (Maven)** | 15-20 sec	   |   ~400 MB    |Development |
+| **Docker**        | 30-45 sec    | ~800 MB      | Testing/Production |
 
 ---
 

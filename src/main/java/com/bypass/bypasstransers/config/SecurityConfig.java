@@ -69,7 +69,6 @@ public class SecurityConfig {
                     "/images/**", "/img/**", "/videos/**", "/error", "/favicon.ico").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/**").hasRole("SUPER_ADMIN")
-                .requestMatchers("/debug/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPERVISOR")
                 .requestMatchers("/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/super/**").hasRole("SUPER_ADMIN")

@@ -14,8 +14,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.regex.Pattern;
+
 @Service
 public class PasswordResetService {
+
+    private static final Pattern STRONG_PASSWORD_PATTERN = Pattern.compile(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
+    );
 
     @Autowired
     private PasswordResetTokenRepository tokenRepository;
@@ -85,7 +91,7 @@ public class PasswordResetService {
 
     public boolean resetPassword(String token, String rawPassword) {
         if (token == null || rawPassword == null || rawPassword.isBlank()) return false;
-        if (rawPassword.length() < 6) return false;
+        if (!STRONG_PASSWORD_PATTERN.matcher(rawPassword).matches()) return false;
         PasswordResetToken prt = tokenRepository.findByToken(token);
         if (prt == null) return false;
         if (prt.getExpiry() == null || prt.getExpiry().isBefore(LocalDateTime.now())) return false;
