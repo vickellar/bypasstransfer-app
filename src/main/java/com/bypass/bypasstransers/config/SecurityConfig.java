@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +41,7 @@ public class SecurityConfig {
             )
             // HTTP Security Headers - Hardened
             .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin()) // Prevent Clickjacking
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin) // Prevent Clickjacking
                 .contentTypeOptions(cto -> {}) // Prevent MIME sniffing
                 .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                 .contentSecurityPolicy(csp -> csp
@@ -63,6 +64,15 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
             )
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/actuator/health*")
+                )
+                .rememberMe(rememberMe -> rememberMe
+                        .rememberMeCookieName("app-remember-me")
+                        .useSecureCookie(true)
+                        .alwaysRemember(false)
+                        .tokenValiditySeconds(604800)    //7 day
+                )
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/about", "/register", "/contact", "/login",
                     "/forgot-password", "/reset", "/reset-password", "/css/**", "/js/**",
@@ -89,8 +99,9 @@ public class SecurityConfig {
                 .permitAll()
             )
             .sessionManagement(session -> session
-                .maximumSessions(1) // Prevent multiple concurrent sessions
-                .maxSessionsPreventsLogin(false)
+                    .sessionFixation(org.springframework.security.config.Customizer.withDefaults())
+                    .maximumSessions(2) // Prevent multiple concurrent sessions
+                    .maxSessionsPreventsLogin(false)
             );
 
         http.authenticationProvider(daoAuthenticationProvider(userDetailsService, passwordEncoder()));

@@ -28,7 +28,7 @@ if not exist "performance-results" mkdir performance-results
 
 set BASE_URL=http://localhost:8080
 set CONCURRENCY=5
-set REQUESTS=50
+set REQUESTS=200
 
 echo Starting tests...
 echo Base URL: %BASE_URL%
