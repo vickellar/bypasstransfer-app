@@ -1,5 +1,6 @@
 package com.bypass.bypasstransers;
 
+import com.bypass.bypasstransers.config.DatabaseEnvironmentConfigurer;
 import com.bypass.bypasstransers.model.Account;
 import com.bypass.bypasstransers.model.User;
 import com.bypass.bypasstransers.repository.AccountRepository;
@@ -28,6 +29,7 @@ public class BypasstransersApplication {
 
     public static void main(String[] args) {
         loadDotEnv();
+        DatabaseEnvironmentConfigurer.configure();
         SpringApplication.run(BypasstransersApplication.class, args);
     }
 
