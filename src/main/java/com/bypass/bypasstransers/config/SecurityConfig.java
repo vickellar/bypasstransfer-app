@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import java.time.Duration;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +26,12 @@ public class SecurityConfig {
     }
 
     @Bean
+    public LoginRateLimitFilter loginRateLimitFilter() {
+        // 5 attempts per 15 minutes — same as your interceptor constants
+        return new LoginRateLimitFilter(5, Duration.ofMinutes(15));
+    }
+
+    @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
@@ -33,7 +41,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, UserDetailsService userDetailsService) throws Exception {
-        http
+        http.addFilterBefore(loginRateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
             .userDetailsService(userDetailsService)
             // CSRF enabled globally - Tightened for financial applications
             .csrf(csrf -> csrf
