@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="es-ES">
 
 <head>
     <title>Login | ByPass Transfers</title>
@@ -41,14 +41,19 @@
             <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
             <form th:action="@{/login}" method="post" class="auth-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="input-group">
                     <label>Username or Email</label>
-                    <input type="text" name="username" placeholder="Enter your username" class="auth-input"
-                        autocomplete="username" required />
+                    <label>
+                        <input type="text" name="username" placeholder="Enter your username" class="auth-input"
+                            autocomplete="username" required />
+                    </label>
                 </div>
                 <div class="input-group">
                     <label>Password</label>
-                    <input type="password" name="password" placeholder="••••••••" class="auth-input" required />
+                    <label>
+                        <input type="password" name="password" placeholder="••••••••" class="auth-input" required />
+                    </label>
                 </div>
 
                 <button type="submit" class="auth-btn">

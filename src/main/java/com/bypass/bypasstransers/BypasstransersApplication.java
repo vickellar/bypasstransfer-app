@@ -64,7 +64,7 @@ public class BypasstransersApplication {
                 if (count == 0) {
                     accountRepo.save(new Account(null, "Econet", BigDecimal.ZERO, new BigDecimal("0.033")));
                     accountRepo.save(new Account(null, "InnBucks", BigDecimal.ZERO, new BigDecimal("0.0325")));
-                    accountRepo.save(new Account(null, "Mukuru", BigDecimal.ZERO, new BigDecimal("0.037")));
+                    accountRepo.save(new Account(null, "Mukuru", BigDecimal.ZERO, new BigDecimal("0.03")));
                     log.info("Seeded default accounts");
                 }
 
@@ -134,7 +134,7 @@ public class BypasstransersApplication {
         StringBuilder password = new StringBuilder();
         SecureRandom random = new SecureRandom();
 
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 8; i++) {
             password.append(chars.charAt(random.nextInt(chars.length())));
         }
 

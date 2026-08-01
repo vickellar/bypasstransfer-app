@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         /* Live Ticker */
         .ticker-wrap {
             background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
@@ -35,7 +35,7 @@
         .ticker-item i { margin-right: 8px; }
         .ticker-up { color: #22c55e; }
         .ticker-down { color: #ef4444; }
-        
+
         /* Hero Section */
         .hero {
             background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);
@@ -91,7 +91,7 @@
             position: relative;
             z-index: 1;
         }
-        
+
         /* Responsive adjustments */
         @media (max-width: 1024px) {
             .hero-content {
@@ -101,7 +101,7 @@
                 padding: 50px 20px;
             }
         }
-        
+
         @media (max-width: 768px) {
             .hero-content {
                 grid-template-columns: 1fr;
@@ -121,7 +121,7 @@
                 padding: 24px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .hero {
                 padding: 40px 16px;
@@ -167,7 +167,7 @@
             color: #64748b;
             margin: 0;
         }
-        
+
         /* Exchange Rate Card */
         .exchange-card {
             background: rgba(255,255,255,0.05);
@@ -176,29 +176,29 @@
             border-radius: 24px;
             padding: 24px;
         }
-        
+
         .exchange-rates-container {
             max-height: 320px; /* Show approximately 5 rate rows */
             overflow-y: auto;
             padding-right: 8px;
             margin-top: 10px;
         }
-        
+
         /* Custom scrollbar for exchange rates */
         .exchange-rates-container::-webkit-scrollbar {
             width: 6px;
         }
-        
+
         .exchange-rates-container::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.1);
             border-radius: 3px;
         }
-        
+
         .exchange-rates-container::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.3);
             border-radius: 3px;
         }
-        
+
         .exchange-rates-container::-webkit-scrollbar-thumb:hover {
             background: rgba(255,255,255,0.5);
         }
@@ -241,7 +241,7 @@
         }
         .rate-change.up { background: rgba(34,197,94,0.2); color: #22c55e; }
         .rate-change.down { background: rgba(239,68,68,0.2); color: #ef4444; }
-        
+
         /* Calculator Section */
         .calculator-section {
             background: #f8fafc;
@@ -333,7 +333,7 @@
             color: #64748b;
             margin-top: 8px;
         }
-        
+
         /* Features Grid */
         .features-section {
             padding: 60px 24px;
@@ -381,7 +381,7 @@
             color: #64748b;
             line-height: 1.6;
         }
-        
+
         /* Trust Badges */
         .trust-section {
             background: rgba(30, 41, 59, 0.2);
@@ -415,7 +415,7 @@
             font-size: 16px;
             font-weight: 600;
         }
-        
+
         /* CTA Section */
         .cta-section {
             padding: 100px 32px;
@@ -452,86 +452,84 @@
             transform: translateY(-3px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        
+
         @media (max-width: 768px) {
             .hero-content { grid-template-columns: 1fr; }
             .hero-text h1 { font-size: 36px; }
             .calc-row { grid-template-columns: 1fr; }
             .hero-stats { flex-direction: column; gap: 20px; }
-            
+
             .ticker-item { padding: 0 20px; font-size: 12px; }
             .ticker-item i { margin-right: 4px; }
             .ticker-wrap { padding: 8px 0; }
-            
+
             .exchange-card { padding: 20px; }
             .rate-row { padding: 12px 0; }
             .rate-flag { width: 32px; height: 32px; font-size: 16px; }
             .rate-value h4 { font-size: 18px; }
             .exchange-rates-container { max-height: 280px; }
-            
+
             .calculator-card { padding: 24px; }
             .calc-result .amount { font-size: 32px; }
-            
+
             .features-grid { gap: 20px; }
             .feature-card { padding: 24px; }
-            
+
             .trust-badges { gap: 30px; }
             .trust-item { gap: 8px; }
             .trust-item i { font-size: 24px; }
             .trust-item span { font-size: 14px; }
-            
+
             .cta-section { padding: 60px 24px; }
             .cta-section h2 { font-size: 32px; }
             .cta-section p { font-size: 16px; }
             .btn-white { padding: 16px 32px; font-size: 16px; }
-            
+
             /* Video background adjustments for mobile */
             .hero-video-bg {
                 opacity: 0.4; /* Slightly higher opacity on mobile to preserve battery life */
             }
         }
-        
+
         @media (max-width: 480px) {
             .hero { padding: 60px 20px; }
             .hero-text h1 { font-size: 28px; }
             .hero-text p { font-size: 16px; }
             .hero-stats { gap: 16px; }
             .stat-item h3 { font-size: 24px; }
-            
+
             /* Video background adjustments for small mobile */
             .hero-video-bg {
                 opacity: 0.5; /* Higher opacity on very small screens */
             }
-            
+
             .section-header h2 { font-size: 28px; }
             .section-header p { font-size: 16px; }
-            
+
             .calculator-card { padding: 16px; }
             .calc-field input, .calc-field select { padding: 12px; font-size: 16px; }
             .calc-swap { width: 40px; height: 40px; font-size: 16px; }
             .calc-result .amount { font-size: 24px; }
             .exchange-rates-container { max-height: 240px; }
-            
+
             .feature-icon { width: 50px; height: 50px; font-size: 20px; }
             .feature-card h3 { font-size: 18px; }
             .feature-card p { font-size: 14px; }
-            
+
             .cta-section h2 { font-size: 24px; }
             .btn-white { padding: 14px 24px; font-size: 14px; }
         }
     </style>
 </head>
 <body>
-    <video class="hero-video-bg" autoplay loop muted playsinline>
-        <source th:src="@{/videos/hero-video.mp4}" type="video/mp4">
-    </video>
+
     <div th:insert="~{fragments/header :: header}"></div>
-    
+
     <!-- Alert for deactivated users -->
     <div th:if="${#authentication.name != null}" class="deactivation-alert" style="display:none;">
         <div th:attr="data-username=${#authentication.name}" style="display:none;" id="currentUser"></div>
     </div>
-    
+
     <script th:inline="javascript">
         // Check if user is active by querying backend
         window.onload = function() {
@@ -570,7 +568,7 @@
                             </div>
                         `;
                         document.body.appendChild(alertDiv);
-                        
+
                         // Also disable interactive elements
                         const interactiveElements = document.querySelectorAll('input, button, select, textarea, a[href^="/transfer"], a[href^="/transaction"]');
                         interactiveElements.forEach(el => {
@@ -583,23 +581,69 @@
                 .catch(error => console.error('Error checking user status:', error));
         };
     </script>
-    
+
     <!-- Live Market Ticker -->
     <div class="ticker-wrap">
         <div class="ticker">
-            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 3,750.00 (+0.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0850 (-0.1%)</span></span>
-            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2670 (+0.3%)</span></span>
-            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+0.5%)</span></span>
-            <span class="ticker-item"><i class="fas fa-ruble-sign"></i> RUB/USD <span class="ticker-down">▼ 0.0108 (-0.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,520 (+0.4%)</span></span>
-            <!-- Duplicate for seamless loop -->
-            <span class="ticker-item"><i class="fas fa-dollar-sign"></i> USD/ZWL <span class="ticker-up">▲ 3,750.00 (+0.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-euro-sign"></i> EUR/USD <span class="ticker-down">▼ 1.0850 (-0.1%)</span></span>
-            <span class="ticker-item"><i class="fas fa-pound-sign"></i> GBP/USD <span class="ticker-up">▲ 1.2670 (+0.3%)</span></span>
-            <span class="ticker-item"><i class="fas fa-rand"></i> ZAR/USD <span class="ticker-up">▲ 0.0542 (+0.5%)</span></span>
-            <span class="ticker-item"><i class="fas fa-ruble-sign"></i> RUB/USD <span class="ticker-down">▼ 0.0108 (-0.2%)</span></span>
-            <span class="ticker-item"><i class="fas fa-bitcoin"></i> BTC/USD <span class="ticker-up">▲ $67,520 (+0.4%)</span></span>
+            <span class="ticker-item" th:if="${exchangeRates['ZWL']} != null">
+    <i class="fas fa-dollar-sign"></i>
+    <span>USD/ZWL</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['ZWL'], 1, 'COMMA', 2, 'POINT')} + ' (+0.2%)'">▲ 3,750.00 (+0.2%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['EUR']} != null">
+    <i class="fas fa-euro-sign"></i>
+    <span>USD/EUR</span>
+    <span class="ticker-down" th:text="'▼ ' + ${#numbers.formatDecimal(exchangeRates['EUR'], 1, 'COMMA', 2, 'POINT')} + ' (-0.1%)'">▼ 0.92 (-0.1%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['GBP']} != null">
+    <i class="fas fa-pound-sign"></i>
+    <span>USD/GBP</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['GBP'], 1, 'COMMA', 2, 'POINT')} + ' (+0.3%)'">▲ 0.79 (+0.3%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['ZAR']} != null">
+    <i class="fas fa-rand"></i>
+    <span>USD/ZAR</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['ZAR'], 1, 'COMMA', 2, 'POINT')} + ' (+0.5%)'">▲ 18.45 (+0.5%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['RUB']} != null">
+    <i class="fas fa-ruble-sign"></i>
+    <span>USD/RUB</span>
+    <span class="ticker-down" th:text="'▼ ' + ${#numbers.formatDecimal(exchangeRates['RUB'], 1, 'COMMA', 2, 'POINT')} + ' (-0.2%)'">▼ 92.50 (-0.2%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['ZWL']} != null">
+    <i class="fas fa-dollar-sign"></i>
+    <span>USD/ZWL</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['ZWL'], 1, 'COMMA', 2, 'POINT')} + ' (+0.2%)'">▲ 3,750.00 (+0.2%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['EUR']} != null">
+    <i class="fas fa-euro-sign"></i>
+    <span>USD/EUR</span>
+    <span class="ticker-down" th:text="'▼ ' + ${#numbers.formatDecimal(exchangeRates['EUR'], 1, 'COMMA', 2, 'POINT')} + ' (-0.1%)'">▼ 0.92 (-0.1%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['GBP']} != null">
+    <i class="fas fa-pound-sign"></i>
+    <span>USD/GBP</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['GBP'], 1, 'COMMA', 2, 'POINT')} + ' (+0.3%)'">▲ 0.79 (+0.3%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['ZAR']} != null">
+    <i class="fas fa-rand"></i>
+    <span>USD/ZAR</span>
+    <span class="ticker-up" th:text="'▲ ' + ${#numbers.formatDecimal(exchangeRates['ZAR'], 1, 'COMMA', 2, 'POINT')} + ' (+0.5%)'">▲ 18.45 (+0.5%)</span>
+</span>
+
+            <span class="ticker-item" th:if="${exchangeRates['RUB']} != null">
+    <i class="fas fa-ruble-sign"></i>
+    <span>USD/RUB</span>
+    <span class="ticker-down" th:text="'▼ ' + ${#numbers.formatDecimal(exchangeRates['RUB'], 1, 'COMMA', 2, 'POINT')} + ' (-0.2%)'">▼ 92.50 (-0.2%)</span>
+</span>
         </div>
     </div>
 
@@ -629,7 +673,7 @@
                     <a th:href="@{/login}" class="btn btn-secondary"><i class="fas fa-sign-in-alt"></i> Sign In</a>
                 </div>
             </div>
-            
+
             <!-- Live Exchange Rates Card -->
             <div class="exchange-card">
                 <h3><i class="fas fa-chart-line"></i> Live Exchange Rates</h3>
@@ -870,8 +914,8 @@
                     <h4>Transfer Details</h4>
                     <div class="amount" id="receiveAmount">USD 950.00</div>
                     <div class="fee">
-                        <i class="fas fa-info-circle"></i> 
-                        Fee: <span id="feeAmount">$50.00</span> | 
+                        <i class="fas fa-info-circle"></i>
+                        Fee: <span id="feeAmount">$50.00</span> |
                         Exchange Rate: <span id="exchangeRate">1 USD = 1.00 USD</span> |
                         Net Amount: <span id="netAmount">$950.00</span>
                     </div>
@@ -974,7 +1018,7 @@
         function updateCalculationMode() {
             const mode = document.getElementById('calculationMode').value;
             const amountInputLabel = document.getElementById('amountInputLabel');
-            
+
             if (mode === 'payIn') {
                 amountInputLabel.textContent = 'Pay-In Amount';
                 document.getElementById('sendAmount').value = '1000';
@@ -982,7 +1026,7 @@
                 amountInputLabel.textContent = 'Amount to Receive (USD)';
                 document.getElementById('sendAmount').value = '100';
             }
-            
+
             calculateTransfer();
         }
 
@@ -991,21 +1035,21 @@
             const amount = parseFloat(document.getElementById('sendAmount').value) || 0;
             const from = document.getElementById('fromCurrency').value;
             const feePercent = parseFloat(document.getElementById('feePercentage').value) || 5; // Default to 5%
-            
+
             // Get exchange rate from sending currency to USD (fixed receiving currency)
             const rate = rates[from] && rates[from]['USD'] ? rates[from]['USD'] : 1;
-            
+
             let receivedInUSD, payInAmount, payInAmountInUSD;
-            
+
             if (mode === 'payIn') {
                 // PAY-IN MODE: User enters amount they want to pay in
                 // Calculate the fee amount
                 const fee = amount * (feePercent / 100);
                 const amountAfterFee = amount - fee;
-                
+
                 // Calculate the final amount received in USD
                 receivedInUSD = amountAfterFee * rate;
-                
+
                 // Calculate equivalent in original currency (for display purposes)
                 payInAmount = amount;
                 payInAmountInUSD = amount * rate;
@@ -1013,7 +1057,7 @@
                 // RECEIVE MODE: User enters amount they want the recipient to receive (in USD)
                 // We need to reverse calculate the pay-in amount
                 receivedInUSD = amount; // This is what the recipient should get
-                
+
                 // Reverse calculation: amount / rate = amount in original currency before conversion
                 // Then we need to account for the fee
                 // If x is the pay-in amount in original currency, then:
@@ -1023,7 +1067,7 @@
                 payInAmount = (receivedInUSD / rate) / netRate;
                 payInAmountInUSD = payInAmount * rate;
             }
-            
+
             // Format based on currency
             const formatCurrency = (val, curr) => {
                 if (curr === 'ZWL') return 'ZWL ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1036,20 +1080,20 @@
                 if (curr === 'RUB') return 'RUB ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 return curr + ' ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             };
-            
+
             // Update the display elements
             document.getElementById('receiveAmount').textContent = formatCurrency(receivedInUSD, 'USD');
             document.getElementById('finalReceiveAmount').value = receivedInUSD.toFixed(2);
             document.getElementById('payInUsdAmount').value = payInAmountInUSD.toFixed(2);
             document.getElementById('payInAmount').value = payInAmount.toFixed(2);
-            
+
             // Calculate fee in original currency for display
             // The payInAmount is the total amount before fees, so the fee is applied to it
             const feeInOriginalCurrency = payInAmount * (feePercent / 100);
-            
+
             // Net amount after fee deduction
             const netAmountAfterFee = payInAmount - feeInOriginalCurrency;
-                
+
             document.getElementById('feeAmount').textContent = formatCurrency(feeInOriginalCurrency, from);
             document.getElementById('netAmount').textContent = formatCurrency(netAmountAfterFee, from);
             document.getElementById('exchangeRate').textContent = '1 ' + from + ' = ' + rate.toFixed(6) + ' USD';
@@ -1060,7 +1104,7 @@
             // and keep "to" as USD
             const from = document.getElementById('fromCurrency');
             const tempOptions = Array.from(from.options).map(option => option.value);
-            
+
             // Rotate the currency options (simple rotation)
             if (from.value === 'USD') {
                 from.value = 'ZWL';
@@ -1087,7 +1131,7 @@
             } else {
                 from.value = 'USD';
             }
-            
+
             calculateTransfer();
         }
 
