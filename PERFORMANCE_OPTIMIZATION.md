@@ -10,7 +10,7 @@
 ```powershell
 $env:DB_URL="jdbc:postgresql://localhost:5432/bypass_records"
 $env:DB_USERNAME="postgres"
-$env:DB_PASSWORD="NjisweVic~2030"
+$env:DB_PASSWORD=".........."
 $env:SPRING_PROFILES_ACTIVE="dev"
 .\mvnw spring-boot:run
 ```
