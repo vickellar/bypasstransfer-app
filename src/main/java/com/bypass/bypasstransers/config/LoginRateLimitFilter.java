@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +41,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         return !("/login".equals(request.getRequestURI()) && "POST".equalsIgnoreCase(request.getMethod()));
     }
 
+    @Nonnull
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {

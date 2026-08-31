@@ -127,6 +127,13 @@
         .filter-bar input, .filter-bar select {
             flex: 1; min-width: 140px; max-width: 240px;
         }
+        .btn-export {
+            background: linear-gradient(135deg, #22c55e, #16a34a); color: white;
+            border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px;
+            font-weight: 600; cursor: pointer; display: inline-flex; align-items: center;
+            gap: 6px; transition: opacity 0.2s; text-decoration: none;
+        }
+        .btn-export:hover { opacity: 0.88; }
     </style>
 </head>
 <body>
@@ -140,6 +147,7 @@
             <h1><i class="fas fa-link"></i> Transaction Matching</h1>
             <p>Pair incoming (received) transactions with outgoing (sent) transactions for end-of-day reconciliation.</p>
         </div>
+        <button class="btn-export" onclick="exportMatchesCSV()"><i class="fas fa-download"></i> Export Matches CSV</button>
         <a th:href="@{/admin}" class="btn-back"><i class="fas fa-arrow-left"></i> Admin Console</a>
     </div>
 
@@ -355,6 +363,28 @@ function filterUnmatched(q) {
     rows.forEach(function(row) {
         row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
+}
+
+function exportMatchesCSV() {
+    var table = document.querySelector('.glass:last-of-type table');
+    if (!table) { alert('No matches to export.'); return; }
+    var csv = 'Match ID,Incoming TX,Incoming Currency,Incoming Amount,Outgoing TX,Outgoing Currency,Outgoing Amount,Description,Note,Status,Matched By,Date\n';
+    var rows = table.querySelectorAll('tbody tr');
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        var line = [];
+        cells.forEach(function(cell, idx) {
+            if (idx === cells.length - 1) return; // skip actions column
+            var val = cell.textContent.trim().replace(/\s+/g, ' ').replace(/"/g, '""');
+            line.push('"' + val + '"');
+        });
+        csv += line.join(',') + '\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'matched-transactions-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
 }
 </script>
 
