@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .audit-container { margin-top: 20px; }
+        .audit-log-row { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
+        .action-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .action-CREATE { background-color: #d4edda; color: #155724; }
+        .action-UPDATE { background-color: #cce5ff; color: #004085; }
+        .action-DELETE { background-color: #f8d7da; color: #721c24; }
+        .action-LOGIN_SUCCESS { background-color: #d4edda; color: #155724; }
+        .action-LOGIN_FAILURE { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+<div class="container-fluid audit-container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Audit Log</h1>
+            <p class="text-muted">System activity and change tracking</p>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Filter Audit Logs</h5>
+                    <form method="get" class="form-inline flex-wrap">
+                        <input type="text" class="form-control mr-2 mb-2" name="entityName" placeholder="Entity Name" th:value="${filter.entityName}">
+                        <input type="text" class="form-control mr-2 mb-2" name="action" placeholder="Action" th:value="${filter.action}">
+                        <input type="date" class="form-control mr-2 mb-2" name="startDate" th:value="${filter.startDate}">
+                        <input type="date" class="form-control mr-2 mb-2" name="endDate" th:value="${filter.endDate}">
+                        <button type="submit" class="btn btn-primary mr-2 mb-2">Filter</button>
+                        <a href="/audit/export-csv" class="btn btn-success mb-2">Export CSV</a>
+                        <a href="/audit/logs" class="btn btn-secondary mb-2">Reset</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Records</h5>
+                    <h2 th:text="${totalRecords}">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Displayed Records</h5>
+                    <h2 th:text="${logs.size()}">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Logs List -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(logs)}" class="alert alert-info">No audit logs found.</div>
+                    
+                    <div th:each="log : ${logs}" class="audit-log-row">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <strong>ID:</strong> <span th:text="${log.id}"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <strong>Entity:</strong> <span th:text="${log.entityName}"></span>
+                            </div>
+                            <div class="col-md-2">
+                                <strong>Action:</strong>
+                                <span th:class="'action-badge action-' + ${log.action}" th:text="${log.action}"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Timestamp:</strong> <span th:text="${#temporals.format(log.performedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>User:</strong> <span th:text="${log.performedBy}"></span>
+                            </div>
+                        </div>
+                        <div class="row mt-2" th:if="${log.oldValue != null or log.newValue != null}">
+                            <div class="col-md-12">
+                                <div th:if="${log.oldValue != null}" class="alert alert-light">
+                                    <strong>Old Value:</strong> <code th:text="${log.oldValue}"></code>
+                                </div>
+                                <div th:if="${log.newValue != null}" class="alert alert-light">
+                                    <strong>New Value:</strong> <code th:text="${log.newValue}"></code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
