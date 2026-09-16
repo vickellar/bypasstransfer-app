@@ -25,8 +25,11 @@ public class BypasstransersApplication {
 
     private static final Logger log = LoggerFactory.getLogger(BypasstransersApplication.class);
 
-    public static void main(String[] args) {
+    static {
         loadDotEnv();
+    }
+
+    public static void main(String[] args) {
         SpringApplication.run(BypasstransersApplication.class, args);
     }
 

@@ -13,11 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import java.math.BigDecimal;
 
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 public class WalletTransactionServiceTest {
 
     @Autowired
@@ -44,8 +45,12 @@ public class WalletTransactionServiceTest {
     }
 
     @Test
+    @Transactional
     public void testSend() {
         // Setup data
+        // No need to manual delete all if using @Transactional in a @SpringBootTest
+        // which will rollback after test.
+
         User user = new User();
         user.setUsername("testuser");
         user.setPassword("pass");
@@ -63,6 +68,12 @@ public class WalletTransactionServiceTest {
         wallet.setCurrency(com.bypass.bypasstransers.enums.Currency.USD);
         walletRepository.save(wallet);
 
+        // Verify user is found
+        User found = userRepository.findByUsername("testuser").stream().findFirst().orElse(null);
+        if (found == null) {
+            throw new RuntimeException("Test user not found after save!");
+        }
+
         // Attempt to send
         try {
             walletTransactionService.send("TestAccount", new BigDecimal("100.00"));
@@ -70,6 +81,7 @@ public class WalletTransactionServiceTest {
         } catch (Exception e) {
             System.err.println("CAUGHT EXCEPTION IN TEST:");
             e.printStackTrace();
+            throw e;
         }
     }
 }

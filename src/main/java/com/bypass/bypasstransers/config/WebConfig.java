@@ -1,6 +1,5 @@
 package com.bypass.bypasstransers.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
@@ -20,14 +19,22 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.cors.allowed-origins:http://localhost:8080}")
     private String allowedOrigins;
 
-    @Autowired
-    private RateLimitInterceptor rateLimitInterceptor;
+    private final RateLimitInterceptor rateLimitInterceptor;
+
+    WebConfig(RateLimitInterceptor rateLimitInterceptor) {
+        this.rateLimitInterceptor = rateLimitInterceptor;
+    }
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(rateLimitInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns("/css/**", "/js/**", "/images/**", "/img/**", "/videos/**");
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
+        final RateLimitInterceptor rateLimitInterceptor2 = rateLimitInterceptor;
+		if (rateLimitInterceptor2 != null) {
+			registry.addInterceptor(rateLimitInterceptor2)
+			        .addPathPatterns("/**")
+			        .excludePathPatterns("/css/**", "/js/**", "/images/**", "/img/**", "/videos/**");
+		} else {
+			// TODO handle null value
+		}
     }
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {

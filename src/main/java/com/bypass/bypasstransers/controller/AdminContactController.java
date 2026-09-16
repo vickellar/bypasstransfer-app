@@ -17,7 +17,7 @@ import java.util.Objects;
 @Controller
 @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
 public class AdminContactController {
-
+    
     private final ContactMessageRepository contactRepo;
 
     public AdminContactController(ContactMessageRepository contactRepo) {

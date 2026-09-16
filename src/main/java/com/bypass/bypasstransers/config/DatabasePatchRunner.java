@@ -10,7 +10,7 @@ public class DatabasePatchRunner implements CommandLineRunner {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
+    
     @Override
     public void run(String... args) throws Exception {
         // Automatically patch existing accounts to have a version of 0

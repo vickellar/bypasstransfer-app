@@ -44,7 +44,7 @@ public class DataLoader implements CommandLineRunner {
             userRepository.save(admin);
             
             // Create default wallets for admin
-            userProvisioningService.createDefaultWalletsForUser(admin);
+            //userProvisioningService.createDefaultWalletsForUser(admin);
             
             System.out.println("Default admin created: 'admin' with initial password.");
         }
